@@ -1,0 +1,160 @@
+@model HCMS4.ViewModels.SurveyEditorViewModel
+
+@{
+    ViewData["Title"] = "Create Survey";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container py-4">
+    <div class="card dashboard-card">
+        <div class="card-header">
+            <h4 class="mb-0">Create Survey</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="CreateSurvey" method="post">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="Title" class="form-label"></label>
+                        <input asp-for="Title" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="StartDate" class="form-label"></label>
+                        <input asp-for="StartDate" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="EndDate" class="form-label"></label>
+                        <input asp-for="EndDate" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="TargetAudience" class="form-label"></label>
+                        <select asp-for="TargetAudience" asp-items="Html.GetEnumSelectList<HCMS4.Models.SurveyTargetAudience>()" class="form-select" id="targetAudience"></select>
+                    </div>
+                    <div class="col-md-4" id="targetCriteriaGroup">
+                        <label asp-for="TargetCriteria" class="form-label"></label>
+                        <input asp-for="TargetCriteria" class="form-control" />
+                        <div class="form-text">Used for specific-category targeting.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check mt-4">
+                            <input asp-for="SendImmediately" class="form-check-input" />
+                            <label asp-for="SendImmediately" class="form-check-label">Save and Send</label>
+                        </div>
+                    </div>
+                    <div class="col-12" id="specificPatientsGroup">
+                        <label class="form-label">Specific Patients</label>
+                        <select asp-for="SpecificPatientIds" asp-items="@(new MultiSelectList(Model.AvailablePatients, "Id", "FullName"))" class="form-select" multiple size="6"></select>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Questions</h5>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="addQuestionBtn">Add Question</button>
+                </div>
+
+                <div id="questionsContainer">
+                    @for (var i = 0; i < Model.Questions.Count; i++)
+                    {
+                        <div class="border rounded p-3 mb-3 question-item">
+                            <div class="mb-3">
+                                <label class="form-label">Question Text</label>
+                                <input name="Questions[@i].QuestionText" value="@Model.Questions[i].QuestionText" class="form-control" />
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Question Type</label>
+                                    <select name="Questions[@i].QuestionType" class="form-select question-type">
+                                        @foreach (var type in Enum.GetValues<HCMS4.Models.SurveyQuestionType>())
+                                        {
+                                            <option value="@type" selected="@(Model.Questions[i].QuestionType == type)">@type</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check mt-4">
+                                        <input type="checkbox" name="Questions[@i].IsRequired" value="true" class="form-check-input" checked="@Model.Questions[i].IsRequired" />
+                                        <input type="hidden" name="Questions[@i].IsRequired" value="false" />
+                                        <label class="form-check-label">Required</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 options-group">
+                                <label class="form-label">Options (one per line, for multiple choice)</label>
+                                <textarea name="Questions[@i].OptionsText" class="form-control" rows="3">@Model.Questions[i].OptionsText</textarea>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save Survey</button>
+                    <a asp-action="Surveys" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const questionsContainer = document.getElementById('questionsContainer');
+            const addQuestionBtn = document.getElementById('addQuestionBtn');
+            const targetAudience = document.getElementById('targetAudience');
+            const specificPatientsGroup = document.getElementById('specificPatientsGroup');
+            const targetCriteriaGroup = document.getElementById('targetCriteriaGroup');
+
+            function updateTargetVisibility() {
+                const value = targetAudience.value;
+                specificPatientsGroup.style.display = value === 'SpecificPatients' ? 'block' : 'none';
+                targetCriteriaGroup.style.display = value === 'SpecificCategory' ? 'block' : 'none';
+            }
+
+            addQuestionBtn.addEventListener('click', function () {
+                const index = questionsContainer.querySelectorAll('.question-item').length;
+                const html = `
+                    <div class="border rounded p-3 mb-3 question-item">
+                        <div class="mb-3">
+                            <label class="form-label">Question Text</label>
+                            <input name="Questions[${index}].QuestionText" class="form-control" />
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Question Type</label>
+                                <select name="Questions[${index}].QuestionType" class="form-select">
+                                    <option value="MultipleChoice">MultipleChoice</option>
+                                    <option value="Rating">Rating</option>
+                                    <option value="YesNo">YesNo</option>
+                                    <option value="OpenText">OpenText</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check mt-4">
+                                    <input type="checkbox" name="Questions[${index}].IsRequired" value="true" class="form-check-input" />
+                                    <input type="hidden" name="Questions[${index}].IsRequired" value="false" />
+                                    <label class="form-check-label">Required</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label">Options (one per line, for multiple choice)</label>
+                            <textarea name="Questions[${index}].OptionsText" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>`;
+                questionsContainer.insertAdjacentHTML('beforeend', html);
+            });
+
+            targetAudience.addEventListener('change', updateTargetVisibility);
+            updateTargetVisibility();
+        });
+    </script>
+}

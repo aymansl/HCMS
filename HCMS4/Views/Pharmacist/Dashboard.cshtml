@@ -1,0 +1,411 @@
+﻿@model HCMS4.ViewModels.PharmacistDashboardViewModel
+
+@{
+    ViewData["Title"] = "Pharmacist Dashboard";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">Pharmacist Dashboard</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item active">Dashboard</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="text-muted">
+            <i class="bi bi-calendar3 me-1"></i> @DateTime.Now.ToString("dddd, MMMM d, yyyy")
+        </div>
+    </div>
+
+    <!-- Welcome Message -->
+    <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        Welcome back, <strong>@User.Identity?.Name</strong>! Here's your pharmacy overview for today.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Alerts Section -->
+    @if (Model.Alerts != null && Model.Alerts.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Alerts & Notifications</h5>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var alert in Model.Alerts)
+                        {
+                            <div class="alert alert-warning alert-dismissible fade show mb-2" role="alert">
+                                @alert
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Drugs</h6>
+                            <h3 class="mb-0">@Model.TotalDrugs</h3>
+                        </div>
+                        <div class="header-icon bg-gradient-primary">
+                            <i class="bi bi-capsule"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Expiring Soon</h6>
+                            <h3 class="mb-0 @(Model.ExpiringSoonCount > 0 ? "text-warning" : "")">@Model.ExpiringSoonCount</h3>
+                            <small class="text-muted">Within 30 days</small>
+                        </div>
+                        <div class="header-icon bg-gradient-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                </div>
+                @if (Model.ExpiringSoonCount > 0)
+                {
+                    <div class="card-footer bg-transparent border-0">
+                        <a asp-action="ExpiryAlerts" class="btn btn-warning btn-sm w-100">View Expiring Drugs</a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Expired Drugs</h6>
+                            <h3 class="mb-0 @(Model.ExpiredCount > 0 ? "text-danger" : "")">@Model.ExpiredCount</h3>
+                            <small class="text-muted">Need immediate action</small>
+                        </div>
+                        <div class="header-icon bg-gradient-danger">
+                            <i class="bi bi-calendar-x"></i>
+                        </div>
+                    </div>
+                </div>
+                @if (Model.ExpiredCount > 0)
+                {
+                    <div class="card-footer bg-transparent border-0">
+                        <a asp-action="ExpiryAlerts" asp-route-filter="expired" class="btn btn-danger btn-sm w-100">Remove Expired</a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Low Stock</h6>
+                            <h3 class="mb-0 @(Model.LowStockCount > 0 ? "text-danger" : "")">@Model.LowStockCount</h3>
+                            <small class="text-muted">Items below 10 units</small>
+                        </div>
+                        <div class="header-icon bg-gradient-info">
+                            <i class="bi bi-box"></i>
+                        </div>
+                    </div>
+                </div>
+                @if (Model.LowStockCount > 0)
+                {
+                    <div class="card-footer bg-transparent border-0">
+                        <a asp-action="LowStock" class="btn btn-info btn-sm w-100">Restock Items</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Prescription Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Pending Prescriptions</h6>
+                            <h3 class="mb-0 @(Model.PendingPrescriptions > 0 ? "text-warning" : "")">@Model.PendingPrescriptions</h3>
+                            <small class="text-muted">Awaiting processing</small>
+                        </div>
+                        <div class="header-icon bg-gradient-warning">
+                            <i class="bi bi-prescription"></i>
+                        </div>
+                    </div>
+                </div>
+                @if (Model.PendingPrescriptions > 0)
+                {
+                    <div class="card-footer bg-transparent border-0">
+                        <a asp-action="Prescriptions" asp-route-status="pending" class="btn btn-warning btn-sm w-100">Process Prescriptions</a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-md-6 mb-4">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Completed Today</h6>
+                            <h3 class="mb-0">@Model.CompletedPrescriptions</h3>
+                            <small class="text-muted">Prescriptions filled</small>
+                        </div>
+                        <div class="header-icon bg-gradient-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card dashboard-card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-lightning-charge me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-sm-6">
+                            <a asp-action="CreateDrug" class="btn btn-outline-primary w-100 py-3">
+                                <i class="bi bi-plus-circle d-block fs-2 mb-2"></i>
+                                <span>Add New Drug</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a asp-action="Drugs" class="btn btn-outline-info w-100 py-3">
+                                <i class="bi bi-capsule d-block fs-2 mb-2"></i>
+                                <span>Manage Inventory</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a asp-action="Prescriptions" asp-route-status="pending" class="btn btn-outline-warning w-100 py-3">
+                                <i class="bi bi-prescription d-block fs-2 mb-2"></i>
+                                <span>View Prescriptions</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a asp-action="ExpiryAlerts" class="btn btn-outline-danger w-100 py-3">
+                                <i class="bi bi-exclamation-triangle d-block fs-2 mb-2"></i>
+                                <span>Check Expiry</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expiring Drugs Section -->
+    @if (Model.ExpiringDrugs != null && Model.ExpiringDrugs.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card dashboard-card">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i>Drugs Expiring Soon (Within 30 Days)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Drug Name</th>
+                                        <th>Supplier</th>
+                                        <th>Quantity</th>
+                                        <th>Expiry Date</th>
+                                        <th>Days Left</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var drug in Model.ExpiringDrugs)
+                                    {
+                                        var daysLeft = (drug.ExpiryDate - DateTime.Now).Days;
+                                        <tr class="@(daysLeft <= 7 ? "table-danger" : "table-warning")">
+                                            <td><strong>@drug.Name</strong></td>
+                                            <td>@drug.Supplier</td>
+                                            <td>@drug.Quantity</td>
+                                            <td>@drug.ExpiryDate.ToString("yyyy-MM-dd")</td>
+                                            <td>
+                                                <span class="badge @(daysLeft <= 7 ? "bg-danger" : "bg-warning")">
+                                                    @daysLeft days
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a asp-action="EditDrug" asp-route-id="@drug.Id" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-pencil"></i> Update
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Low Stock Section -->
+    @if (Model.LowStockDrugs != null && Model.LowStockDrugs.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card dashboard-card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="bi bi-box me-2"></i>Low Stock Items (Below 10 Units)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Drug Name</th>
+                                        <th>Supplier</th>
+                                        <th>Current Stock</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var drug in Model.LowStockDrugs)
+                                    {
+                                        <tr class="@(drug.Quantity < 5 ? "table-danger" : "table-warning")">
+                                            <td><strong>@drug.Name</strong></td>
+                                            <td>@drug.Supplier</td>
+                                            <td>
+                                                <span class="badge @(drug.Quantity < 5 ? "bg-danger" : "bg-warning")">
+                                                    @drug.Quantity units
+                                                </span>
+                                            </td>
+                                            <td>@drug.Price.ToString("C")</td>
+                                            <td>
+                                                @if (drug.Quantity < 5)
+                                                {
+                                                    <span class="badge bg-danger">Critical</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">Low</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a asp-action="EditDrug" asp-route-id="@drug.Id" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-pencil"></i> Restock
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Recent Prescriptions -->
+    @if (Model.RecentPrescriptions != null && Model.RecentPrescriptions.Any())
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card dashboard-card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Prescriptions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Doctor</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var prescription in Model.RecentPrescriptions)
+                                    {
+                                        <tr>
+                                            <td>@prescription.Patient?.User?.FullName</td>
+                                            <td>@prescription.Doctor?.User?.FullName</td>
+                                            <td>@prescription.PrescriptionDate.ToString("yyyy-MM-dd")</td>
+                                            <td>
+                                                @if (prescription.Status == PrescriptionStatus.Pending)
+                                                {
+                                                    <span class="badge bg-warning">Pending</span>
+                                                }
+                                                else if (prescription.Status == PrescriptionStatus.Completed)
+                                                {
+                                                    <span class="badge bg-success">Completed</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@prescription.Status</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <a asp-action="PrescriptionDetails" asp-route-id="@prescription.Id"
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh alerts every 5 minutes (300000 ms)
+        setTimeout(function() {
+            location.reload();
+        }, 300000);
+    </script>
+}

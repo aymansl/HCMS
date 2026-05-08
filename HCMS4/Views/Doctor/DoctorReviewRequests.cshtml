@@ -1,0 +1,57 @@
+@model List<HCMS4.Models.DoctorReviewRequest>
+
+@{
+    ViewData["Title"] = "Doctor Review Requests";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <h1 class="h3 mb-4">Doctor Review Requests</h1>
+    <div class="card dashboard-card">
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                @foreach (var request in Model)
+                {
+                    <div class="border rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <div class="fw-semibold">Prescription #@request.PrescriptionId</div>
+                                <div class="small text-muted">Patient: @request.Prescription?.Patient?.User?.FullName | Pharmacist: @request.Pharmacist?.User?.FullName</div>
+                            </div>
+                            <span class="badge bg-secondary">@request.Status</span>
+                        </div>
+
+                        <div class="mt-2"><strong>Reason:</strong> @request.ReasonForReview</div>
+                        @if (!string.IsNullOrWhiteSpace(request.AdditionalComments))
+                        {
+                            <div class="small mt-2">@request.AdditionalComments</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(request.SuggestedAlternative))
+                        {
+                            <div class="small mt-1"><strong>Suggested alternative:</strong> @request.SuggestedAlternative</div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(request.DoctorResponse))
+                        {
+                            <div class="alert alert-light mt-3 mb-0"><strong>Your response:</strong> @request.DoctorResponse</div>
+                        }
+                        else
+                        {
+                            <form asp-action="RespondToReviewRequest" method="post" class="mt-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@request.Id" />
+                                <textarea name="doctorResponse" class="form-control mb-2" rows="3" placeholder="Doctor response"></textarea>
+                                <button type="submit" class="btn btn-primary">Send Response</button>
+                            </form>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted mb-0">No doctor review requests found.</p>
+            }
+        </div>
+    </div>
+</div>

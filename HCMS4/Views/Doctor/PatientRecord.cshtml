@@ -1,0 +1,527 @@
+﻿@model HCMS4.ViewModels.PatientMedicalRecordViewModel
+
+@{
+    ViewData["Title"] = "Patient Medical Record";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">
+                        <i class="bi bi-person-vcard me-2"></i>Patient Medical Record
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a asp-action="Dashboard">Dashboard</a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a asp-action="ViewAppointments">Appointments</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                @Model.FullName
+                            </li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a asp-action="ViewAppointments" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Appointments
+                    </a>
+                    <a asp-action="CreateClinicalNote" asp-route-patientId="@Model.PatientId" 
+                       class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>Add Clinical Note
+                    </a>
+                    <a asp-action="CreatePrescription" 
+                          asp-route-patientId="@Model.PatientId"
+                       asp-route-appointmentId="@Model.AppointmentId"
+                         class="btn btn-primary">
+                        <i class="bi bi-prescription2 me-1"></i> Create Prescription
+                    </a>
+                </div>
+            </div>
+
+            <div class="card dashboard-card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-circle me-2"></i>Patient Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Full Name</label>
+                                    <p class="mb-0 fs-5">@Model.FullName</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Email</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-envelope me-2"></i>@Model.Email
+                                    </p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Phone</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-telephone me-2"></i>
+                                        @(Model.PhoneNumber ?? "Not provided")
+                                    </p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Date of Birth / Age</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-calendar me-2"></i>
+                                        @if (Model.DateOfBirth.HasValue)
+                                        {
+                                            <text>@Model.DateOfBirth.Value.ToString("MMMM dd, yyyy") (@Model.Age years)</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Not provided</text>
+                                        }
+                                    </p>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label text-muted">Address</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-geo-alt me-2"></i>
+                                        @(Model.Address ?? "Not provided")
+                                    </p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-muted">Emergency Contact</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-telephone-forward me-2"></i>
+                                        @(Model.EmergencyContact ?? "Not provided")
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-3">Medical History Summary</h6>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>Appointments</span>
+                                            <span class="badge bg-info">@Model.TotalAppointments</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-info" style="width: @(Math.Min(Model.TotalAppointments * 10, 100))%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>Prescriptions</span>
+                                            <span class="badge bg-success">@Model.TotalPrescriptions</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-success" style="width: @(Math.Min(Model.TotalPrescriptions * 20, 100))%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>Clinical Notes</span>
+                                            <span class="badge bg-warning">@Model.TotalClinicalNotes</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar bg-warning" style="width: @(Math.Min(Model.TotalClinicalNotes * 20, 100))%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(Model.ChronicConditions))
+                    {
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <h6 class="alert-heading">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>Chronic Conditions
+                                    </h6>
+                                    <p class="mb-0">@Model.ChronicConditions</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <ul class="nav nav-tabs nav-tabs-bordered" id="medicalHistoryTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+<button class="nav-link active" id="appointments-tab" data-bs-toggle="tab" 
+        data-bs-target="#appointments" type="button" role="tab">
+    <i class="bi bi-calendar-check me-1"></i>Appointments
+    <span class="badge bg-info ms-1">@Model.AppointmentHistory.Count</span>
+</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="prescriptions-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#prescriptions" type="button" role="tab">
+                                <i class="bi bi-prescription me-1"></i>Prescriptions
+                                <span class="badge bg-success ms-1">@Model.Prescriptions.Count</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="notes-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#notes" type="button" role="tab">
+                                <i class="bi bi-journal-text me-1"></i>Clinical Notes
+                                <span class="badge bg-warning ms-1">@Model.ClinicalNotes.Count</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="invoices-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#invoices" type="button" role="tab">
+                                <i class="bi bi-receipt me-1"></i>Invoices
+                                <span class="badge bg-secondary ms-1">@Model.Invoices.Count</span>
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content pt-3" id="medicalHistoryTabsContent">
+<div class="tab-pane fade show active" id="appointments" role="tabpanel">
+    @if (Model.AppointmentHistory.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Doctor</th>
+                        <th>Specialization</th>
+                        <th>Status</th>
+                        <th>Fee</th>
+                        <th>Booked On</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var appointment in Model.AppointmentHistory)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@appointment.AppointmentDateTime.ToString("MMM dd, yyyy")</strong>
+                                <div class="text-muted small">@appointment.AppointmentDateTime.ToString("hh:mm tt")</div>
+                            </td>
+                            <td>@appointment.DoctorName</td>
+                            <td>@appointment.Specialization</td>
+                            <td>
+                                <span class="badge @appointment.StatusBadgeClass">
+                                    @appointment.Status
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-bold">@string.Format("{0:C2}", appointment.ConsultationFee)</span>
+                            </td>
+                            <td>
+                                @if (appointment.CreatedAt.HasValue)
+                                {
+                                    @appointment.CreatedAt.Value.ToString("MMM dd, yyyy")
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-4">
+            <i class="bi bi-calendar-x display-1 text-muted"></i>
+            <h4 class="mt-3">No Appointment History</h4>
+            <p class="text-muted">This patient has no appointment history.</p>
+        </div>
+    }
+</div>
+                        
+                        <div class="tab-pane fade" id="prescriptions" role="tabpanel">
+                            @if (Model.Prescriptions.Any())
+                            {
+                                <div class="accordion" id="prescriptionsAccordion">
+                                    @foreach (var prescription in Model.Prescriptions)
+                                    {
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed" type="button" 
+                                                        data-bs-toggle="collapse" 
+                                                        data-bs-target="#prescription-@prescription.Id">
+                                                    <div class="d-flex justify-content-between w-100 me-3">
+                                                        <div>
+                                                            <strong>@prescription.PrescriptionDate.ToString("MMMM dd, yyyy")</strong>
+                                                            <span class="badge @prescription.StatusBadgeClass ms-2">
+                                                                @prescription.Status
+                                                            </span>
+                                                        </div>
+                                                        <div class="text-muted">
+                                                            Dr. @prescription.DoctorName
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            </h2>
+                                            <div id="prescription-@prescription.Id" class="accordion-collapse collapse" 
+                                                 data-bs-parent="#prescriptionsAccordion">
+                                                <div class="accordion-body">
+                                                    <div class="row">
+                                                        <div class="col-md-8">
+                                                            <h6>Medication Details:</h6>
+                                                            <div class="table-responsive">
+                                                                <table class="table table-sm">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Drug</th>
+                                                                            <th>Dosage</th>
+                                                                            <th>Frequency</th>
+                                                                            <th>Duration</th>
+                                                                            <th>Instructions</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach (var item in prescription.Items)
+                                                                        {
+                                                                            <tr>
+                                                                                <td>@item.DrugName</td>
+                                                                                <td>@item.Dosage</td>
+                                                                                <td>@item.Frequency</td>
+                                                                                <td>@item.Duration days</td>
+                                                                                <td>@item.Instructions</td>
+                                                                            </tr>
+                                                                        }
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="card border-0 bg-light">
+                                                                <div class="card-body">
+                                                                    <h6>Prescription Info:</h6>
+                                                                    <p><strong>Doctor:</strong> @prescription.DoctorName</p>
+                                                                    <p><strong>Specialization:</strong> @prescription.Specialization</p>
+                                                                    <p><strong>Total Cost:</strong> @prescription.TotalCost.ToString("C2")</p>
+                                                                    @if (!string.IsNullOrEmpty(prescription.Notes))
+                                                                    {
+                                                                        <p><strong>Notes:</strong> @prescription.Notes</p>
+                                                                    }
+                                                                    @if (prescription.PharmacistNotes.Any())
+                                                                    {
+                                                                        <div class="mt-3">
+                                                                            <strong>Pharmacist Notes:</strong>
+                                                                            @foreach (var note in prescription.PharmacistNotes)
+                                                                            {
+                                                                                <div class="border rounded p-2 mt-2 small">
+                                                                                    <div class="fw-semibold">@note.PharmacistName</div>
+                                                                                    <div>@note.NoteText</div>
+                                                                                    <div class="text-muted">@note.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <i class="bi bi-prescription display-1 text-muted"></i>
+                                    <h4 class="mt-3">No Prescription History</h4>
+                                    <p class="text-muted">This patient has no prescription history.</p>
+                                </div>
+                            }
+                        </div>
+                        
+                        <div class="tab-pane fade" id="notes" role="tabpanel">
+                            @if (Model.ClinicalNotes.Any())
+                            {
+                                <div class="row">
+                                    @foreach (var note in Model.ClinicalNotes)
+                                    {
+                                        <div class="col-md-6 mb-3">
+                                            <div class="card h-100">
+                                                <div class="card-header d-flex justify-content-between align-items-center">
+                                                    <span class="badge bg-info">@note.NoteType</span>
+                                                    <small class="text-muted">@note.Date.ToString("MMM dd, yyyy HH:mm")</small>
+                                                </div>
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Dr. @note.DoctorName</h6>
+                                                    <p class="card-text">@note.Content</p>
+                                                    @if (!string.IsNullOrEmpty(note.Diagnosis))
+                                                    {
+                                                        <div class="alert alert-warning mt-2 mb-0">
+                                                            <strong>Diagnosis:</strong> @note.Diagnosis
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <i class="bi bi-journal-text display-1 text-muted"></i>
+                                    <h4 class="mt-3">No Clinical Notes</h4>
+                                    <p class="text-muted">No clinical notes have been recorded for this patient.</p>
+                                    <a asp-action="CreateClinicalNote" asp-route-patientId="@Model.PatientId" 
+                                       class="btn btn-primary mt-2">
+                                        <i class="bi bi-plus-circle me-1"></i>Add First Clinical Note
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                        
+                      
+                        <div class="tab-pane fade" id="invoices" role="tabpanel">
+                            @if (Model.Invoices.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Invoice Date</th>
+                                                <th>Total Amount</th>
+                                                <th>Payment Status</th>
+                                                <th>Payment Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var invoice in Model.Invoices)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <strong>@invoice.InvoiceDate.ToString("MMM dd, yyyy")</strong>
+                                                    </td>
+                                                    <td>
+                                                        <span class="fw-bold">@invoice.TotalAmount.ToString("C2")</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge @invoice.StatusBadgeClass">
+                                                            @invoice.PaymentStatus
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if (invoice.PaymentDate.HasValue)
+                                                        {
+                                                            @invoice.PaymentDate.Value.ToString("MMM dd, yyyy")
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">-</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <i class="bi bi-receipt display-1 text-muted"></i>
+                                    <h4 class="mt-3">No Invoices</h4>
+                                    <p class="text-muted">No invoices have been generated for this patient.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            @if (!Model.HasMedicalHistory)
+            {
+                <div class="card dashboard-card mt-4 border-warning">
+                    <div class="card-header bg-warning bg-opacity-10">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-plus me-2"></i>New Patient
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center py-3">
+                            <i class="bi bi-clipboard-plus display-1 text-warning"></i>
+                            <h4 class="mt-3">New Patient Record</h4>
+                            <p class="text-muted mb-4">
+                                This is a new patient with no medical history. You can start by:
+                            </p>
+                            <div class="d-flex justify-content-center gap-3">
+                                <a asp-action="CreateClinicalNote" asp-route-patientId="@Model.PatientId" 
+                                   class="btn btn-primary">
+                                    <i class="bi bi-journal-plus me-1"></i>Add First Clinical Note
+                                </a>
+                                <button type="button" class="btn btn-outline-secondary">
+                                    <i class="bi bi-calendar-plus me-1"></i>Schedule Follow-up
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          
+            const triggerTabList = document.querySelectorAll('#medicalHistoryTabs button')
+            triggerTabList.forEach(triggerEl => {
+                const tabTrigger = new bootstrap.Tab(triggerEl)
+                
+                triggerEl.addEventListener('click', event => {
+                    event.preventDefault()
+                    tabTrigger.show()
+                })
+            })
+            
+        
+            const hash = window.location.hash;
+            if (hash) {
+                const triggerEl = document.querySelector(`#medicalHistoryTabs button[data-bs-target="${hash}"]`);
+                if (triggerEl) {
+                    bootstrap.Tab.getInstance(triggerEl)?.show();
+                }
+            }
+            
+            const tabEls = document.querySelectorAll('#medicalHistoryTabs button[data-bs-toggle="tab"]');
+            tabEls.forEach(tabEl => {
+                tabEl.addEventListener('shown.bs.tab', event => {
+                    const target = event.target.getAttribute('data-bs-target');
+                    window.location.hash = target;
+                });
+            });
+        });
+    </script>
+}

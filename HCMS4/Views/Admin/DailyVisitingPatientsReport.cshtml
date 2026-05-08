@@ -1,0 +1,286 @@
+@model HCMS4.ViewModels.DailyVisitingPatientsReportViewModel
+
+@{
+    ViewData["Title"] = "Daily Visiting Patients Report";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">
+                        <i class="bi bi-people me-2"></i>
+                        Daily Visiting Patients Report
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Visiting Patients Report</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <button onclick="printReport()" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-printer"></i> Print
+                    </button>
+                    <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i> @Model.ErrorMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card dashboard-card mb-4">
+                <div class="card-body">
+                    <form asp-action="DailyVisitingPatientsReport" method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Select Date</label>
+                            <input type="date" name="date" class="form-control" value="@Model.ReportDate.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> View Report
+                            </button>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end justify-content-end">
+                            <a asp-action="DailyVisitingPatientsReport" class="btn btn-outline-secondary btn-sm me-2">
+                                <i class="bi bi-calendar-today"></i> Today
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card dashboard-card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50 mb-1">Report Date</h6>
+                                    <h4 class="mb-0">@Model.ReportDate.ToString("dd MMM yyyy")</h4>
+                                </div>
+                                <i class="bi bi-calendar-date fs-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dashboard-card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50 mb-1">Total Visiting Patients</h6>
+                                    <h4 class="mb-0">@Model.TotalPatients</h4>
+                                </div>
+                                <i class="bi bi-people fs-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card dashboard-card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50 mb-1">With Prescriptions</h6>
+                                    <h4 class="mb-0">@Model.Patients.Count(p => p.HasPrescription)</h4>
+                                </div>
+                                <i class="bi bi-prescription fs-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card dashboard-card">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-table me-2"></i>
+                        Visiting Patients List
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Patients.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Patient Name</th>
+                                        <th>Phone Number</th>
+                                        <th>Time</th>
+                                        <th>Visit Type</th>
+                                        <th>Diagnosis</th>
+                                        <th>Prescription</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int index = 1;
+                                    }
+                                    @foreach (var patient in Model.Patients)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@index</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm me-2">
+                                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                            @(patient.PatientName.Length > 0 ? patient.PatientName[0].ToString().ToUpper() : "?")
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <strong>@patient.PatientName</strong>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(patient.PhoneNumber))
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-telephone me-1"></i>@patient.PhoneNumber
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">N/A</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <strong>@patient.AppointmentTime.ToString("hh:mm tt")</strong>
+                                            </td>
+                                            <td>
+                                                @if (patient.VisitType == "Consultation")
+                                                {
+                                                    <span class="badge bg-primary">Consultation</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-info">Follow-up</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(patient.Diagnosis))
+                                                {
+                                                    <span class="text-truncate d-inline-block" style="max-width: 150px;" title="@patient.Diagnosis">
+                                                        @patient.Diagnosis
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (patient.HasPrescription)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Yes
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="bi bi-x-circle me-1"></i>No
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="6" class="text-end fw-bold">Total Patients:</td>
+                                        <td class="fw-bold fs-5">@Model.TotalPatients</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-people display-1 text-muted"></i>
+                            <h4 class="mt-3">No Visiting Patients</h4>
+                            <p class="text-muted">No patients visited on @Model.ReportDate.ToString("MMMM dd, yyyy").</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function printReport() {
+            window.print();
+        }
+    </script>
+}
+
+<style>
+    @@media print {
+        .btn, .breadcrumb, .navbar, .footer, .card-body form {
+            display: none !important;
+        }
+
+        .card {
+            border: 1px solid #ddd !important;
+            break-inside: avoid;
+        }
+
+        .table {
+            font-size: 12px;
+        }
+
+        .dashboard-card {
+            box-shadow: none !important;
+        }
+    }
+
+    .bg-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+
+    .bg-success {
+        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%) !important;
+    }
+
+    .bg-info {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important;
+        color: #333 !important;
+    }
+
+    .text-white-50 {
+        color: rgba(255,255,255,0.7) !important;
+    }
+</style>

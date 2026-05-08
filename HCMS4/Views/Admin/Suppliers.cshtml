@@ -1,0 +1,208 @@
+@model IEnumerable<HCMS4.Models.Supplier>
+
+@{
+    ViewData["Title"] = "Manage Suppliers";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Manage Suppliers</h1>
+                <a asp-action="CreateSupplier" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add New Supplier
+                </a>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row mb-4">
+                <div class="col-md-4 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Total Suppliers</h6>
+                                    <h3 class="mb-0">@Model.Count()</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-success">
+                                    <i class="bi bi-people"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Active Suppliers</h6>
+                                    <h3 class="mb-0">@Model.Count(s => s.IsActive)</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-info">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">With Email</h6>
+                                    <h3 class="mb-0">@Model.Count(s => !string.IsNullOrEmpty(s.Email))</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-primary">
+                                    <i class="bi bi-envelope"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Supplier Name</th>
+                                        <th>Contact Person</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Address</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var supplier in Model)
+                                    {
+                                        <tr>
+                                            <td>@supplier.Id</td>
+                                            <td>
+                                                <strong>@supplier.Name</strong>
+                                            </td>
+                                            <td>@supplier.ContactPerson</td>
+                                            <td>@supplier.Phone</td>
+                                            <td>@supplier.Email</td>
+                                            <td>@supplier.Address</td>
+                                            <td>
+                                                <div class="btn-group-uniform">
+                                                    <a asp-action="EditSupplier" asp-route-id="@supplier.Id"
+                                                       class="btn btn-gradient-primary btn-icon" title="Edit Supplier">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+
+                                                    <button type="button" class="btn btn-gradient-danger btn-icon delete-supplier-btn"
+                                                            title="Delete Supplier"
+                                                            data-supplier-id="@supplier.Id"
+                                                            data-supplier-name="@supplier.Name">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            <p class="text-muted">Total Suppliers: <strong>@Model.Count()</strong></p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-people display-1 text-muted"></i>
+                            <h4 class="mt-3">No Suppliers Found</h4>
+                            <p class="text-muted">No suppliers have been added yet.</p>
+                            <a asp-action="CreateSupplier" class="btn btn-primary">Add First Supplier</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteSupplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Supplier</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="deleteSupplierForm" asp-action="DeleteSupplier" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="deleteSupplierId" name="id" />
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="supplierName"></strong>?</p>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        This action cannot be undone. If the supplier has purchase requests, it will be deactivated instead of deleted.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="bi bi-trash me-1"></i>Delete Supplier
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            document.querySelectorAll('.delete-supplier-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const supplierId = this.getAttribute('data-supplier-id');
+                    const supplierName = this.getAttribute('data-supplier-name');
+
+                    document.getElementById('deleteSupplierId').value = supplierId;
+                    document.getElementById('supplierName').textContent = supplierName;
+
+                    const modal = new bootstrap.Modal(document.getElementById('deleteSupplierModal'));
+                    modal.show();
+                });
+            });
+
+            document.getElementById('deleteSupplierForm').addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('#confirmDeleteBtn');
+                if (submitBtn) {
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+                    submitBtn.disabled = true;
+                }
+            });
+        });
+    </script>
+}

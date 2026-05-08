@@ -1,0 +1,435 @@
+﻿@model IEnumerable<HCMS4.Models.Drug>
+
+@{
+    ViewData["Title"] = "Manage Drugs Inventory";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">Manage Drugs Inventory</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Drugs Inventory</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a asp-action="CreateDrug" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add New Drug
+                </a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["WarningMessage"] != null)
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["WarningMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Search and Filter Bar -->
+            <div class="card dashboard-card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-5">
+                            <div class="input-group">
+                                <span class="input-group-text bg-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" name="searchTerm" class="form-control"
+                                       placeholder="Search by drug name, supplier, or description..."
+                                       value="@ViewBag.SearchTerm" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <select name="expiryFilter" class="form-control">
+                                <option value="">All Drugs</option>
+                                <option value="expired" selected="@(ViewBag.ExpiryFilter == "expired")">Expired Drugs</option>
+                                <option value="expiring-soon" selected="@(ViewBag.ExpiryFilter == "expiring-soon")">Expiring Soon (30 days)</option>
+                                <option value="valid" selected="@(ViewBag.ExpiryFilter == "valid")">Valid Drugs</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-filter"></i> Apply Filters
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Total Drugs</h6>
+                                    <h3 class="mb-0">@Model.Count()</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-primary">
+                                    <i class="bi bi-capsule"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Total Value</h6>
+                                    <h3 class="mb-0">@ViewBag.TotalValue.ToString("C")</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-success">
+                                    <i class="bi bi-cash-stack"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Expired</h6>
+                                    <h3 class="mb-0 text-danger">@ViewBag.ExpiredCount</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-danger">
+                                    <i class="bi bi-calendar-x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Expiring Soon</h6>
+                                    <h3 class="mb-0 text-warning">@ViewBag.ExpiringSoonCount</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drugs Table -->
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Drug Name</th>
+                                        <th>Supplier</th>
+                                        <th>Price</th>
+                                        <th>Quantity</th>
+                                        <th>Expiry Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var drug in Model)
+                                    {
+                                        var daysUntilExpiry = (drug.ExpiryDate - DateTime.Now).Days;
+                                        <tr class="@GetRowClass(drug, daysUntilExpiry)">
+                                            <td>@drug.Id</td>
+                                            <td>
+                                                <strong>@drug.Name</strong>
+                                                @if (!string.IsNullOrEmpty(drug.Description))
+                                                {
+                                                    <div class="text-muted small">@drug.Description</div>
+                                                }
+                                            </td>
+                                            <td>@(drug.Supplier ?? "N/A")</td>
+                                            <td>@drug.Price.ToString("C")</td>
+                                            <td>
+                                                <span class="@GetQuantityClass(drug.Quantity)">
+                                                    @drug.Quantity
+                                                    @if (drug.Quantity < 10)
+                                                    {
+                                                        <i class="bi bi-exclamation-triangle ms-1"
+                                                           title="Low Stock"></i>
+                                                    }
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @drug.ExpiryDate.ToString("yyyy-MM-dd")
+                                                <div class="text-muted small">
+                                                    @GetDaysUntilExpiry(daysUntilExpiry)
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (daysUntilExpiry <= 0)
+                                                {
+                                                    <span class="badge bg-danger">Expired</span>
+                                                }
+                                                else if (daysUntilExpiry <= 30)
+                                                {
+                                                    <span class="badge bg-warning">Expiring Soon</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">Valid</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a asp-action="EditDrug" asp-route-id="@drug.Id"
+                                                       class="btn btn-sm btn-primary" title="Edit Drug">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-info"
+                                                            onclick="showQuickStockModal(@drug.Id, '@drug.Name', @drug.Quantity)"
+                                                            title="Update Stock">
+                                                        <i class="bi bi-box"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger"
+                                                            onclick="showDeleteModal(@drug.Id, '@drug.Name', @drug.PrescriptionItems.Any().ToString().ToLower())"
+                                                            title="Delete Drug">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-capsule display-1 text-muted"></i>
+                            <h4 class="mt-3">No Drugs Found</h4>
+                            <p class="text-muted">
+                                @if (!string.IsNullOrEmpty(ViewBag.SearchTerm))
+                                {
+                                    <text>No drugs match your search criteria.</text>
+                                }
+                                else
+                                {
+                                    <text>No drugs have been added to the inventory yet.</text>
+                                }
+                            </p>
+                            <a asp-action="CreateDrug" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Add New Drug
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stock Update Modal -->
+<div class="modal fade" id="quickStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-box me-2"></i>Update Stock Quantity
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="UpdateStock" method="post" id="quickStockForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="stockDrugId" />
+                <div class="modal-body">
+                    <p>Update stock for <strong id="stockDrugName"></strong></p>
+                    <div class="form-group mb-3">
+                        <label class="form-label">Current Stock</label>
+                        <input type="number" class="form-control" id="currentStock" readonly />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">New Quantity <span class="text-danger">*</span></label>
+                        <input type="number" name="newQuantity" class="form-control" min="0" required
+                               placeholder="Enter new quantity" />
+                        <small class="text-muted">Enter the new stock quantity</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-check-circle"></i> Update Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteDrugModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Delete Drug
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="DeleteDrug" method="post" id="deleteDrugForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="deleteDrugId" />
+                <div class="modal-body">
+                    <div id="regularDeleteMessage">
+                        <p>Are you sure you want to delete <strong id="drugName"></strong>?</p>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            This action cannot be undone.
+                        </div>
+                    </div>
+                    <div id="prescriptionDeleteMessage" class="d-none">
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <strong>Cannot Delete</strong>
+                            <p class="mb-0 mt-2">This drug is associated with existing prescriptions and cannot be deleted.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="bi bi-trash me-1"></i>Delete Drug
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Quick Stock Modal Functions
+        function showQuickStockModal(id, name, currentStock) {
+            document.getElementById('stockDrugId').value = id;
+            document.getElementById('stockDrugName').textContent = name;
+            document.getElementById('currentStock').value = currentStock;
+
+            var modal = new bootstrap.Modal(document.getElementById('quickStockModal'));
+            modal.show();
+        }
+
+        // Delete Modal Functions
+        function showDeleteModal(id, name, hasPrescriptions) {
+            document.getElementById('deleteDrugId').value = id;
+            document.getElementById('drugName').textContent = name;
+
+            if (hasPrescriptions) {
+                document.getElementById('regularDeleteMessage').classList.add('d-none');
+                document.getElementById('prescriptionDeleteMessage').classList.remove('d-none');
+                document.getElementById('confirmDeleteBtn').classList.add('d-none');
+            } else {
+                document.getElementById('regularDeleteMessage').classList.remove('d-none');
+                document.getElementById('prescriptionDeleteMessage').classList.add('d-none');
+                document.getElementById('confirmDeleteBtn').classList.remove('d-none');
+            }
+
+            var modal = new bootstrap.Modal(document.getElementById('deleteDrugModal'));
+            modal.show();
+        }
+
+        // Prevent double submission
+        document.getElementById('quickStockForm')?.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Updating...';
+            }
+        });
+
+        document.getElementById('deleteDrugForm')?.addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('#confirmDeleteBtn');
+            if (submitBtn && !submitBtn.classList.contains('d-none')) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Deleting...';
+            }
+        });
+
+        // Auto-submit filter when selection changes (optional)
+        document.querySelector('select[name="expiryFilter"]')?.addEventListener('change', function() {
+            this.form.submit();
+        });
+
+        // Clear search button (if needed)
+        document.querySelector('.input-group .btn-outline-secondary')?.addEventListener('click', function() {
+            document.querySelector('input[name="searchTerm"]').value = '';
+            this.form.submit();
+        });
+    </script>
+}
+
+@functions {
+    string GetRowClass(HCMS4.Models.Drug drug, int daysUntilExpiry)
+    {
+        if (daysUntilExpiry <= 0)
+            return "table-danger";
+        if (daysUntilExpiry <= 30)
+            return "table-warning";
+        if (drug.Quantity < 5)
+            return "table-danger";
+        if (drug.Quantity < 10)
+            return "table-warning";
+        return "";
+    }
+
+    string GetQuantityClass(int quantity)
+    {
+        if (quantity < 5)
+            return "text-danger fw-bold";
+        if (quantity < 10)
+            return "text-warning fw-bold";
+        return "text-success";
+    }
+
+    string GetDaysUntilExpiry(int days)
+    {
+        if (days <= 0)
+            return "Expired";
+        if (days == 1)
+            return "Expires tomorrow";
+        if (days <= 30)
+            return $"Expires in {days} days";
+        return $"{days} days remaining";
+    }
+}

@@ -1,0 +1,226 @@
+﻿@model List<HCMS4.ViewModels.AppointmentHistoryViewModel>
+
+@{
+    ViewData["Title"] = "Appointment History";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">My Appointment History</h1>
+                <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-calendar-x display-1 text-muted"></i>
+                            <h3 class="mt-4">No past appointments found</h3>
+                            <p class="text-muted">You don't have any appointment history yet.</p>
+                            <a asp-action="BookAppointment" class="btn btn-primary mt-3">
+                                <i class="bi bi-plus-circle"></i> Book Your First Appointment
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="appointmentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Doctor</th>
+                                        <th>Specialization</th>
+                                        <th>Status</th>
+                                        <th>Fee</th>
+                                        <th>Booked On</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var appointment in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="fw-semibold">@appointment.AppointmentDateTime.ToString("yyyy-MM-dd")</div>
+                                                <div class="text-muted small">@appointment.AppointmentDateTime.ToString("HH:mm")</div>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold">Dr. @appointment.DoctorName</div>
+                                            </td>
+                                            <td>@appointment.Specialization</td>
+                                            <td>
+                                                <span class="badge @appointment.StatusBadgeClass">@appointment.Status</span>
+                                            </td>
+                                            <td>
+                                                <span class="fw-semibold">@string.Format("{0:C2}", appointment.ConsultationFee)</span>
+                                            </td>
+                                            <td>
+                                                <div class="text-muted small">@appointment.CreatedAt?.ToString("yyyy-MM-dd")</div>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    @if (appointment.Status == "Scheduled")
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                                data-bs-toggle="modal" data-bs-target="#detailsModal@(appointment.Id)">
+                                                            <i class="bi bi-eye"></i> View
+                                                        </button>
+                                                        <a href="#" class="btn btn-sm btn-outline-danger">
+                                                            <i class="bi bi-x-circle"></i> Cancel
+                                                        </a>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                                data-bs-toggle="modal" data-bs-target="#detailsModal@(appointment.Id)">
+                                                            <i class="bi bi-eye"></i> Details
+                                                        </button>
+                                                        @if (appointment.CanRateVisit)
+                                                        {
+                                                            <a asp-action="RateVisit" asp-route-appointmentId="@appointment.Id"
+                                                               class="btn btn-sm btn-outline-success">
+                                                                <i class="bi bi-star-fill"></i> Rate Visit
+                                                            </a>
+                                                        }
+                                                        else if (appointment.HasVisitRating)
+                                                        {
+                                                            <span class="btn btn-sm btn-success disabled">
+                                                                <i class="bi bi-check-circle"></i> Rated
+                                                            </span>
+                                                        }
+                                                    }
+                                                </div>
+                                                
+                                                
+                                                <div class="modal fade" id="detailsModal@(appointment.Id)" tabindex="-1">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Appointment Details</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="row">
+                                                                    <div class="col-md-6">
+                                                                        <h6>Appointment Info</h6>
+                                                                        <p><strong>Date:</strong> @appointment.AppointmentDateTime.ToString("dddd, MMMM dd, yyyy")</p>
+                                                                        <p><strong>Time:</strong> @appointment.AppointmentDateTime.ToString("h:mm tt")</p>
+                                                                        <p><strong>Status:</strong> <span class="badge @appointment.StatusBadgeClass">@appointment.Status</span></p>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <h6>Doctor Info</h6>
+                                                                        <p><strong>Name:</strong> Dr. @appointment.DoctorName</p>
+                                                                        <p><strong>Specialization:</strong> @appointment.Specialization</p>
+                                                                        <p><strong>Fee:</strong> @string.Format("{0:C2}", appointment.ConsultationFee)</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                @if (appointment.Status == "Scheduled")
+                                                                {
+                                                                    <button type="button" class="btn btn-danger">Cancel Appointment</button>
+                                                                }
+                                                                else if (appointment.CanRateVisit)
+                                                                {
+                                                                    <a asp-action="RateVisit" asp-route-appointmentId="@appointment.Id" class="btn btn-success">Rate Visit</a>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div class="text-muted">
+                                Showing @Model.Count appointment(s)
+                            </div>
+                            <div class="btn-group">
+                                <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                                    <i class="bi bi-house"></i> Dashboard
+                                </a>
+                                <a asp-action="BookAppointment" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Book New Appointment
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            if (document.getElementById('appointmentsTable')) {
+                $('#appointmentsTable').DataTable({
+                    "order": [[0, "desc"]], 
+                    "pageLength": 10,
+                    "language": {
+                        "search": "Search appointments:",
+                        "emptyTable": "No appointments found",
+                        "info": "Showing _START_ to _END_ of _TOTAL_ appointments",
+                        "infoEmpty": "Showing 0 to 0 of 0 appointments",
+                        "lengthMenu": "Show _MENU_ appointments"
+                    }
+                });
+            }
+            
+            
+            document.querySelectorAll('.btn-outline-danger').forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const appointmentId = this.closest('tr').querySelector('td:first-child').textContent.trim();
+                    
+                    if (confirm('Are you sure you want to cancel this appointment?')) {
+                        
+                        alert('Cancellation functionality would be implemented here.\nAppointment: ' + appointmentId);
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <style>
+        .dashboard-card {
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .badge {
+            font-size: 0.85em;
+            padding: 0.4em 0.8em;
+        }
+        
+        .bg-warning {
+            background-color: #ffc107 !important;
+        }
+        
+        .bg-success {
+            background-color: #198754 !important;
+        }
+        
+        .bg-danger {
+            background-color: #dc3545 !important;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+    </style>
+}

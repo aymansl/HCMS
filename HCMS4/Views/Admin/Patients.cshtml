@@ -1,0 +1,440 @@
+@model HCMS4.ViewModels.PatientStatsViewModel
+
+@{
+    ViewData["Title"] = "Manage Patients";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Manage Patients</h1>
+            </div>
+
+      
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            
+            <div class="row mb-4">
+                <div class="col-md-3 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Total Patients</h6>
+                                    <h3 class="mb-0">@Model.TotalPatients</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-success">
+                                    <i class="bi bi-people-fill"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Active Appointments</h6>
+                                    <h3 class="mb-0">@Model.TotalScheduledAppointments</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-info">
+                                    <i class="bi bi-calendar-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Total Prescriptions</h6>
+                                    <h3 class="mb-0">@Model.TotalPrescriptions</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-warning">
+                                    <i class="bi bi-prescription"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-3 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Pending Invoices</h6>
+                                    <h3 class="mb-0">@Model.PendingInvoicesCount</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-danger">
+                                    <i class="bi bi-receipt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+         
+            <div class="card">
+                <div class="card-body">
+                    @if (Model.Patients.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Patient Name</th>
+                                        <th>Email</th>
+                                        <th>Date of Birth</th>
+                                        <th>Emergency Contact</th>
+                                        <th>Records</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var patient in Model.Patients)
+                                    {
+                                    <tr>
+                                        <td>@patient.Id</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm me-2">
+                                                    <div class="">
+                                                         
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <h6>@patient.User?.FullName</h6>
+                                                    @if (patient.Status == PatientStatus.Disabled)
+                                                    {
+                                                        <span class="badge bg-danger mb-1">Disabled</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>@patient.User?.Email</td>
+                                        <td>@patient.DateOfBirth?.ToString("yyyy-MM-dd")</td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(patient.EmergencyContact))
+                                            {
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-telephone me-1"></i>@patient.EmergencyContact
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Not set</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-calendar me-1"></i>@Model.TotalScheduledAppointments
+                                                </span>
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-prescription me-1"></i>@patient.Prescriptions?.Count
+                                                </span>
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-receipt me-1"></i>@patient.Invoices?.Count
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group-uniform">
+                                                <a asp-action="PatientDetails" asp-route-id="@patient.Id" 
+                                                   class="btn btn-gradient-info btn-icon" title="View Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a asp-action="EditPatient" asp-route-id="@patient.Id" 
+                                                   class="btn btn-gradient-primary btn-icon" title="Edit Patient">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                @if (patient.Status == PatientStatus.Active)
+                                                {
+                                                    <button type="button" class="btn btn-gradient-warning btn-icon disable-btn" 
+                                                            title="Disable Account"
+                                                            data-patient-id="@patient.Id"
+                                                            data-patient-name="@patient.User?.FullName">
+                                                        <i class="bi bi-slash-circle"></i>
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <form asp-action="EnablePatient" method="post" style="display: inline;">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@patient.Id" />
+                                                        <button type="submit" class="btn btn-gradient-success btn-icon" 
+                                                                title="Enable Account">
+                                                            <i class="bi bi-check-circle"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+                                                <a asp-action="GenerateInvoice" asp-route-patientId="@patient.Id" 
+                                                   class="btn btn-gradient-success btn-icon" title="Generate Invoice">
+                                                    <i class="bi bi-receipt"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-gradient-danger btn-icon delete-btn" 
+                                                        title="Delete Patient"
+                                                        data-patient-id="@patient.Id"
+                                                        data-patient-name="@patient.User?.FullName">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-person-plus display-1 text-muted"></i>
+                            <h4 class="mt-3">No Patients Found</h4>
+                            <p class="text-muted">No patient accounts have been registered yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Delete Form -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="deletePatientId" />
+</form>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const patientId = this.getAttribute('data-patient-id');
+                    const patientName = this.getAttribute('data-patient-name');
+                    
+                    confirmDelete(patientId, patientName);
+                });
+            });
+
+            document.querySelectorAll('.disable-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const patientId = this.getAttribute('data-patient-id');
+                    const patientName = this.getAttribute('data-patient-name');
+                    
+                    confirmDisable(patientId, patientName);
+                });
+            });
+        });
+
+        async function confirmDisable(patientId, patientName) {
+            const { isConfirmed, value: reason } = await Swal.fire({
+                title: 'Disable Patient Account?',
+                html: `
+                    <div class="text-start">
+                        <p class="mb-3">Please provide a reason for disabling:</p>
+                        <div class="alert alert-warning p-3 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-x fs-4 me-3 text-warning"></i>
+                                <div>
+                                    <strong>${patientName}</strong>
+                                    <div class="text-muted small">Patient ID: ${patientId}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <textarea id="disableReason" class="form-control" rows="3" placeholder="e.g., Violation of conduct, Unpaid bills"></textarea>
+                    </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Disable Account',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                width: '500px',
+                customClass: {
+                    popup: 'rounded-3',
+                    confirmButton: 'btn btn-gradient-warning px-4 py-2',
+                    cancelButton: 'btn btn-outline-secondary px-4 py-2'
+                },
+                buttonsStyling: false,
+                preConfirm: () => {
+                    const reason = document.getElementById('disableReason').value.trim();
+                    if (!reason) {
+                        Swal.showValidationMessage('Please provide a reason for disabling the account');
+                        return false;
+                    }
+                    return reason;
+                }
+            });
+            
+            if (isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '@Url.Action("DisablePatient", "Admin")';
+                form.style.display = 'none';
+                
+                const token = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (token) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '__RequestVerificationToken';
+                    csrfInput.value = token.value;
+                    form.appendChild(csrfInput);
+                }
+            
+                const idInput = document.createElement('input');
+                idInput.type = 'hidden';
+                idInput.name = 'PatientId';
+                idInput.value = patientId;
+                form.appendChild(idInput);
+
+                const reasonInput = document.createElement('input');
+                reasonInput.type = 'hidden';
+                reasonInput.name = 'DisableReason';
+                reasonInput.value = reason;
+                form.appendChild(reasonInput);
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        async function confirmDelete(patientId, patientName) {
+            const { isConfirmed } = await Swal.fire({
+                title: 'Delete Patient?',
+                html: `
+                    <div class="text-start">
+                        <p class="mb-3">Are you sure you want to delete patient:</p>
+                        <div class="alert alert-warning p-3 mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-x fs-4 me-3 text-warning"></i>
+                                <div>
+                                    <strong>${patientName}</strong>
+                                    <div class="text-muted small">Patient ID: ${patientId}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-danger mb-0">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            This will permanently remove all patient records!
+                        </p>
+                    </div>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#fe7096',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Delete Patient',
+                cancelButtonText: 'Cancel',
+                reverseButtons: true,
+                width: '500px',
+                customClass: {
+                    popup: 'rounded-3',
+                    confirmButton: 'btn btn-gradient-danger px-4 py-2',
+                    cancelButton: 'btn btn-outline-secondary px-4 py-2'
+                },
+                buttonsStyling: false
+            });
+            
+            if (isConfirmed) {
+              
+                document.getElementById('deletePatientId').value = patientId;
+                document.getElementById('deleteForm').action = '@Url.Action("DeletePatient", "Admin")';
+                document.getElementById('deleteForm').submit();
+            }
+        }
+
+
+        const style = document.createElement('style');
+        style.textContent = `
+            .avatar-sm {
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            
+            .avatar-title {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 1rem;
+            }
+            
+            .btn-group-uniform {
+                display: flex;
+                gap: 8px;
+                justify-content: center;
+            }
+            
+            .btn-icon {
+                width: 38px;
+                height: 38px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 10px;
+                border: none;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            
+            .btn-gradient-info { 
+                background: linear-gradient(135deg, #90caf9, #047edf) !important;
+                color: white !important;
+            }
+            
+            .btn-gradient-primary { 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                color: white !important;
+            }
+            
+            .btn-gradient-danger { 
+                background: linear-gradient(135deg, #ffbf96, #fe7096) !important;
+                color: white !important;
+            }
+            
+            .btn-icon:hover {
+                transform: translateY(-2px) scale(1.05);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            
+            .table tbody tr:hover {
+                background-color: rgba(0, 0, 0, 0.02);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+}

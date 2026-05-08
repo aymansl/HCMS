@@ -1,0 +1,109 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|c:\\users\\asus\\downloads\\hcms4_final\\hcms4\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|solutionrelative:hcms4\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|c:\\users\\asus\\downloads\\hcms4_final\\hcms4\\views\\admin\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|solutionrelative:hcms4\\views\\admin\\dashboard.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|c:\\users\\asus\\downloads\\hcms4_final\\hcms4\\views\\admin\\dailyvisitingpatientsreport.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|solutionrelative:hcms4\\views\\admin\\dailyvisitingpatientsreport.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|c:\\users\\asus\\downloads\\hcms4_final\\hcms4\\views\\shared\\_layoutauth.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|solutionrelative:hcms4\\views\\shared\\_layoutauth.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|c:\\users\\asus\\downloads\\hcms4_final\\hcms4\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{94451206-DF34-459E-ACDA-A8323446AAA5}|HCMS4\\HCMS4.csproj|solutionrelative:hcms4\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 325,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "DailyVisitingPatientsReport.cshtml",
+              "DocumentMoniker": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Views\\Admin\\DailyVisitingPatientsReport.cshtml",
+              "RelativeDocumentMoniker": "HCMS4\\Views\\Admin\\DailyVisitingPatientsReport.cshtml",
+              "ToolTip": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Views\\Admin\\DailyVisitingPatientsReport.cshtml",
+              "RelativeToolTip": "HCMS4\\Views\\Admin\\DailyVisitingPatientsReport.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-08T18:16:08.388Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "_LayoutAuth.cshtml",
+              "DocumentMoniker": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Views\\Shared\\_LayoutAuth.cshtml",
+              "RelativeDocumentMoniker": "HCMS4\\Views\\Shared\\_LayoutAuth.cshtml",
+              "ToolTip": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Views\\Shared\\_LayoutAuth.cshtml",
+              "RelativeToolTip": "HCMS4\\Views\\Shared\\_LayoutAuth.cshtml",
+              "ViewState": "AgIAAEgAAAAAAAAAAAAAAGUAAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-08T18:00:57.93Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AdminController.cs",
+              "DocumentMoniker": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Controllers\\AdminController.cs",
+              "RelativeDocumentMoniker": "HCMS4\\Controllers\\AdminController.cs",
+              "ToolTip": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Controllers\\AdminController.cs",
+              "RelativeToolTip": "HCMS4\\Controllers\\AdminController.cs",
+              "ViewState": "AgIAACoJAAAAAAAAAAAowM0IAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-08T07:00:57.629Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Dashboard.cshtml",
+              "DocumentMoniker": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Views\\Admin\\Dashboard.cshtml",
+              "RelativeDocumentMoniker": "HCMS4\\Views\\Admin\\Dashboard.cshtml",
+              "ToolTip": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Views\\Admin\\Dashboard.cshtml",
+              "RelativeToolTip": "HCMS4\\Views\\Admin\\Dashboard.cshtml",
+              "ViewState": "AgIAAD0AAAAAAAAAAAAwwEoAAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-08T16:46:41.069Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Views\\Account\\Login.cshtml",
+              "RelativeDocumentMoniker": "HCMS4\\Views\\Account\\Login.cshtml",
+              "ToolTip": "C:\\Users\\Asus\\Downloads\\HCMS4_FINAL\\HCMS4\\Views\\Account\\Login.cshtml",
+              "RelativeToolTip": "HCMS4\\Views\\Account\\Login.cshtml",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAAABcAAAA1AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-05-08T06:55:35.085Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

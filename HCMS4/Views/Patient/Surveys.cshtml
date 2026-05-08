@@ -1,0 +1,68 @@
+@model List<HCMS4.Models.SurveyAssignment>
+
+@{
+    ViewData["Title"] = "Surveys";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <h1 class="h3 mb-4">Available Surveys</h1>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card dashboard-card">
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Survey</th>
+                                <th>Status</th>
+                                <th>Assigned</th>
+                                <th>End Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var assignment in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@assignment.Survey.Title</div>
+                                        <div class="small text-muted">@assignment.Survey.Description</div>
+                                    </td>
+                                    <td><span class="badge bg-secondary">@assignment.Status</span></td>
+                                    <td>@assignment.AssignedAt.ToString("yyyy-MM-dd")</td>
+                                    <td>@(assignment.Survey.EndDate?.ToString("yyyy-MM-dd") ?? "Open")</td>
+                                    <td>
+                                        @if (assignment.Status == HCMS4.Models.SurveyAssignmentStatus.Pending)
+                                        {
+                                            <a asp-action="TakeSurvey" asp-route-assignmentId="@assignment.Id" class="btn btn-sm btn-success">Start Survey</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="btn btn-sm btn-outline-secondary disabled">Completed</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mb-0">No surveys are currently available.</div>
+            }
+        </div>
+    </div>
+</div>

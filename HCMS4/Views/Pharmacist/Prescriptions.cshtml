@@ -1,0 +1,429 @@
+﻿@model IEnumerable<HCMS4.Models.Prescription>
+
+@{
+    ViewData["Title"] = "Manage Prescriptions";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">Manage Prescriptions</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Prescriptions</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <span class="badge bg-light text-dark me-2">
+                        <i class="bi bi-prescription me-1"></i> Total: @Model.Count()
+                    </span>
+                    <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <!-- Success/Error Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Status Filter Tabs -->
+            <div class="card dashboard-card mb-4">
+                <div class="card-body">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewBag.CurrentStatus == "pending" ? "active" : "")"
+                               asp-action="Prescriptions" asp-route-status="pending">
+                                <i class="bi bi-clock-history me-1"></i> Pending
+                                <span class="badge bg-warning ms-1">@Model.Count(p => p.Status == PrescriptionStatus.Pending)</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewBag.CurrentStatus == "completed" ? "active" : "")"
+                               asp-action="Prescriptions" asp-route-status="completed">
+                                <i class="bi bi-check-circle me-1"></i> Completed
+                                <span class="badge bg-success ms-1">@Model.Count(p => p.Status == PrescriptionStatus.Completed)</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewBag.CurrentStatus == "cancelled" ? "active" : "")"
+                               asp-action="Prescriptions" asp-route-status="cancelled">
+                                <i class="bi bi-x-circle me-1"></i> Cancelled
+                                <span class="badge bg-danger ms-1">@Model.Count(p => p.Status == PrescriptionStatus.Canceled)</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewBag.CurrentStatus == "all" || ViewBag.CurrentStatus == null ? "active" : "")"
+                               asp-action="Prescriptions" asp-route-status="all">
+                                <i class="bi bi-list-ul me-1"></i> All
+                                <span class="badge bg-secondary ms-1">@Model.Count()</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Prescriptions Table -->
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Patient</th>
+                                        <th>Doctor</th>
+                                        <th>Date</th>
+                                        <th>Items</th>
+                                        <th>Total</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var prescription in Model)
+                                    {
+                                        <tr>
+                                            <td>#@prescription.Id</td>
+                                            <td>
+                                                <strong>@(prescription.Patient?.User?.FullName ?? "N/A")</strong>
+                                                @if (!string.IsNullOrEmpty(prescription.Patient?.User?.Email))
+                                                {
+                                                    <div class="text-muted small">@prescription.Patient.User.Email</div>
+                                                }
+                                            </td>
+                                            <td>
+                                                @(prescription.Doctor?.User?.FullName ?? "N/A")
+                                                @if (!string.IsNullOrEmpty(prescription.Doctor?.SpecializationName))
+                                                {
+                                                    <div class="text-muted small">@prescription.Doctor.SpecializationName</div>
+                                                }
+                                            </td>
+                                            <td>
+                                                @prescription.PrescriptionDate.ToString("yyyy-MM-dd")
+                                                <div class="text-muted small">@prescription.PrescriptionDate.ToString("HH:mm")</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">@(prescription.PrescriptionItems?.Count ?? 0) items</span>
+                                                @if (prescription.PrescriptionItems != null && prescription.PrescriptionItems.Any())
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-link p-0 ms-1"
+                                                            onclick="showItemsModal(@prescription.Id, '@(prescription.Patient?.User?.FullName)', @Html.Raw(Json.Serialize(prescription.PrescriptionItems.Select(i => new { i.Drug?.Name, i.Quantity, i.Dosage, i.Duration })))">
+                                                        <i class="bi bi-eye"></i> View
+                                                    </button>
+                                                }
+                                            </td>
+                                            <td class="fw-bold">@(prescription.MedicationTotal?.ToString("C") ?? "N/A")</td>
+                                            <td>
+                                                @switch (prescription.Status)
+                                                {
+                                                    case PrescriptionStatus.Pending:
+                                                        <span class="badge bg-warning">Pending</span>
+                                                        break;
+                                                    case PrescriptionStatus.Completed:
+                                                        <span class="badge bg-success">Completed</span>
+                                                        break;
+                                                    case PrescriptionStatus.Canceled:
+                                                        <span class="badge bg-danger">Cancelled</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary">@prescription.Status</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a asp-action="PrescriptionDetails" asp-route-id="@prescription.Id"
+                                                       class="btn btn-sm btn-info" title="View Details">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+
+                                                    @if (prescription.Status == PrescriptionStatus.Pending)
+                                                    {
+                                                        <a asp-controller="Pharmacist" asp-action="ProcessPrescription" asp-route-id="@prescription.Id"
+                                                           class="btn btn-sm btn-success" title="Process Prescription">
+                                                            <i class="bi bi-cash-stack"></i>
+                                                        </a>
+
+                                                        <form asp-action="MarkPrescriptionCompleted" asp-route-id="@prescription.Id"
+                                                              method="post" style="display: inline;"
+                                                              onsubmit="return confirm('Mark this prescription as completed?')">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-sm btn-secondary" title="Mark as Completed">
+                                                                <i class="bi bi-check-lg"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-prescription display-1 text-muted"></i>
+                            <h4 class="mt-3">No Prescriptions Found</h4>
+                            <p class="text-muted">
+                                @if (ViewBag.CurrentStatus != "all" && ViewBag.CurrentStatus != null)
+                                {
+                                    <text>No @ViewBag.CurrentStatus prescriptions available.</text>
+                                }
+                                else
+                                {
+                                    <text>No prescriptions have been created yet.</text>
+                                }
+                            </p>
+                            <a asp-action="Dashboard" class="btn btn-primary">
+                                <i class="bi bi-grid"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            @if (Model.Any())
+            {
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card dashboard-card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted">Total Prescriptions</h6>
+                                <h3>@Model.Count()</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card dashboard-card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted">Pending</h6>
+                                <h3 class="text-warning">@Model.Count(p => p.Status == PrescriptionStatus.Pending)</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card dashboard-card bg-light">
+                            <div class="card-body">
+                                <h6 class="text-muted">Completed Today</h6>
+                                <h3 class="text-success">@Model.Count(p => p.Status == PrescriptionStatus.Completed && p.PrescriptionDate.Date == DateTime.Today)</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Prescription Items Modal -->
+<div class="modal fade" id="itemsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-prescription me-2"></i>Prescription Items
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Patient:</strong> <span id="modalPatientName"></span></p>
+                <p><strong>Prescription #:</strong> <span id="modalPrescriptionId"></span></p>
+
+                <div class="table-responsive mt-3">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Drug Name</th>
+                                <th>Quantity</th>
+                                <th>Dosage</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalItemsBody">
+                            <!-- Items will be inserted here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Function to show prescription items modal
+        function showItemsModal(prescriptionId, patientName, items) {
+            document.getElementById('modalPrescriptionId').textContent = '#' + prescriptionId;
+            document.getElementById('modalPatientName').textContent = patientName;
+
+            const tbody = document.getElementById('modalItemsBody');
+            tbody.innerHTML = '';
+
+            if (items && items.length > 0) {
+                items.forEach(item => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${item.name || 'N/A'}</td>
+                        <td>${item.quantity || 'N/A'}</td>
+                        <td>${item.dosage || 'N/A'}</td>
+                        <td>${item.duration || 'N/A'}</td>
+                    `;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No items found</td></tr>';
+            }
+
+            var modal = new bootstrap.Modal(document.getElementById('itemsModal'));
+            modal.show();
+        }
+
+        // Auto-refresh for pending prescriptions (optional)
+        @if (ViewBag.CurrentStatus == "pending")
+        {
+                <text>
+                // Refresh every 30 seconds to check for new prescriptions
+                setTimeout(function() {
+                    location.reload();
+                }, 30000);
+                </text>
+        }
+
+        // Prevent double submission on complete buttons
+        document.querySelectorAll('form[action*="MarkPrescriptionCompleted"]').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+            });
+        });
+
+        // Search functionality (optional enhancement)
+        document.getElementById('searchInput')?.addEventListener('keyup', function() {
+            const searchText = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('tbody tr');
+
+            tableRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchText) ? '' : 'none';
+            });
+        });
+    </script>
+}
+
+<style>
+    /* Custom styles for prescriptions view */
+    .nav-tabs .nav-link {
+        color: #495057;
+        border: none;
+        padding: 0.75rem 1.5rem;
+    }
+
+        .nav-tabs .nav-link:hover {
+            border: none;
+            color: #667eea;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            background: transparent;
+            font-weight: 500;
+        }
+
+    .nav-tabs .badge {
+        font-size: 0.75rem;
+    }
+
+    .btn-group {
+        gap: 0.25rem;
+    }
+
+        .btn-group .btn {
+            border-radius: 4px !important;
+        }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .bg-light {
+        background-color: #f8f9fa !important;
+    }
+
+    /* Status badges */
+    .badge.bg-warning {
+        background-color: #ffc107 !important;
+        color: #212529;
+    }
+
+    .badge.bg-success {
+        background-color: #28a745 !important;
+    }
+
+    .badge.bg-danger {
+        background-color: #dc3545 !important;
+    }
+
+    .badge.bg-info {
+        background-color: #17a2b8 !important;
+    }
+
+    .badge.bg-secondary {
+        background-color: #6c757d !important;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .nav-tabs .nav-link {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+            .btn-group .btn {
+                width: 100%;
+            }
+
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>

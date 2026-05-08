@@ -1,0 +1,89 @@
+@model HCMS4.ViewModels.SurveyResponseViewModel
+
+@{
+    ViewData["Title"] = "Take Survey";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container py-4">
+    <div class="card dashboard-card">
+        <div class="card-header">
+            <h4 class="mb-0">@Model.Title</h4>
+        </div>
+        <div class="card-body">
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <p class="text-muted">@Model.Description</p>
+            }
+
+            <form asp-action="TakeSurvey" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="SurveyId" type="hidden" />
+                <input asp-for="SurveyAssignmentId" type="hidden" />
+
+                @for (var i = 0; i < Model.Questions.Count; i++)
+                {
+                    <input asp-for="Questions[i].SurveyQuestionId" type="hidden" />
+                    <input asp-for="Questions[i].QuestionText" type="hidden" />
+                    <input asp-for="Questions[i].QuestionType" type="hidden" />
+                    <input asp-for="Questions[i].IsRequired" type="hidden" />
+
+                    <div class="mb-4 border rounded p-3">
+                        <label class="form-label fw-semibold">
+                            @(i + 1). @Model.Questions[i].QuestionText
+                            @if (Model.Questions[i].IsRequired)
+                            {
+                                <span class="text-danger">*</span>
+                            }
+                        </label>
+
+                        @if (Model.Questions[i].QuestionType == HCMS4.Models.SurveyQuestionType.MultipleChoice)
+                        {
+                            @foreach (var option in Model.Questions[i].Options)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="Questions[@i].AnswerText" value="@option.OptionText"
+                                           checked="@(Model.Questions[i].AnswerText == option.OptionText)" />
+                                    <label class="form-check-label">@option.OptionText</label>
+                                </div>
+                            }
+                        }
+                        else if (Model.Questions[i].QuestionType == HCMS4.Models.SurveyQuestionType.Rating)
+                        {
+                            <select asp-for="Questions[i].NumericValue" class="form-select">
+                                <option value="">Select rating</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                        }
+                        else if (Model.Questions[i].QuestionType == HCMS4.Models.SurveyQuestionType.YesNo)
+                        {
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="Questions[@i].BooleanValue" value="true"
+                                       checked="@(Model.Questions[i].BooleanValue == true)" />
+                                <label class="form-check-label">Yes</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="Questions[@i].BooleanValue" value="false"
+                                       checked="@(Model.Questions[i].BooleanValue == false)" />
+                                <label class="form-check-label">No</label>
+                            </div>
+                        }
+                        else
+                        {
+                            <textarea asp-for="Questions[i].AnswerText" class="form-control" rows="3"></textarea>
+                        }
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Submit Answers</button>
+                    <a asp-action="Surveys" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

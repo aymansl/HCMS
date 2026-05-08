@@ -1,0 +1,227 @@
+﻿@model IEnumerable<HCMS4.Models.Pharmacist>
+
+@{
+    ViewData["Title"] = "Manage Pharmacists";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">Manage Pharmacists</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Pharmacists</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a asp-action="CreatePharmacist" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Add New Pharmacist
+                </a>
+            </div>
+
+            <!-- Success/Error Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Total Pharmacists</h6>
+                                    <h3 class="mb-0">@Model.Count()</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-primary">
+                                    <i class="bi bi-person-badge"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Active Pharmacists</h6>
+                                    <h3 class="mb-0">@Model.Count(p => p.IsActive)</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-success">
+                                    <i class="bi bi-person-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4 col-sm-6">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Shifts</h6>
+                                    <h3 class="mb-0">
+                                        M: @Model.Count(p => p.Shift == "Morning") |
+                                        E: @Model.Count(p => p.Shift == "Evening") |
+                                        N: @Model.Count(p => p.Shift == "Night")
+                                    </h3>
+                                </div>
+                                <div class="header-icon bg-gradient-info">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pharmacists Table -->
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Shift</th>
+                                        <th>Status</th>
+                                        <th>Created At</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var pharmacist in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@pharmacist.FullName</strong>
+                                                @if (!string.IsNullOrEmpty(pharmacist.Qualifications))
+                                                {
+                                                    <div class="text-muted small">@pharmacist.Qualifications</div>
+                                                }
+                                            </td>
+                                            <td>@pharmacist.User?.Email</td>
+                                            <td>
+                                                <span class="badge bg-@(pharmacist.Shift == "Morning" ? "warning" :
+                                                                                                                           pharmacist.Shift == "Evening" ? "info" :
+                                                                                                                           pharmacist.Shift == "Night" ? "dark" : "secondary")">
+                                            @(pharmacist.Shift ?? "Not Set")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (pharmacist.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>@pharmacist.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                            <td>
+                                                <div class="btn-group-uniform">
+                                                    <a asp-action="EditPharmacist" asp-route-id="@pharmacist.Id"
+                                                       class="btn btn-gradient-primary btn-icon" title="Edit Pharmacist">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-gradient-danger btn-icon delete-pharmacist-btn"
+                                                            title="Delete Pharmacist"
+                                                            data-pharmacist-id="@pharmacist.Id"
+                                                            data-pharmacist-name="@pharmacist.FullName">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-person-badge display-1 text-muted"></i>
+                            <h4 class="mt-3">No Pharmacists Found</h4>
+                            <p class="text-muted">No pharmacist accounts have been created yet.</p>
+                            <a asp-action="CreatePharmacist" class="btn btn-primary">Add First Pharmacist</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deletePharmacistModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Pharmacist</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="deletePharmacistForm" asp-action="DeletePharmacist" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="deletePharmacistId" name="id" />
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="pharmacistName"></strong>?</p>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        This action cannot be undone. All data associated with this pharmacist will be permanently deleted.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Delete Pharmacist
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle delete button clicks
+            document.querySelectorAll('.delete-pharmacist-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const pharmacistId = this.getAttribute('data-pharmacist-id');
+                    const pharmacistName = this.getAttribute('data-pharmacist-name');
+
+                    document.getElementById('deletePharmacistId').value = pharmacistId;
+                    document.getElementById('pharmacistName').textContent = pharmacistName;
+
+                    const modal = new bootstrap.Modal(document.getElementById('deletePharmacistModal'));
+                    modal.show();
+                });
+            });
+        });
+    </script>
+}

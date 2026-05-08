@@ -1,0 +1,57 @@
+@model HCMS4.ViewModels.PatientComplaintFormViewModel
+
+@{
+    ViewData["Title"] = "Submit Complaint";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container py-4">
+    <div class="card dashboard-card">
+        <div class="card-header">
+            <h4 class="mb-0">Submit a Complaint</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="CreateComplaint" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label"></label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Type" class="form-label"></label>
+                    <select asp-for="Type" asp-items="Html.GetEnumSelectList<HCMS4.Models.ComplaintType>()" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="AssociatedVisitDate" class="form-label"></label>
+                    <input asp-for="AssociatedVisitDate" class="form-control" />
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Attachment" class="form-label"></label>
+                    <input asp-for="Attachment" class="form-control" type="file" />
+                    <div class="form-text">Allowed: JPG, PNG, PDF, DOC, DOCX. Max 5 MB.</div>
+                    <span asp-validation-for="Attachment" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Submit Complaint</button>
+                    <a asp-action="Complaints" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

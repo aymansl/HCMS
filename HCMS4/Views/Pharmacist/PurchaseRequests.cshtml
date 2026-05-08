@@ -1,0 +1,293 @@
+﻿<!-- Views/Pharmacist/PurchaseRequests.cshtml -->
+@model HCMS4.ViewModels.PurchaseRequestListViewModel
+
+@{
+    ViewData["Title"] = "Purchase Requests";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">
+                        <i class="bi bi-cart-plus me-2 text-primary"></i>
+                        Purchase Requests
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Purchase Requests</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a asp-action="CreatePurchaseRequest" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> New Purchase Request
+                    </a>
+                </div>
+            </div>
+
+            <!-- Success/Error Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["WarningMessage"] != null)
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["WarningMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Summary Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card dashboard-card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50 mb-1">Total Requests</h6>
+                                    <h3 class="mb-0">@Model.TotalCount</h3>
+                                </div>
+                                <i class="bi bi-cart fs-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dashboard-card bg-warning text-dark">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-dark-50 mb-1">Pending</h6>
+                                    <h3 class="mb-0">@Model.PendingCount</h3>
+                                </div>
+                                <i class="bi bi-clock-history fs-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dashboard-card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50 mb-1">Approved</h6>
+                                    <h3 class="mb-0">@Model.ApprovedCount</h3>
+                                </div>
+                                <i class="bi bi-check-circle fs-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card dashboard-card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50 mb-1">Received</h6>
+                                    <h3 class="mb-0">@Model.ReceivedCount</h3>
+                                </div>
+                                <i class="bi bi-box-seam fs-1"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Filter Tabs -->
+            <div class="card dashboard-card mb-4">
+                <div class="card-body">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link @(Model.CurrentFilter == "all" ? "active" : "")"
+                               asp-action="PurchaseRequests" asp-route-status="all">
+                                <i class="bi bi-list-ul me-1"></i> All
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(Model.CurrentFilter == "Pending" ? "active" : "")"
+                               asp-action="PurchaseRequests" asp-route-status="Pending">
+                                <i class="bi bi-clock-history me-1"></i> Pending
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(Model.CurrentFilter == "Approved" ? "active" : "")"
+                               asp-action="PurchaseRequests" asp-route-status="Approved">
+                                <i class="bi bi-check-circle me-1"></i> Approved
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(Model.CurrentFilter == "Received" ? "active" : "")"
+                               asp-action="PurchaseRequests" asp-route-status="Received">
+                                <i class="bi bi-box-seam me-1"></i> Received
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Purchase Requests Table -->
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    @if (Model.PurchaseRequests.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Request #</th>
+                                        <th>Date</th>
+                                        <th>Supplier</th>
+                                        <th>Items</th>
+                                        <th>Total Amount</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var request in Model.PurchaseRequests)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@request.RequestNumber</td>
+                                            <td>@request.RequestDate.ToString("dd MMM yyyy HH:mm")</td>
+                                            <td>@(request.Supplier?.Name ?? "Not Specified")</td>
+                                            <td>@request.Items.Count items</td>
+                                            <td class="text-success fw-bold">@request.TotalAmount.ToString("C2")</td>
+                                            <td>
+                                                @{
+                                                    var statusClass = request.Status switch
+                                                    {
+                                                        PurchaseRequestStatus.Pending => "bg-warning",
+                                                        PurchaseRequestStatus.Approved => "bg-success",
+                                                        PurchaseRequestStatus.Rejected => "bg-danger",
+                                                        PurchaseRequestStatus.Received => "bg-info",
+                                                        _ => "bg-secondary"
+                                                    };
+                                                }
+                                                <span class="badge @statusClass">@request.Status</span>
+                                            </td>
+                                            <td>
+                                                <a asp-action="PurchaseRequestDetails" asp-route-id="@request.Id"
+                                                   class="btn btn-sm btn-info" title="View Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-cart display-1 text-muted"></i>
+                            <h4 class="mt-3">No Purchase Requests Found</h4>
+                            <p class="text-muted">
+                                @if (Model.CurrentFilter != "all")
+                                {
+                                    <text>No @Model.CurrentFilter purchase requests available.</text>
+                                }
+                                else
+                                {
+                                    <text>You haven't created any purchase requests yet.</text>
+                                }
+                            </p>
+                            <a asp-action="CreatePurchaseRequest" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Create First Request
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh for pending requests
+        @if (Model.CurrentFilter == "Pending")
+        {
+                <text>
+                setTimeout(function() {
+                    location.reload();
+                }, 30000);
+                </text>
+        }
+    </script>
+}
+
+<style>
+    .dashboard-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        transition: transform 0.2s;
+    }
+
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+    }
+
+    .nav-tabs .nav-link {
+        color: #495057;
+        border: none;
+        padding: 0.75rem 1.5rem;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border: none;
+        color: #667eea;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #667eea;
+        border-bottom: 3px solid #667eea;
+        background: transparent;
+        font-weight: 500;
+    }
+
+    .bg-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+
+    .bg-warning {
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%) !important;
+    }
+
+    .bg-success {
+        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%) !important;
+    }
+
+    .bg-info {
+        background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%) !important;
+        color: #333 !important;
+    }
+
+    .text-white-50 {
+        color: rgba(255,255,255,0.7) !important;
+    }
+
+    .text-dark-50 {
+        color: rgba(0,0,0,0.6) !important;
+    }
+</style>

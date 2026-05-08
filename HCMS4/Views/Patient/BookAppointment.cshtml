@@ -1,0 +1,532 @@
+﻿@model HCMS4.ViewModels.BookAppointmentViewModel
+
+@{
+    ViewData["Title"] = "Book New Appointment";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Book New Appointment</h1>
+                <a asp-action="ViewAppointmentHistory" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Appointments
+                </a>
+            </div>
+
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <form asp-action="BookAppointment" method="post" id="bookAppointmentForm">
+                        @Html.AntiForgeryToken()
+                        
+                     
+                        <div class="row">
+                            @if (Model.AvailablePatients.Count > 1)
+                            {
+                                <div class="col-md-12">
+                                    <div class="mb-4">
+                                        <h6 class="section-title mb-3">
+                                            <i class="bi bi-person me-2"></i>Select Patient
+                                        </h6>
+                                        <div class="mb-3">
+                                            <label asp-for="PatientId" class="form-label">Patient</label>
+                                            <select asp-for="PatientId" class="form-select" required>
+                                                @foreach (var patient in Model.AvailablePatients)
+                                                {
+                                                    <option value="@patient.Id">@patient.FullName (@patient.Email)</option>
+                                                }
+                                            </select>
+                                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <input type="hidden" asp-for="PatientId" />
+                                <div class="col-md-6">
+                                    <div class="mb-4">
+                                        <h6 class="section-title mb-3">
+                                            <i class="bi bi-person me-2"></i>Patient Information
+                                        </h6>
+                                        <div class="mb-3">
+                                            <label class="form-label">Patient</label>
+                                            <input type="text" class="form-control" 
+                                                   value="@Model.AvailablePatients.FirstOrDefault()?.FullName" 
+                                                   readonly disabled>
+                                            <small class="form-text text-muted">Appointment will be booked under your account</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-person-badge me-2"></i>Select Doctor
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="DoctorId" class="form-label">Doctor</label>
+                                        <select asp-for="DoctorId" class="form-select" id="doctorSelect" required>
+                                            <option value="">-- Select Doctor --</option>
+                                            @foreach (var doctor in Model.AvailableDoctors)
+                                            {
+                                                <option value="@doctor.Id" data-specialization="@doctor.Specialization">
+                                                    Dr. @doctor.FullName - @doctor.Specialization
+                                                </option>
+                                            }
+                                        </select>
+                                        <span asp-validation-for="DoctorId" class="text-danger"></span>
+                                    </div>
+                                    <div class="text-muted small" id="doctorInfo"></div>
+                                    <div class="mt-2" id="feeDisplay" style="display:none;">
+                                        <strong>Consultation Fee: </strong><span id="consultationFeeText" class="text-primary fw-bold"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-calendar me-2"></i>Select Date & Time
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="AppointmentDateTime" class="form-label">Appointment Date & Time</label>
+                                        <input asp-for="AppointmentDateTime" type="datetime-local" 
+                                               class="form-control" id="appointmentDate" 
+                                               min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                                        <span asp-validation-for="AppointmentDateTime" class="text-danger"></span>
+                                        <small class="form-text text-muted">Please select a date and time for your appointment</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-clipboard-pulse me-2"></i>Visit Details
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="Symptoms" class="form-label">Reason for Visit / Symptoms</label>
+                                        <textarea asp-for="Symptoms" class="form-control" rows="3" 
+                                                  placeholder="e.g., Cough, fever, headache, etc. (Optional, but helps with doctor recommendations)"
+                                                  maxlength="200"></textarea>
+                                        <div class="form-text">Optional: Entering symptoms helps our assistant recommend the right doctor.</div>
+                                        <span asp-validation-for="Symptoms" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a asp-action="ViewAppointmentHistory" class="btn btn-danger">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Book Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+           
+            function fixJQueryValidation() {
+                if (typeof $ !== 'undefined' && typeof $.validator !== 'undefined') {
+                    $.validator.setDefaults({
+                        ignore: ":hidden:not(select)",
+                        errorClass: "text-danger",
+                        validClass: "is-valid",
+                        errorElement: "span",
+                        highlight: function(element, errorClass, validClass) {
+                            $(element).addClass("is-invalid").removeClass(validClass);
+                        },
+                        unhighlight: function(element, errorClass, validClass) {
+                            $(element).removeClass("is-invalid").addClass(validClass);
+                        }
+                    });
+                    
+                    $('form').removeData('validator');
+                    $('form').removeData('unobtrusiveValidation');
+                    $.validator.unobtrusive.parse('form');
+                    
+                    console.log('jQuery validation initialized');
+                } else {
+                    console.warn('jQuery validation not available');
+                }
+            }
+            
+     
+            fixJQueryValidation();
+            setTimeout(fixJQueryValidation, 100);
+            
+           
+            const doctorSelect = document.getElementById('doctorSelect');
+            const appointmentDate = document.getElementById('appointmentDate');
+            const patientSelect = document.getElementById('PatientId');
+            const symptomsTextarea = document.querySelector('textarea[name="Symptoms"]');
+            const form = document.getElementById('bookAppointmentForm');
+ 
+            if (appointmentDate && !appointmentDate.value) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(9, 0, 0, 0);
+                
+                
+                const year = tomorrow.getFullYear();
+                const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+                const day = String(tomorrow.getDate()).padStart(2, '0');
+                const hours = String(tomorrow.getHours()).padStart(2, '0');
+                const minutes = String(tomorrow.getMinutes()).padStart(2, '0');
+                
+                appointmentDate.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+            
+            initializeAssistant();
+
+            if (symptomsTextarea) {
+                initializeSymptomsAnalysis();
+            }
+            
+
+            document.querySelectorAll('.doctor-suggestion').forEach(button => {
+                button.addEventListener('click', function() {
+                    const doctorId = this.getAttribute('data-doctor-id');
+                    if (doctorSelect) {
+                        doctorSelect.value = doctorId;
+                        // Trigger change event to update consultation fee
+                        $(doctorSelect).trigger('change');
+                        
+                        document.querySelectorAll('.doctor-suggestion').forEach(btn => {
+                            btn.classList.remove('btn-info');
+                            btn.classList.add('btn-outline-info');
+                        });
+                        this.classList.remove('btn-outline-info');
+                        this.classList.add('btn-info');
+                    
+                        showToast('Doctor selected!', 'success');
+                    }
+                });
+            });
+                        this.classList.remove('btn-outline-info');
+                        this.classList.add('btn-info');
+                   
+                        showToast('Doctor selected!', 'success');
+                    }
+                });
+            });
+       
+            function showToast(message, type = 'info') {
+            
+                const toast = document.createElement('div');
+                toast.className = `toast align-items-center text-white bg-${type} border-0`;
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+              
+                const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+                toastContainer.appendChild(toast);
+         
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+               
+                toast.addEventListener('hidden.bs.toast', function() {
+                    toast.remove();
+                });
+            }
+            
+            function createToastContainer() {
+                const container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                container.style.zIndex = '1050';
+                document.body.appendChild(container);
+                return container;
+            }
+            
+  
+            function initializeAssistant() {
+                
+                const patientId = document.querySelector('input[name="PatientId"]')?.value || 
+                                 document.querySelector('select[name="PatientId"]')?.value;
+                
+                if (patientId) {
+                    const symptoms = symptomsTextarea ? symptomsTextarea.value.trim() : '';
+                
+                }
+         
+                if (patientSelect && patientSelect.tagName === 'SELECT') {
+                    patientSelect.addEventListener('change', function() {
+                        const patientId = this.value;
+                        const symptoms = symptomsTextarea ? symptomsTextarea.value.trim() : '';
+                        if (patientId) {
+                            loadAssistantSuggestions(patientId, symptoms);
+                        }
+                    });
+                }
+            }
+            
+            function initializeSymptomsAnalysis() {
+                if (!symptomsTextarea) return;
+                
+                symptomsTextarea.addEventListener('input', function() {
+                    const symptoms = this.value.trim();
+                    const patientId = patientSelect ? patientSelect.value : '';
+                    
+                    if (patientId && symptoms.length > 5) {
+                        clearTimeout(window.symptomsDebounce);
+                        window.symptomsDebounce = setTimeout(() => {
+                            loadAssistantSuggestions(patientId, symptoms);
+                        }, 800);
+                    }
+                });
+            }
+            
+            function loadAssistantSuggestions(patientId, symptoms = '') {
+                console.log('Loading suggestions for patient:', patientId, 'symptoms:', symptoms);
+                
+                showLoadingIndicator();
+                
+                
+                let url = `/Patient/GetAppointmentSuggestions?patientId=${patientId}`;
+                if (symptoms) {
+                    url += `&symptoms=${encodeURIComponent(symptoms)}`;
+                }
+                
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            updateAssistantUI(data);
+                        } else {
+                            showError('Could not load suggestions');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        showError('Error loading suggestions');
+                    });
+            }
+            
+            function showLoadingIndicator() {
+                let assistantSection = document.querySelector('.assistant-section');
+                
+                if (!assistantSection) {
+                    assistantSection = document.createElement('div');
+                    assistantSection.className = 'card mb-4 border-info assistant-section';
+                    assistantSection.innerHTML = `
+                        <div class="card-header bg-info text-white">
+                            <i class="bi bi-robot me-2"></i> Appointment Assistant
+                        </div>
+                        <div class="card-body" id="assistantContent">
+                            <div class="text-center">
+                                <div class="spinner-border text-info" role="status"></div>
+                                <p class="mt-2">Loading suggestions...</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    if (form) {
+                        form.insertBefore(assistantSection, form.firstChild);
+                    }
+                } else {
+                    const content = document.getElementById('assistantContent');
+                    if (content) {
+                        content.innerHTML = `
+                            <div class="text-center">
+                                <div class="spinner-border text-info" role="status"></div>
+                                <p class="mt-2">Loading suggestions...</p>
+                            </div>
+                        `;
+                    }
+                }
+            }
+            
+            function updateAssistantUI(data) {
+                let html = '';
+                
+                if (data.urgency === 'high') {
+                    html += `
+                        <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Urgent attention suggested!</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                }
+                
+                if (data.recommendedDoctors && data.recommendedDoctors.length > 0) {
+                    html += `
+                        <div class="mb-3">
+                            <h6 class="text-info"><i class="bi bi-person-heart me-1"></i> Recommended Doctors:</h6>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                    `;
+                    
+                    data.recommendedDoctors.forEach(doctor => {
+                        html += `
+                            <button type="button" class="btn btn-outline-info btn-sm doctor-suggestion"
+                                    data-doctor-id="${doctor.id}">
+                                Dr. ${doctor.name}
+                                ${doctor.specialization ? `<span class="badge bg-light text-dark ms-1">${doctor.specialization}</span>` : ''}
+                            </button>
+                        `;
+                    });
+                    
+                    html += `</div></div>`;
+                }
+                
+                if (data.suggestedTimes && data.suggestedTimes.length > 0) {
+                    html += `
+                        <div>
+                            <h6 class="text-info"><i class="bi bi-clock-history me-1"></i> Optimal Time Slots:</h6>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                    `;
+                    
+                    data.suggestedTimes.forEach(time => {
+                        html += `
+                            <button type="button" class="btn btn-outline-success btn-sm time-suggestion"
+                                    data-time="${time.value}">
+                                ${time.display}
+                            </button>
+                        `;
+                    });
+                    
+                    html += `</div></div>`;
+                }
+                
+                if (!html) {
+                    html = `<div class="alert alert-info">No specific suggestions available.</div>`;
+                }
+                
+                const content = document.getElementById('assistantContent');
+                if (content) {
+                    content.innerHTML = html;
+                    attachSuggestionEventListeners();
+                    
+                    // Trigger change event if doctor is pre-selected
+                    if (doctorSelect && doctorSelect.value) {
+                        $(doctorSelect).trigger('change');
+                    }
+                }
+            }
+            
+            function attachSuggestionEventListeners() {
+                
+                document.querySelectorAll('.doctor-suggestion').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const doctorId = this.getAttribute('data-doctor-id');
+                        if (doctorSelect) {
+                            doctorSelect.value = doctorId;
+                            doctorSelect.dispatchEvent(new Event('change'));
+                            
+                            document.querySelectorAll('.doctor-suggestion').forEach(b => {
+                                b.classList.remove('btn-info', 'border-2');
+                                b.classList.add('btn-outline-info');
+                            });
+                            this.classList.remove('btn-outline-info');
+                            this.classList.add('btn-info', 'border-2');
+                        }
+                    });
+                });
+            }
+            
+            function clearAssistantSuggestions() {
+                const assistantSection = document.querySelector('.assistant-section');
+                if (assistantSection) {
+                    assistantSection.remove();
+                }
+            }
+            
+            function showError(message) {
+                const content = document.getElementById('assistantContent');
+                if (content) {
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            ${message}
+                        </div>
+                    `;
+                }
+            }
+                    $("#DoctorId").change(function() {
+                var doctorId = $(this).val();
+                if (doctorId) {
+                    $.get("/Patient/GetDoctorConsultationFee", { doctorId: doctorId }, function(data) {
+                        $('#consultationFeeText').text('$' + parseFloat(data).toFixed(2));
+                        $('#feeDisplay').show();
+                    });
+                } else {
+                    $('#feeDisplay').hide();
+                }
+            });
+        });
+    </script>
+    
+    <style>
+        .dashboard-card {
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            color: #2c3e50;
+            font-weight: 600;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        
+        .doctor-suggestion:hover {
+            transform: translateY(-2px);
+            transition: transform 0.2s;
+        }
+    </style>
+}

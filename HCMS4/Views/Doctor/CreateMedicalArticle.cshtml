@@ -1,0 +1,46 @@
+@model HCMS4.ViewModels.MedicalArticleEditorViewModel
+
+@{
+    ViewData["Title"] = "Create Medical Article";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container py-4">
+    <div class="card dashboard-card">
+        <div class="card-header">
+            <h4 class="mb-0">Create Medical Article</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="CreateMedicalArticle" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label"></label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Summary" class="form-label"></label>
+                    <textarea asp-for="Summary" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Category" class="form-label"></label>
+                    <input asp-for="Category" class="form-control" />
+                </div>
+                <div class="mb-4">
+                    <label asp-for="Content" class="form-label"></label>
+                    <textarea asp-for="Content" class="form-control" rows="10"></textarea>
+                    <span asp-validation-for="Content" class="text-danger"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" name="submitAction" value="publish" class="btn btn-success">Publish</button>
+                    <button type="submit" name="submitAction" value="draft" class="btn btn-outline-secondary">Save as Draft</button>
+                    <a asp-action="MedicalArticles" class="btn btn-outline-danger">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

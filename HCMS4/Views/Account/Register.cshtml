@@ -1,0 +1,375 @@
+﻿@model HCMS4.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Patient Registration";
+    Layout = "_Layout";
+    }
+
+    <section id="appointment" class="appointment section">
+        <div class="container" data-aos="fade-up">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="section-header text-center">
+                        <h2>Create Patient Account</h2>
+                        <p>Register as a patient to book appointments and manage your health records</p>
+                    </div>
+
+                   
+                     @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            @TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Register" method="post" class="php-email-form" id="registerForm">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        
+                        <div class="row">
+                           
+                            <div class="col-12 mb-3">
+                                <h5 class="border-bottom pb-2">Personal Information</h5>
+                            </div>
+                            
+                            <div class="col-md-6 form-group">
+                                <label asp-for="FirstName" class="form-label">First Name *</label>
+                                <input asp-for="FirstName" class="form-control" 
+                                   placeholder="Enter your first name" 
+                                   autocomplete="given-name" />
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-6 form-group">
+                                <label asp-for="LastName" class="form-label">Last Name *</label>
+                                <input asp-for="LastName" class="form-control" 
+                                   placeholder="Enter your last name" 
+                                   autocomplete="family-name" />
+                                <span asp-validation-for="LastName" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-6 form-group mt-3">
+                                <label asp-for="Email" class="form-label">Email Address *</label>
+                                <input asp-for="Email" class="form-control" 
+                                   placeholder="your.email@example.com" 
+                                   autocomplete="email" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-6 form-group mt-3">
+                                 <label asp-for="DateOfBirth" class="form-label">Date of Birth *</label>
+                                 <input asp-for="DateOfBirth" class="form-control" 
+                                    type="date"
+                                    max="@DateTime.Now.ToString("yyyy-MM-dd")"
+                                    placeholder="Select your date of birth" 
+                                    autocomplete="bday" />
+                                 <span asp-validation-for="DateOfBirth" class="text-danger"></span>
+                                 <small class="form-text text-muted">
+                                     Format: MM/DD/YYYY
+                                </small>
+                            </div>
+
+                            <div class="col-md-6 form-group mt-3">
+                                <label asp-for="PhoneNumber" class="form-label">Phone Number</label>
+                                <input asp-for="PhoneNumber" class="form-control" 
+                                   placeholder="(123) 456-7890" 
+                                   autocomplete="tel" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                            </div>
+                            
+                              
+                                <div class="col-12 mt-4 mb-3">
+                                    <h5 class="border-bottom pb-2">Patient Preferences</h5>
+                                </div>
+                                
+                                <div class="col-md-6 form-group">
+                                    <label asp-for="ChronicConditions" class="form-label">Chronic Conditions</label>
+                                    <select asp-for="ChronicConditions" class="form-select" 
+	                                    asp-items="@(new SelectList(Model.AvailableChronicConditions))">
+                                        <option value="">Select Condition (Optional)</option>
+                                    </select>
+                                    <span asp-validation-for="ChronicConditions" class="text-danger"></span>
+                                </div>
+                                
+                                <div class="col-md-6 form-group">
+                                    <label asp-for="PreferredTimeOfDay" class="form-label">Preferred Time of Day</label>
+                                    <select asp-for="PreferredTimeOfDay" class="form-select" 
+	                                    asp-items="@(new SelectList(Model.AvailablePreferredTimes))">
+                                        <option value="">Select Time (Optional)</option>
+                                    </select>
+                                    <span asp-validation-for="PreferredTimeOfDay" class="text-danger"></span>
+                                </div>
+                                
+                               
+                                <div class="col-12 mt-4 mb-3">
+                                    <h5 class="border-bottom pb-2">Account Credentials</h5>
+                                </div>
+                            
+                            <div class="col-md-6 form-group">
+                                <label asp-for="Password" class="form-label">Password *</label>
+                                <div class="input-group">
+                                    <input asp-for="Password" class="form-control" 
+                                       type="password" 
+                                       placeholder="Create a password" 
+                                       autocomplete="new-password"
+                                       id="passwordInput" />
+                                    <button type="button" class="btn btn-outline-secondary" 
+                                            id="togglePassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    Must be at least 6 characters with uppercase, lowercase, and number
+                                </small>
+                                <div class="mt-2">
+                                    <div class="progress" style="height: 5px;">
+                                        <div class="progress-bar" id="passwordStrengthBar" 
+                                             role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small id="passwordStrengthText" class="text-muted"></small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 form-group">
+                                <label asp-for="ConfirmPassword" class="form-label">Confirm Password *</label>
+                                <div class="input-group">
+                                    <input asp-for="ConfirmPassword" class="form-control" 
+                                       type="password" 
+                                       placeholder="Re-enter your password" 
+                                       autocomplete="new-password"
+                                       id="confirmPasswordInput" />
+                                    <button type="button" class="btn btn-outline-secondary" 
+                                            id="toggleConfirmPassword">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                                <small class="form-text text-muted" id="passwordMatchText"></small>
+                            </div>
+                            
+                            
+                            <div class="col-12 mt-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="termsCheckbox" required>
+                                    <label class="form-check-label" for="termsCheckbox">
+                                        I agree to the <a href="#" data-bs-toggle="modal" 
+                                        data-bs-target="#termsModal">Terms and Conditions</a> *
+                                    </label>
+                                    <div class="invalid-feedback">
+                                        You must agree to the terms and conditions
+                                    </div>
+                                </div>
+                            </div>
+                            
+                       
+                            <div class="col-12 text-center mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg px-5" 
+                                        id="submitBtn">
+                                    <i class="bi bi-person-plus"></i> Create Account
+                                </button>
+                            </div>
+                          
+                            <div class="col-12 text-center mt-4">
+                                <p class="mb-0">
+                                    Already have an account? 
+                                    <a asp-controller="Account" asp-action="Login" 
+                                   class="text-primary fw-bold">Login here</a>
+                                </p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <div class="modal fade" id="termsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Terms and Conditions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Medilab Patient Registration Agreement</h6>
+                    <p>By creating an account, you agree to the following terms:</p>
+                    
+                    <ol>
+                        <li>You will provide accurate and complete information.</li>
+                        <li>You are responsible for maintaining the confidentiality of your account.</li>
+                        <li>You will notify us immediately of any unauthorized use of your account.</li>
+                        <li>Your medical information will be kept confidential in accordance with HIPAA regulations.</li>
+                        <li>You consent to receive appointment reminders and health-related communications.</li>
+                        <li>You understand that this platform is for managing appointments and medical records.</li>
+                        <li>For medical emergencies, please call 911 or go to the nearest emergency room.</li>
+                    </ol>
+                    
+                    <p><strong>Privacy Policy:</strong> We respect your privacy. Your personal and medical information 
+                    will only be used for providing healthcare services and will not be shared without your consent, 
+                    except as required by law.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal" 
+                            onclick="document.getElementById('termsCheckbox').checked = true">
+                        I Agree
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+            document.addEventListener('DOMContentLoaded', function() {
+           
+                const togglePassword = document.getElementById('togglePassword');
+                const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+                const passwordInput = document.getElementById('passwordInput');
+                const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+                const termsCheckbox = document.getElementById('termsCheckbox');
+                const submitBtn = document.getElementById('submitBtn');
+                const registerForm = document.getElementById('registerForm');
+                
+          
+                togglePassword.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    this.querySelector('i').classList.toggle('bi-eye');
+                    this.querySelector('i').classList.toggle('bi-eye-slash');
+                });
+                
+                toggleConfirmPassword.addEventListener('click', function() {
+                    const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    confirmPasswordInput.setAttribute('type', type);
+                    this.querySelector('i').classList.toggle('bi-eye');
+                    this.querySelector('i').classList.toggle('bi-eye-slash');
+                });
+                
+          
+                passwordInput.addEventListener('input', function() {
+                    const password = this.value;
+                    const strengthBar = document.getElementById('passwordStrengthBar');
+                    const strengthText = document.getElementById('passwordStrengthText');
+                    
+                    let strength = 0;
+                    let text = 'Very Weak';
+                    let color = 'bg-danger';
+                    
+
+                    if (password.length >= 6) strength += 25;
+                    if (/[a-z]/.test(password)) strength += 25;
+                    if (/[A-Z]/.test(password)) strength += 25;
+                    if (/\d/.test(password)) strength += 25;
+                    
+
+                    strengthBar.style.width = strength + '%';
+                    
+                    if (strength >= 75) {
+                        text = 'Strong';
+                        color = 'bg-success';
+                    } else if (strength >= 50) {
+                        text = 'Good';
+                        color = 'bg-info';
+                    } else if (strength >= 25) {
+                        text = 'Fair';
+                        color = 'bg-warning';
+                    }
+                    
+                    strengthBar.className = 'progress-bar ' + color;
+                    strengthText.textContent = 'Strength: ' + text;
+                    
+
+                    checkPasswordMatch();
+                });
+
+                confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+                
+                function checkPasswordMatch() {
+                    const password = passwordInput.value;
+                    const confirmPassword = confirmPasswordInput.value;
+                    const matchText = document.getElementById('passwordMatchText');
+                    
+                    if (confirmPassword === '') {
+                        matchText.textContent = '';
+                        matchText.className = 'form-text text-muted';
+                        return;
+                    }
+                    
+                    if (password === confirmPassword) {
+                        matchText.textContent = '✓ Passwords match';
+                        matchText.className = 'form-text text-success';
+                    } else {
+                        matchText.textContent = '✗ Passwords do not match';
+                        matchText.className = 'form-text text-danger';
+                    }
+                }
+                
+
+                registerForm.addEventListener('submit', function(e) {
+                    if (!termsCheckbox.checked) {
+                        e.preventDefault();
+                        termsCheckbox.classList.add('is-invalid');
+                        alert('Please agree to the Terms and Conditions.');
+                        return false;
+                    }
+                    
+
+                    const password = passwordInput.value;
+                    const hasUpperCase = /[A-Z]/.test(password);
+                    const hasLowerCase = /[a-z]/.test(password);
+                    const hasNumber = /\d/.test(password);
+                    
+                    if (password.length < 6) {
+                        e.preventDefault();
+                        alert('Password must be at least 6 characters long.');
+                        return false;
+                    }
+                    
+                    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+                        e.preventDefault();
+                        alert('Password must contain at least one uppercase letter, one lowercase letter, and one number.');
+                        return false;
+                    }
+                    
+                    return true;
+                });
+
+               
+                termsCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        this.classList.remove('is-invalid');
+                    }
+                });
+                
+
+                function checkFormValidity() {
+                    const isValid = registerForm.checkValidity() && termsCheckbox.checked;
+                    submitBtn.disabled = !isValid;
+                }
+                
+
+                registerForm.querySelectorAll('input').forEach(input => {
+                    input.addEventListener('input', checkFormValidity);
+                });
+                
+                termsCheckbox.addEventListener('change', checkFormValidity);
+
+                checkFormValidity();
+            });
+            
+    </script>
+    }

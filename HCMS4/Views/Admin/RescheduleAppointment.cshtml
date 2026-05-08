@@ -1,0 +1,146 @@
+﻿@model HCMS4.ViewModels.RescheduleAppointmentViewModel
+
+@{
+    ViewData["Title"] = "Reschedule Appointment";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Reschedule Appointment</h1>
+                <a asp-action="ManageAppointments" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Appointments
+                </a>
+            </div>
+
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-info-circle fs-4 me-3"></i>
+                            <div>
+                                <h6 class="mb-1">Current Appointment Details</h6>
+                                <p class="mb-0">
+                                    <strong>Patient:</strong> @Model.PatientName |
+                                    <strong>Doctor:</strong> @Model.DoctorName |
+                                    <strong>Current Time:</strong> @Model.CurrentAppointmentDateTime.ToString("f")
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form asp-action="RescheduleAppointment" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="AppointmentId" />
+                        
+                        <div class="row">
+                         
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-calendar me-2"></i>Select New Date
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="NewAppointmentDateTime" class="form-label">New Appointment Date</label>
+                                        <input asp-for="NewAppointmentDateTime" type="date" 
+                                               class="form-control" id="newAppointmentDate" 
+                                               min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                                        <span asp-validation-for="NewAppointmentDateTime" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                         
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-clock me-2"></i>Select New Time
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="NewAppointmentDateTime" class="form-label">New Appointment Time</label>
+                                        <input asp-for="NewAppointmentDateTime" type="time" 
+                                               class="form-control" id="newAppointmentTime" required />
+                                        <span asp-validation-for="NewAppointmentDateTime" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a asp-action="ManageAppointments" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Reschedule Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const newAppointmentDate = document.getElementById('newAppointmentDate');
+            const newAppointmentTime = document.getElementById('newAppointmentTime');
+            const form = document.querySelector('form');
+            
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            if (!newAppointmentDate.value) {
+                newAppointmentDate.value = tomorrow.toISOString().split('T')[0];
+            }
+            
+            if (!newAppointmentTime.value) {
+                newAppointmentTime.value = '09:00';
+            }
+            
+            
+            form.addEventListener('submit', function(e) {
+                const datePart = newAppointmentDate.value;
+                const timePart = newAppointmentTime.value;
+                
+            
+                const newDateTimeLocal = `${datePart}T${timePart}`;
+                
+  
+                const newDateTimeInput = document.querySelector('input[name="NewAppointmentDateTime"]');
+                newDateTimeInput.value = newDateTimeLocal;
+               
+                const newDateTime = new Date(newDateTimeLocal);
+                const currentDateTime = new Date('@Model.CurrentAppointmentDateTime.ToString("o")');
+                
+                if (newDateTime.getTime() === currentDateTime.getTime()) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Same Time Selected',
+                        text: 'Please select a different time from the current appointment.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    });
+                    return false;
+                }
+                
+ 
+                if (newDateTime <= new Date()) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Invalid Time',
+                        text: 'New appointment time must be in the future.',
+                        icon: 'error',
+                        confirmButtonText: 'OK'
+                    });
+                    return false;
+                }
+            });
+        });
+    </script>
+}

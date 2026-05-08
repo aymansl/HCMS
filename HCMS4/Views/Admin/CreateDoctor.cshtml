@@ -1,0 +1,118 @@
+﻿
+@model HCMS4.ViewModels.DoctorRegisterViewModel
+
+@{
+    ViewData["Title"] = "Create Doctor Account";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Create New Doctor Account</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CreateDoctor" method="post">
+                        <div asp-validation-summary="All" class="alert alert-danger" style="display:none;"></div>
+                        
+                       
+                        <h5 class="mb-3">Personal Information</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="FirstName" class="form-label">First Name *</label>
+                                    <input asp-for="FirstName" class="form-control" />
+                                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="LastName" class="form-label">Last Name *</label>
+                                    <input asp-for="LastName" class="form-control" />
+                                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label asp-for="Email" class="form-label">Email *</label>
+                                    <input asp-for="Email" class="form-control" type="email" />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                   
+                        <h5 class="mb-3 mt-4">Professional Information</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="SpecializationId" class="form-label">Specialization *</label>
+                                    <select asp-for="SpecializationId" class="form-control" asp-items="ViewBag.Specializations">
+                                        <option value="">-- Select Specialization --</option>
+                                    </select>
+                                    <span asp-validation-for="SpecializationId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="ContactInfo" class="form-label">Contact Information</label>
+                                    <input asp-for="ContactInfo" class="form-control" placeholder="Phone number" />
+                                    <span asp-validation-for="ContactInfo" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label asp-for="Qualifications" class="form-label">Qualifications</label>
+                                    <textarea asp-for="Qualifications" class="form-control" rows="3" placeholder="Medical degrees, certifications, etc."></textarea>
+                                    <span asp-validation-for="Qualifications" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    
+                        <h5 class="mb-3 mt-4">Account Credentials</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Password" class="form-label">Password *</label>
+                                    <input asp-for="Password" class="form-control" type="password" />
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                    <small class="form-text text-muted">Minimum 6 characters with uppercase, lowercase, and number</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="ConfirmPassword" class="form-label">Confirm Password *</label>
+                                    <input asp-for="ConfirmPassword" class="form-control" type="password" />
+                                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                   
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="d-flex justify-content-between">
+                                    <a asp-action="Dashboard" class="btn btn-danger">Cancel</a>
+                                    <button type="submit" class="btn btn-gradient-info">Create Doctor Account</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

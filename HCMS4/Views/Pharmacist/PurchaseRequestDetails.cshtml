@@ -1,0 +1,277 @@
+﻿<!-- Views/Pharmacist/PurchaseRequestDetails.cshtml -->
+@model HCMS4.ViewModels.PurchaseRequestDetailViewModel
+
+@{
+    ViewData["Title"] = $"Purchase Request #{Model.PurchaseRequest.RequestNumber}";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">
+                        <i class="bi bi-receipt me-2 text-primary"></i>
+                        Purchase Request Details
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a asp-action="PurchaseRequests">Purchase Requests</a></li>
+                            <li class="breadcrumb-item active">@Model.PurchaseRequest.RequestNumber</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a asp-action="PurchaseRequests" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+
+            <!-- Status Badge -->
+            <div class="mb-4">
+                @{
+                    var statusClass = Model.PurchaseRequest.Status switch
+                    {
+                        PurchaseRequestStatus.Pending => "bg-warning",
+                        PurchaseRequestStatus.Approved => "bg-success",
+                        PurchaseRequestStatus.Rejected => "bg-danger",
+                        PurchaseRequestStatus.Received => "bg-info",
+                        _ => "bg-secondary"
+                    };
+                }
+                <span class="badge @statusClass px-3 py-2 fs-6">
+                    <i class="bi @(Model.PurchaseRequest.Status == PurchaseRequestStatus.Pending ? "bi-clock-history" :
+                                                       Model.PurchaseRequest.Status == PurchaseRequestStatus.Approved ? "bi-check-circle" :
+                                                       Model.PurchaseRequest.Status == PurchaseRequestStatus.Received ? "bi-box-seam" : "bi-receipt") me-1"></i>
+                    @Model.PurchaseRequest.Status
+                </span>
+            </div>
+
+            <div class="row">
+                <!-- Main Content -->
+                <div class="col-lg-8">
+                    <div class="card dashboard-card mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle me-2 text-primary"></i>
+                                Request Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Request Number</small>
+                                    <strong class="fs-5">@Model.PurchaseRequest.RequestNumber</strong>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Request Date</small>
+                                    <strong>@Model.PurchaseRequest.RequestDate.ToString("dd MMM yyyy HH:mm")</strong>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Requested By</small>
+                                    <strong>@Model.PurchaseRequest.Pharmacist?.User?.FullName</strong>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Supplier</small>
+                                    <strong>@(Model.PurchaseRequest.Supplier?.Name ?? "Not Specified")</strong>
+                                    @if (!string.IsNullOrEmpty(Model.PurchaseRequest.Supplier?.ContactPerson))
+                                    {
+                                        <div class="small text-muted">Contact: @Model.PurchaseRequest.Supplier.ContactPerson</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.PurchaseRequest.Supplier?.Phone))
+                                    {
+                                        <div class="small text-muted">Phone: @Model.PurchaseRequest.Supplier.Phone</div>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrEmpty(Model.PurchaseRequest.Notes))
+                                {
+                                    <div class="col-12 mb-3">
+                                        <small class="text-muted d-block">Notes</small>
+                                        <p class="bg-light p-2 rounded mb-0">@Model.PurchaseRequest.Notes</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card dashboard-card">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-capsule me-2 text-primary"></i>
+                                Requested Items
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Drug</th>
+                                            <th>Quantity</th>
+                                            <th>Unit Price</th>
+                                            <th>Subtotal</th>
+                                            <th>Notes</th>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in Model.Items)
+                                        {
+                                            <tr>
+                                                <td>@item.DrugName</td>
+                                                <td>@item.Quantity</td>
+                                                <td>@item.UnitPrice.ToString("C2")</td>
+                                                <td class="text-success fw-bold">@item.Subtotal.ToString("C2")</td>
+                                                <td>@(item.Notes ?? "-")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="3" class="text-end fw-bold">Total Amount:</td>
+                                            <td colspan="2">
+                                                <h5 class="mb-0 text-primary">@Model.PurchaseRequest.TotalAmount.ToString("C2")</h5>
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="col-lg-4">
+                    <div class="card dashboard-card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="bi bi-timeline me-2"></i>
+                                Timeline
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-success"></div>
+                                    <div class="timeline-content">
+                                        <small class="text-muted">Request Created</small>
+                                        <p class="mb-0">@Model.PurchaseRequest.CreatedAt.ToString("dd MMM yyyy HH:mm")</p>
+                                        <small>by @Model.PurchaseRequest.Pharmacist?.User?.FullName</small>
+                                    </div>
+                                </div>
+
+                                @if (Model.PurchaseRequest.ApprovedDate.HasValue)
+                                {
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-primary"></div>
+                                        <div class="timeline-content">
+                                            <small class="text-muted">Approved</small>
+                                            <p class="mb-0">@Model.PurchaseRequest.ApprovedDate.Value.ToString("dd MMM yyyy HH:mm")</p>
+                                            <small>by @Model.PurchaseRequest.ApprovedBy</small>
+                                        </div>
+                                    </div>
+                                }
+
+                                @if (Model.PurchaseRequest.ReceivedDate.HasValue)
+                                {
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-info"></div>
+                                        <div class="timeline-content">
+                                            <small class="text-muted">Received</small>
+                                            <p class="mb-0">@Model.PurchaseRequest.ReceivedDate.Value.ToString("dd MMM yyyy HH:mm")</p>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.CanApprove || Model.CanReceive)
+                    {
+                        <div class="card dashboard-card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-gear me-2"></i>
+                                    Actions
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                @if (Model.CanApprove)
+                                {
+                                    <form asp-action="ApprovePurchaseRequest" asp-route-id="@Model.PurchaseRequest.Id" method="post" class="mb-2">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-success w-100" onclick="return confirm('Approve this purchase request?')">
+                                            <i class="bi bi-check-circle"></i> Approve Request
+                                        </button>
+                                    </form>
+                                }
+                                @if (Model.CanReceive)
+                                {
+                                    <form asp-action="ReceivePurchaseRequest" asp-route-id="@Model.PurchaseRequest.Id" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-info w-100" onclick="return confirm('Mark this request as received? This will update inventory.')">
+                                            <i class="bi bi-box-seam"></i> Mark as Received
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        top: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .timeline-content {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 3px solid #dee2e6;
+    }
+
+    .badge.bg-warning {
+        background-color: #ffc107 !important;
+        color: #212529;
+    }
+
+    .badge.bg-success {
+        background-color: #28a745 !important;
+    }
+
+    .badge.bg-danger {
+        background-color: #dc3545 !important;
+    }
+
+    .badge.bg-info {
+        background-color: #17a2b8 !important;
+    }
+</style>

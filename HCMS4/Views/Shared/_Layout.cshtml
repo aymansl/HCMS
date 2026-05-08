@@ -1,0 +1,141 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>@ViewData["Title"] - Medilab</title>
+  <meta name="description" content="Medilab - Medical Bootstrap Template">
+  <meta name="keywords" content="medical, hospital, healthcare, bootstrap">
+
+
+  <link href="~/assets/img/favicon.png" rel="icon">
+  <link href="~/assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+
+  <link href="~/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="~/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="~/assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="~/assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+  <link href="~/assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="~/assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+
+  <link href="~/assets/css/main.css" rel="stylesheet">
+
+
+  <meta name="template" content="Medilab - Medical Bootstrap Template">
+  <meta name="author" content="BootstrapMade.com">
+</head>
+
+<body class="index-page">
+
+  <header id="header" class="header sticky-top">
+    <div class="branding d-flex align-items-center">
+      <div class="container position-relative d-flex align-items-center justify-content-between">
+        <a asp-action="Index" class="logo d-flex align-items-center me-auto">
+          <h1 class="sitename">Medilab</h1>
+        </a>
+
+        <nav id="navmenu" class="navmenu">
+          <ul>
+            <li><a asp-controller="Home" asp-action="Index" >Home</a></li>
+            <li><a asp-controller="Home" asp-action="About">About</a></li>            
+            <li><a asp-controller="Home" asp-action="Contact">Contact</a></li>
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+        <a class="cta-btn d-none d-sm-block" asp-controller="Account" asp-action="Login">Login</a>
+        <a class="cta-btn d-none d-sm-block ms-2" asp-controller="Account" asp-action="Register" 
+         style="background-color: #28a745;">
+         Register
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    @RenderBody()
+  </main>
+
+  <footer id="footer" class="footer">
+    <div class="footer-top">
+      <div class="container">
+        <div class="row gy-4">
+          <div class="col-lg-4 col-md-6 footer-info">
+            <a asp-action="Index" class="logo d-flex align-items-center">
+              <h3 class="sitename">Medilab</h3>
+            </a>
+            <p class="mt-3">Providing exceptional healthcare with compassion and expertise. Your health and well-being are our highest priority.</p>
+          </div>
+
+          <div class="col-lg-2 col-md-6 footer-links">
+            <h4>Quick Links</h4>
+            <ul>
+              <li><i class="bi bi-chevron-right"></i> <a asp-action="Index">Home</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a asp-action="About">About Us</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a asp-action="Contact">Contact</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-3 col-md-6 footer-links">
+            <h4>Our Services</h4>
+            <ul>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Cardiology</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Neurology</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Orthopedics</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Emergency Care</a></li>
+              <li><i class="bi bi-chevron-right"></i> <a href="#">Medical Checkup</a></li>
+            </ul>
+          </div>
+
+          <div class="col-lg-3 col-md-6 footer-contact">
+            <h4>Contact Us</h4>
+            <p>
+              Damascus<br><br>
+              <strong>Phone:</strong> 011 9999<br>
+              <strong>Email:</strong> info@medilab.com
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container footer-bottom clearfix">
+      <div class="copyright">
+        &copy; Copyright <strong><span>Medilab</span></strong>. All Rights Reserved
+      </div>
+    </div>
+  </footer>
+
+
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center">
+    <i class="bi bi-arrow-up-short"></i>
+  </a>
+
+
+  <div id="preloader"></div>
+
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+
+  <script src="~/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="~/assets/vendor/aos/aos.js"></script>
+  <script src="~/assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="~/assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="~/assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+
+  <script src="~/assets/js/main.js"></script>
+
+  @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+
+</html>
