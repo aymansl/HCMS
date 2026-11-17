@@ -1,0 +1,50 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L01: Log In / Log Out - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Lab Technician" as U
+participant ":LoginView" as V
+participant ":AccountController" as C
+participant ":SignInManager" as S
+database "HCMS Database" as DB
+U -> V : open login page
+U -> V : enter email, password
+V -> C : Login(model)
+C -> S : PasswordSignInAsync(email, pwd)
+S -> DB : check user, password, lockout
+DB --> S : user
+alt success and role = LabTechnician
+  S --> C : Succeeded
+  C --> V : redirect to Lab/Dashboard
+else invalid credentials
+  S --> C : Failed
+  C --> V : "invalid email or password"
+else locked out
+  S --> C : IsLockedOut
+  C --> V : "account locked"
+end
+U -> V : logout
+V -> C : Logout()
+C -> S : SignOutAsync()
+C --> V : redirect to login page
+@enduml

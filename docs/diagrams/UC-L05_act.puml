@@ -1,0 +1,38 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L05: Receive Appointment Booking from Patient - Activity
+|Patient|
+start
+:Choose "Book lab appointment";
+|System|
+:Show available slots;
+|Patient|
+:Select slot;
+|System|
+if (Slot still free?) then (yes)
+  :Save booking;
+  :Notify lab and confirm to patient;
+else (no)
+  :Show "slot taken, choose another";
+  stop
+endif
+|Lab Technician|
+:See booking in daily schedule;
+stop
+@enduml

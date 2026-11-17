@@ -1,0 +1,51 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-E02: Register Emergency Case and Assign Doctor - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Department Supervisor" as U
+actor Doctor as D
+participant ":EmergencyCaseView" as V
+participant ":EmergencyController" as C
+participant ":EmergencyService" as S
+database "HCMS Database" as DB
+participant ":NotificationHub" as H
+U -> V : new case data
+V -> C : AvailableDoctors()
+C -> S : GetAvailableDoctorsAsync()
+S -> DB : SELECT available doctors
+alt doctors available
+  C --> V : doctors list
+  U -> V : select doctor
+  V -> C : Register(caseDto, doctorId)
+  C -> S : RegisterAsync(caseDto, doctorId)
+  S -> DB : INSERT EmergencyCase (Assigned)
+  S ->> H : NotifyDoctor(caseId)
+  H ->> D : new emergency case
+  C --> V : case opened
+else none available
+  C -> S : QueueAsync(caseDto)
+  S -> DB : INSERT EmergencyCase (Waiting)
+  S ->> H : NotifyAdmin(caseId)
+  C --> V : case queued
+end
+@enduml

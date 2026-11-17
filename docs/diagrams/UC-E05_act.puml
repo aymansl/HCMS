@@ -1,0 +1,41 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-E05: View Emergency Cases List - Activity
+|Supervisor|
+start
+:Open emergency cases list;
+|System|
+:Load today's open cases;
+if (Any cases?) then (yes)
+  :Group by category (Women, Children, ...);
+  :Show doctor, status, waiting time;
+  |Supervisor|
+  if (Filter?) then (yes)
+    |System|
+    :Show matching cases;
+  else (no)
+  endif
+  |Supervisor|
+  :Open case details;
+else (no)
+  |System|
+  :Show "no cases";
+endif
+stop
+@enduml

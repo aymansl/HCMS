@@ -1,0 +1,54 @@
+@model List<HCMS4.Models.Survey>
+
+@{
+    ViewData["Title"] = "Surveys";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Survey Management</h1>
+        <a asp-action="CreateSurvey" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>New Survey
+        </a>
+    </div>
+
+    <div class="card dashboard-card">
+        <div class="card-body">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Status</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>Questions</th>
+                                <th>Assignments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var survey in Model)
+                            {
+                                <tr>
+                                    <td>@survey.Title</td>
+                                    <td><span class="badge bg-secondary">@survey.Status</span></td>
+                                    <td>@survey.StartDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@(survey.EndDate?.ToString("yyyy-MM-dd") ?? "Open")</td>
+                                    <td>@survey.Questions.Count</td>
+                                    <td>@survey.Assignments.Count</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted mb-0">No surveys created yet.</p>
+            }
+        </div>
+    </div>
+</div>

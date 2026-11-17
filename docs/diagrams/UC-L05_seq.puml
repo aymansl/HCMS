@@ -1,0 +1,47 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L05: Receive Appointment Booking from Patient - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor Patient as P
+participant ":BookingView" as V
+participant ":LabAppointmentController" as C
+participant ":LabAppointmentService" as S
+database "HCMS Database" as DB
+participant ":NotificationHub" as H
+P -> V : open lab booking
+V -> C : AvailableSlots(date)
+C -> S : GetFreeSlotsAsync(date)
+S -> DB : SELECT free slots
+C --> V : slots
+P -> V : select slot
+V -> C : Book(requestId, slot)
+C -> S : BookAsync(requestId, slot)
+S -> DB : check slot free
+alt free
+  S -> DB : INSERT LabAppointment
+  S ->> H : NotifyLab(appointmentId)
+  C --> V : booking confirmed
+else taken
+  C --> V : "slot taken, choose another"
+end
+@enduml

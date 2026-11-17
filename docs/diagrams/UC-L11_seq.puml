@@ -1,0 +1,44 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L11: Generate Daily Lab Activity Report - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Lab Technician" as U
+participant ":ReportsView" as V
+participant ":LabReportController" as C
+participant ":LabReportService" as S
+database "HCMS Database" as DB
+participant ":PdfReportService" as R
+U -> V : select date
+V -> C : Daily(date)
+C -> S : BuildDailyAsync(date)
+S -> DB : SELECT requests and timestamps for date
+S -> S : count by status, median TAT
+C --> V : summary
+opt export
+  U -> V : export PDF
+  V -> C : DailyPdf(date)
+  C -> R : GenerateDailyReport(summary)
+  R --> C : file
+  C --> V : download PDF
+end
+@enduml

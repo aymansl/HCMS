@@ -1,0 +1,427 @@
+﻿@model HCMS4.ViewModels.GenerateInvoiceViewModel
+
+@{
+    ViewData["Title"] = "Generate Invoice";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Generate Invoice</h1>
+                <a asp-action="Patients" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Patients
+                </a>
+            </div>
+            
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header bg-gradient-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-receipt me-2"></i>Invoice Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form asp-action="GenerateInvoice" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" asp-for="PatientId" />
+                                <input type="hidden" asp-for="PatientName" />
+
+                                <!-- Patient Info -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="alert alert-info">
+                                            <div class="d-flex align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">Patient: @Model.PatientName</h6>
+                                                    <small class="text-muted">Patient ID: @Model.PatientId</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Appointment and Prescription Selection -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label asp-for="AppointmentId" class="form-label">
+                                                <i class="bi bi-calendar-check me-1"></i>Related Appointment
+                                            </label>
+                                            <select asp-for="AppointmentId" class="form-select">
+                                                <option value="">-- Select Appointment --</option>
+                                                @if (Model.RecentAppointments != null && Model.RecentAppointments.Any())
+                                                {
+                                                    foreach (var appointment in Model.RecentAppointments)
+                                                    {
+                                                        <option value="@appointment.Id" data-fee="@appointment.ConsultationFee">
+                                                            @appointment.DisplayText
+                                                        </option>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <option value="">No recent appointments found</option>
+                                                }
+                                            </select>
+                                            <small class="text-muted">Select a completed appointment to link to this invoice</small>
+                                            <span asp-validation-for="AppointmentId" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label asp-for="PrescriptionId" class="form-label">
+                                                <i class="bi bi-prescription me-1"></i>Related Prescription
+                                            </label>
+                                            <select asp-for="PrescriptionId" class="form-select">
+                                                <option value="">-- Select Prescription --</option>
+                                                @if (Model.RecentPrescriptions != null && Model.RecentPrescriptions.Any())
+                                                {
+                                                    foreach (var prescription in Model.RecentPrescriptions)
+                                                    {
+                                                        <option value="@prescription.Id" data-medication="@prescription.MedicationTotal">
+                                                            @prescription.DisplayText
+                                                        </option>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <option value="">No recent prescriptions found</option>
+                                                }
+                                            </select>
+                                            <small class="text-muted">Select a completed prescription to link to this invoice</small>
+                                            <span asp-validation-for="PrescriptionId" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Fee Calculation -->
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-calculator me-2"></i>Fee Calculation
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="ConsultationFee" class="form-label">Consultation Fee</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input asp-for="ConsultationFee" class="form-control" 
+                                                               type="number" step="0.01" min="0" max="10000" 
+                                                               id="consultationFeeInput" />
+                                                    </div>
+                                                    <span asp-validation-for="ConsultationFee" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label asp-for="MedicationTotal" class="form-label">Medication Total</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">$</span>
+                                                        <input asp-for="MedicationTotal" class="form-control" 
+                                                               type="number" step="0.01" min="0" max="10000" 
+                                                               id="medicationTotalInput" />
+                                                    </div>
+                                                    <span asp-validation-for="MedicationTotal" class="text-danger"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="alert alert-success">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <h6 class="mb-0">Total Amount</h6>
+                                                            <small class="text-muted">Consultation + Medication</small>
+                                                        </div>
+                                                        <h3 id="totalAmountDisplay" class="mb-0">
+                                                            $@Model.TotalAmount.ToString("F2")
+                                                        </h3>
+                                                        <input type="hidden" asp-for="TotalAmount" id="totalAmountInput" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Notes -->
+                                <div class="mb-4">
+                                    <label asp-for="Notes" class="form-label">
+                                        <i class="bi bi-chat-left-text me-1"></i>Notes
+                                    </label>
+                                    <textarea asp-for="Notes" class="form-control" rows="3" 
+                                              placeholder="Add any additional notes or adjustments..."></textarea>
+                                    <span asp-validation-for="Notes" class="text-danger"></span>
+                                </div>
+
+                                <!-- Buttons -->
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="calculateAuto()">
+                                        <i class="bi bi-calculator me-1"></i>Auto-Calculate
+                                    </button>
+                                    <div>
+                                        <button type="submit" class="btn btn-gradient-success me-2">
+                                            <i class="bi bi-check-circle me-1"></i>Save Invoice
+                                        </button>
+                                        <a asp-action="Patients" class="btn btn-outline-danger">
+                                            <i class="bi bi-x-circle me-1"></i>Cancel
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar - Recent Invoices -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header bg-gradient-info text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history me-2"></i>Recent Invoices
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.ExistingInvoices != null && Model.ExistingInvoices.Any())
+                            {
+                                <div class="list-group">
+                                    @foreach (var invoice in Model.ExistingInvoices)
+                                    {
+                                        <div class="list-group-item list-group-item-action">
+                                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">Invoice #@invoice.Id</h6>
+                                                    <small class="text-muted">@invoice.InvoiceDate.ToString("yyyy-MM-dd")</small>
+                                                </div>
+                                                <span class="badge @(invoice.PaymentStatus == PaymentStatus.Paid ? "bg-success" : "bg-warning")">
+                                                    @invoice.PaymentStatus
+                                                </span>
+                                            </div>
+                                            <div class="mt-2">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>Amount:</small>
+                                                    <strong>$@invoice.TotalAmount.ToString("F2")</strong>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <a asp-action="ViewInvoice" asp-route-id="@invoice.Id" 
+                                                       class="btn btn-sm btn-outline-primary btn-icon">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <i class="bi bi-receipt display-4 text-muted"></i>
+                                    <p class="mt-3 text-muted">No invoices found for this patient.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="card mt-4">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i>Invoice Guidelines
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <small>Consultation fee is typically $50-$200</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <small>Medication costs vary by prescription</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <small>Select related records for auto-calculation</small>
+                                </li>
+                                <li>
+                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <small>Review amounts before saving</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const consultationInput = document.getElementById('consultationFeeInput');
+            const medicationInput = document.getElementById('medicationTotalInput');
+            const totalDisplay = document.getElementById('totalAmountDisplay');
+            const totalInput = document.getElementById('totalAmountInput');
+
+            function updateTotal() {
+                const consultation = parseFloat(consultationInput.value) || 0;
+                const medication = parseFloat(medicationInput.value) || 0;
+                const total = consultation + medication;
+                
+                totalDisplay.textContent = '$' + total.toFixed(2);
+                totalInput.value = total;
+            }
+
+            consultationInput.addEventListener('input', updateTotal);
+            medicationInput.addEventListener('input', updateTotal);
+
+            const appointmentSelect = document.querySelector('select[name="AppointmentId"]');
+            const prescriptionSelect = document.querySelector('select[name="PrescriptionId"]');
+
+            if (appointmentSelect) {
+                appointmentSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption.value) {
+                        const fee = selectedOption.getAttribute('data-fee') || 0;
+                        consultationInput.value = fee;
+                        updateTotal();
+                    }
+                });
+            }
+
+            if (prescriptionSelect) {
+                prescriptionSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    if (selectedOption.value) {
+                        const medication = selectedOption.getAttribute('data-medication') || 0;
+                        medicationInput.value = medication;
+                        updateTotal();
+                    }
+                });
+            }
+        });
+
+        function calculateAuto() {
+            const appointmentSelect = document.querySelector('select[name="AppointmentId"]');
+            const prescriptionSelect = document.querySelector('select[name="PrescriptionId"]');
+            
+            let totalConsultation = 0;
+            let totalMedication = 0;
+     
+            if (appointmentSelect && appointmentSelect.value) {
+                const selectedAppointment = appointmentSelect.options[appointmentSelect.selectedIndex];
+                totalConsultation = parseFloat(selectedAppointment.getAttribute('data-fee')) || 0;
+            }
+    
+            if (prescriptionSelect && prescriptionSelect.value) {
+                const selectedPrescription = prescriptionSelect.options[prescriptionSelect.selectedIndex];
+                totalMedication = parseFloat(selectedPrescription.getAttribute('data-medication')) || 0;
+            }
+            
+            const consultationInput = document.getElementById('consultationFeeInput');
+            const medicationInput = document.getElementById('medicationTotalInput');
+            
+            consultationInput.value = totalConsultation;
+            medicationInput.value = totalMedication;
+
+            const total = totalConsultation + totalMedication;
+            document.getElementById('totalAmountDisplay').textContent = '$' + total.toFixed(2);
+            document.getElementById('totalAmountInput').value = total;
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Auto-Calculated!',
+                text: `Consultation: $${totalConsultation.toFixed(2)} | Medication: $${totalMedication.toFixed(2)}`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+            .btn-gradient-success { 
+                background: linear-gradient(135deg, #42e695, #3bb2b8) !important;
+                color: white !important;
+                border: none;
+            }
+            
+            .btn-gradient-primary { 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                color: white !important;
+                border: none;
+            }
+            
+            .btn-gradient-info { 
+                background: linear-gradient(135deg, #90caf9, #047edf) !important;
+                color: white !important;
+                border: none;
+            }
+            
+            .btn-icon {
+                width: 32px;
+                height: 32px;
+                padding: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                transition: all 0.3s ease;
+            }
+            
+            .btn-icon:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            }
+            
+            .list-group-item {
+                border-radius: 10px !important;
+                margin-bottom: 8px;
+                border: 1px solid rgba(0,0,0,0.08);
+                transition: all 0.3s ease;
+            }
+            
+            .list-group-item:hover {
+                transform: translateX(5px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            }
+            
+            .alert-info {
+                background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+                border: none;
+                border-radius: 10px;
+            }
+            
+            .alert-success {
+                background: linear-gradient(135deg, #d4edda, #c3e6cb);
+                border: none;
+                border-radius: 10px;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+}

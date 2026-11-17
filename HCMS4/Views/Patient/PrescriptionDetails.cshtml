@@ -1,0 +1,268 @@
+﻿@model HCMS4.ViewModels.PatientPrescriptionDetailViewModel
+
+@{
+    ViewData["Title"] = "Prescription Details";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Prescription Details</h1>
+                <div class="btn-group">
+                    <a asp-action="Prescriptions" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                    @if (string.Equals(Model.LatestReissueStatus, "Approved", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="btn btn-success disabled">
+                            <i class="bi bi-check-circle"></i> Doctor Approved
+                        </span>
+                    }
+                    else if (Model.CanRequestReissue)
+                    {
+                        <form asp-action="RequestPrescriptionReissue" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="prescriptionId" value="@Model.Id" />
+                            <button type="submit" class="btn btn-outline-warning"
+                                    onclick="return confirm('Are you sure you want to request re-issuance of this prescription?')">
+                                <i class="bi bi-arrow-repeat"></i> Request Re-issuance
+                            </button>
+                        </form>
+                    }
+                    @if (Model.Status == "Completed")
+                    {
+                        <button class="btn btn-outline-primary" onclick="window.print()">
+                            <i class="bi bi-printer"></i> Print Prescription
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Prescription #@Model.Id</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Prescription Information</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Prescription #:</th>
+                                    <td>@Model.Id</td>
+                                </tr>
+                                <tr>
+                                    <th>Prescription Date:</th>
+                                    <td>@Model.PrescriptionDate.ToString("dddd, MMMM dd, yyyy")</td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        <span class="badge @Model.StatusBadgeClass">@Model.Status</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Total Cost:</th>
+                                    <td class="fw-bold">@Model.TotalCost.ToString("C2")</td>
+                                </tr>
+                                @if (Model.DispensedDate.HasValue)
+                                {
+                                    <tr>
+                                        <th>Dispensed Date:</th>
+                                        <td>@Model.DispensedDate.Value.ToString("dddd, MMMM dd, yyyy HH:mm")</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Dispensed By:</th>
+                                        <td>@Model.DispensedBy</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Doctor Information</h6>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Doctor Name:</th>
+                                    <td>Dr. @Model.DoctorName</td>
+                                </tr>
+                                <tr>
+                                    <th>Specialization:</th>
+                                    <td>@Model.Specialization</td>
+                                </tr>
+                                @if (Model.AppointmentDate.HasValue)
+                                {
+                                    <tr>
+                                        <th>Appointment Date:</th>
+                                        <td>@Model.AppointmentDate.Value.ToString("dddd, MMMM dd, yyyy")</td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6>Doctor's Notes</h6>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    @Model.Notes
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.HasPendingReissueRequest || !string.IsNullOrWhiteSpace(Model.LatestReissueStatus))
+                    {
+                        var isApproved = string.Equals(Model.LatestReissueStatus, "Approved", StringComparison.OrdinalIgnoreCase);
+                        var alertClass = isApproved ? "alert-success" : "alert-warning";
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="alert @alertClass">
+                                    <strong>Re-issuance status:</strong> @(isApproved ? "Doctor Approved" : (Model.LatestReissueStatus ?? "Pending"))
+                                    @if (Model.PrescriptionExpiryDate.HasValue)
+                                    {
+                                        <span class="ms-2">Valid until @Model.PrescriptionExpiryDate.Value.ToString("yyyy-MM-dd")</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model.PharmacistNotes.Any())
+                    {
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6>Pharmacist Notes</h6>
+                                @foreach (var note in Model.PharmacistNotes)
+                                {
+                                    <div class="alert alert-secondary">
+                                        <div class="fw-semibold">@note.PharmacistName</div>
+                                        <div>@note.NoteText</div>
+                                        <div class="small text-muted mt-1">@note.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h6>Prescribed Medications</h6>
+                            @if (Model.PrescriptionItems.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Drug Name</th>
+                                                <th>Dosage</th>
+                                                <th>Duration</th>
+                                                <th>Frequency</th>
+                                                <th>Quantity</th>
+                                                <th>Price</th>
+                                                <th>Subtotal</th>
+                                                <th>Instructions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var item in Model.PrescriptionItems)
+                                            {
+                                                <tr>
+                                                    <td>@item.DrugName</td>
+                                                    <td>@item.Dosage</td>
+                                                    <td>@item.Duration</td>
+                                                    <td>@item.Frequency</td>
+                                                    <td>@item.Quantity</td>
+                                                    <td>@item.Price.ToString("C2")</td>
+                                                    <td class="fw-bold">@item.Subtotal.ToString("C2")</td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(item.Instructions))
+                                                        {
+                                                            <span class="text-muted">@item.Instructions</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">-</span>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="6" class="text-end fw-bold">Total:</td>
+                                                <td colspan="2" class="fw-bold">@Model.TotalCost.ToString("C2")</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    No medications prescribed in this prescription
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            Created at: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
+                        </small>
+                        <a asp-action="Prescriptions" class="btn btn-secondary">
+                            <i class="bi bi-list"></i> View All Prescriptions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-card {
+        border-radius: 10px;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .badge {
+        font-size: 0.85em;
+        padding: 0.4em 0.8em;
+    }
+    
+    .bg-warning {
+        background-color: #ffc107 !important;
+    }
+    
+    .bg-success {
+        background-color: #198754 !important;
+    }
+    
+    .bg-danger {
+        background-color: #dc3545 !important;
+    }
+    
+    .table-borderless th {
+        color: #6c757d;
+    }
+    
+  
+    @@media print {
+        .btn, .card-footer {
+            display: none !important;
+        }
+        
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>

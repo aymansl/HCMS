@@ -1,0 +1,52 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-R03: Write and Send Imaging Report - Activity
+|Radiologist|
+start
+:Open performed session;
+|System|
+if (Session performed?) then (no)
+  :Block report;
+  stop
+else (yes)
+endif
+|Radiologist|
+:Write findings and impression;
+if (Finished?) then (no)
+  |System|
+  :Save as draft;
+  stop
+else (yes)
+  |Radiologist|
+  :Approve report;
+endif
+|System|
+if (Impression empty?) then (yes)
+  :Block approval;
+  stop
+else (no)
+endif
+:Set status Sent and log time;
+fork
+  :Notify doctor;
+fork again
+  :Notify patient;
+end fork
+stop
+@enduml

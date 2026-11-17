@@ -1,0 +1,159 @@
+﻿@model HCMS4.ViewModels.CreateClinicalNoteViewModel
+
+@{
+    ViewData["Title"] = "Add Clinical Note";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card dashboard-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-journal-plus me-2"></i>Add Clinical Note
+                    </h5>
+                    <a asp-action="PatientRecord" asp-route-patientId="@Model.PatientId" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>Back to Record
+                    </a>
+                </div>
+                
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    
+                    <form asp-action="CreateClinicalNote" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="PatientId" />
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="NoteType" class="form-label required"></label>
+                                <select asp-for="NoteType" class="form-select" required>
+                                    <option value="">Select note type</option>
+                                    <option value="Consultation">Consultation</option>
+                                    <option value="Follow-up">Follow-up</option>
+                                    <option value="Medication Review">Medication Review</option>
+                                    <option value="Allergy Review">Allergy Review</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span asp-validation-for="NoteType" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date & Time</label>
+                                <input type="text" class="form-control" value="@DateTime.Now.ToString("MMMM dd, yyyy HH:mm")" readonly>
+                                <small class="form-text text-muted">Note will be recorded with current date and time</small>
+                            </div>
+                            
+                            <div class="col-md-12 mb-3">
+                                <label asp-for="Content" class="form-label required"></label>
+                                <textarea asp-for="Content" class="form-control" 
+                                          rows="10" placeholder="Enter clinical note details..." required></textarea>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="form-text text-muted">Maximum 2000 characters.</small>
+                                    <small class="form-text text-muted" id="contentCounter">Characters: 0/2000</small>
+                                </div>
+                                <span asp-validation-for="Content" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-12 mb-4">
+                                <label asp-for="Diagnosis" class="form-label">Diagnosis</label>
+                                <textarea asp-for="Diagnosis" class="form-control" 
+                                          rows="4" placeholder="Enter diagnosis if applicable..."></textarea>
+                                <div class="d-flex justify-content-between mt-1">
+                                    <small class="form-text text-muted">Maximum 500 characters.</small>
+                                    <small class="form-text text-muted" id="diagnosisCounter">Characters: 0/500</small>
+                                </div>
+                                <span asp-validation-for="Diagnosis" class="text-danger"></span>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-shield-check me-2"></i>
+                                    <strong>Note:</strong> This clinical note will be permanently recorded in the patient's medical record. 
+                                    Ensure all information is accurate and complete.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-12">
+                                <div class="d-flex justify-content-between">
+                                    <a asp-action="PatientRecord" asp-route-patientId="@Model.PatientId" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle me-1"></i>Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-circle me-1"></i>Save Clinical Note
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentTextarea = document.getElementById('Content');
+            const diagnosisTextarea = document.getElementById('Diagnosis');
+            const contentCounter = document.getElementById('contentCounter');
+            const diagnosisCounter = document.getElementById('diagnosisCounter');
+            
+            function updateCounter(textarea, counter, maxLength) {
+                if (!textarea || !counter) return;
+                
+                const length = textarea.value.length;
+                counter.textContent = `Characters: ${length}/${maxLength}`;
+                
+                if (length > maxLength) {
+                    counter.classList.add('text-danger');
+                    counter.classList.remove('text-muted');
+                } else if (length > maxLength * 0.9) {
+                    counter.classList.add('text-warning');
+                    counter.classList.remove('text-muted');
+                } else {
+                    counter.classList.remove('text-danger', 'text-warning');
+                    counter.classList.add('text-muted');
+                }
+            }
+            
+            if (contentTextarea) {
+                contentTextarea.addEventListener('input', function() {
+                    updateCounter(this, contentCounter, 2000);
+                });
+                updateCounter(contentTextarea, contentCounter, 2000);
+            }
+            
+            if (diagnosisTextarea) {
+                diagnosisTextarea.addEventListener('input', function() {
+                    updateCounter(this, diagnosisCounter, 500);
+                });
+                updateCounter(diagnosisTextarea, diagnosisCounter, 500);
+            }
+            
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+              
+                if (contentTextarea && contentTextarea.value.length > 2000) {
+                    e.preventDefault();
+                    alert('Clinical note content cannot exceed 2000 characters.');
+                    return;
+                }
+                
+                if (diagnosisTextarea && diagnosisTextarea.value.length > 500) {
+                    e.preventDefault();
+                    alert('Diagnosis cannot exceed 500 characters.');
+                    return;
+                }
+                
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+                submitBtn.disabled = true;
+            });
+        });
+    </script>
+}

@@ -1,0 +1,41 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+left to right direction
+actor "Radiologist" as A
+actor "Doctor" as Doctor
+actor "Patient" as Patient
+rectangle "Radiology System" {
+  usecase "Create Imaging Request\n(UC-R01)" as UC_R01
+  usecase "Manage Imaging Session Appointments\n(UC-R02)" as UC_R02
+  usecase "Write and Send Imaging Report\n(UC-R03)" as UC_R03
+  usecase "Manage Request and Imaging Types\n(UC-R04)" as UC_R04
+  usecase "Add Radiologist Note\n(UC-R05)" as UC_R05
+  usecase "Generate Daily Radiology Report\n(UC-R06)" as UC_R06
+}
+A -- UC_R01
+A -- UC_R02
+A -- UC_R03
+A -- UC_R04
+A -- UC_R05
+A -- UC_R06
+UC_R01 -- Doctor
+UC_R03 -- Doctor
+UC_R02 -- Patient
+UC_R03 -- Patient
+@enduml

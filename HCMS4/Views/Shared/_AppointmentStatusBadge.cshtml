@@ -1,0 +1,23 @@
+﻿@model HCMS4.Models.AppointmentStatus
+
+@switch (Model)
+{
+    case HCMS4.Models.AppointmentStatus.Scheduled:
+        <span class="badge bg-success">
+            <i class="bi bi-clock me-1"></i>Scheduled
+        </span>
+        break;
+    case HCMS4.Models.AppointmentStatus.Completed:
+        <span class="badge bg-info">
+            <i class="bi bi-check-circle me-1"></i>Completed
+        </span>
+        break;
+    case HCMS4.Models.AppointmentStatus.Canceled:
+        <span class="badge bg-danger">
+            <i class="bi bi-x-circle me-1"></i>Canceled
+        </span>
+        break;
+    default:
+        <span class="badge bg-secondary">@Model</span>
+        break;
+}

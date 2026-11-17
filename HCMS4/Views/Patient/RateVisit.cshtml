@@ -1,0 +1,61 @@
+@model HCMS4.ViewModels.VisitRatingFormViewModel
+
+@{
+    ViewData["Title"] = "Rate Visit";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container py-4">
+    <div class="card dashboard-card">
+        <div class="card-header">
+            <h4 class="mb-0">Rate Medical Visit</h4>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Dr. @Model.DoctorName | @Model.AppointmentDateTime.ToString("yyyy-MM-dd HH:mm")</p>
+            <form asp-action="RateVisit" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="AppointmentId" type="hidden" />
+                <input asp-for="DoctorId" type="hidden" />
+                <input asp-for="DoctorName" type="hidden" />
+                <input asp-for="AppointmentDateTime" type="hidden" />
+
+                <div class="mb-3">
+                    <label asp-for="Rating" class="form-label"></label>
+                    <select asp-for="Rating" class="form-select">
+                        <option value="">Select rating</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <span asp-validation-for="Rating" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Comment" class="form-label"></label>
+                    <textarea asp-for="Comment" class="form-control" rows="4"></textarea>
+                </div>
+
+                <div class="form-check mb-2">
+                    <input asp-for="DoctorCooperative" class="form-check-input" />
+                    <label asp-for="DoctorCooperative" class="form-check-label">Was the doctor cooperative?</label>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input asp-for="WaitingTimeReasonable" class="form-check-input" />
+                    <label asp-for="WaitingTimeReasonable" class="form-check-label">Was the waiting time reasonable?</label>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Submit Rating</button>
+                    <a asp-action="ViewAppointmentHistory" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

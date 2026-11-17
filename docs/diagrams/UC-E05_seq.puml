@@ -1,0 +1,40 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-E05: View Emergency Cases List - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Department Supervisor" as U
+participant ":CasesListView" as V
+participant ":EmergencyController" as C
+participant ":EmergencyService" as S
+database "HCMS Database" as DB
+U -> V : open cases list
+V -> C : Cases(category?, includeClosed?)
+C -> S : GetCasesAsync(filter)
+S -> DB : SELECT cases for today
+S -> S : group by category, compute waiting time
+alt not empty
+  C --> V : grouped list
+else empty
+  C --> V : "no cases"
+end
+@enduml

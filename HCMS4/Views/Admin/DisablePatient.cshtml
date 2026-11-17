@@ -1,0 +1,91 @@
+@model HCMS4.ViewModels.DisablePatientViewModel
+
+@{
+    ViewData["Title"] = "Disable Patient Account";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card dashboard-card">
+                <div class="card-header bg-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-slash-circle me-2 text-warning"></i>
+                        Disable Patient Account
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Disabling this account will prevent the patient from logging into the system.
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Patient Information</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold">Patient Name:</td>
+                                <td>@Model.PatientName</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Patient ID:</td>
+                                <td>@Model.PatientId</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <form asp-action="DisablePatient" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="PatientId" />
+
+                        <div class="mb-3">
+                            <label for="DisableReason" class="form-label">
+                                Reason for Disabling <span class="text-danger">*</span>
+                            </label>
+                            <textarea class="form-control" id="DisableReason" name="DisableReason" rows="4" 
+                                      placeholder="Please provide a reason for disabling this account (e.g., Violation of conduct, Unpaid bills)"
+                                      required></textarea>
+                            <div class="invalid-feedback">Please provide a reason for disabling the account.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Patients" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-slash-circle me-1"></i> Disable Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            form.addEventListener('submit', function(e) {
+                const reasonField = document.getElementById('DisableReason');
+                if (!reasonField.value.trim()) {
+                    e.preventDefault();
+                    reasonField.classList.add('is-invalid');
+                    reasonField.focus();
+                    return false;
+                }
+                reasonField.classList.remove('is-invalid');
+                return true;
+            });
+
+            const reasonField = document.getElementById('DisableReason');
+            reasonField.addEventListener('input', function() {
+                if (this.value.trim().length > 0) {
+                    this.classList.remove('is-invalid');
+                }
+            });
+        });
+    </script>
+}

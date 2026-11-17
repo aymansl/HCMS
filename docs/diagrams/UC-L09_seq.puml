@@ -1,0 +1,44 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L09: View Patient's Test History - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Lab Technician" as U
+participant ":PatientHistoryView" as V
+participant ":LabResultController" as C
+participant ":LabResultService" as S
+database "HCMS Database" as DB
+U -> V : search patient
+V -> C : FindPatient(term)
+C -> S : FindPatientAsync(term)
+S -> DB : SELECT patients
+alt found
+  U -> V : select patient
+  V -> C : History(patientId)
+  C -> S : GetHistoryAsync(patientId)
+  S -> DB : SELECT results by patient
+  S -> S : flag out-of-range values
+  C --> V : history
+else not found
+  C --> V : "patient not found"
+end
+@enduml

@@ -1,0 +1,637 @@
+﻿@model HCMS4.Models.Prescription
+
+@{
+    ViewData["Title"] = "Process Prescription";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">Process Prescription</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a asp-action="Prescriptions">Prescriptions</a></li>
+                            <li class="breadcrumb-item active">Process #@Model.Id</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a asp-action="Prescriptions" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Queue
+                    </a>
+                </div>
+            </div>
+
+            <!-- Success/Error Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row">
+                <!-- Main Content - Prescription Details -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-prescription me-2 text-primary"></i>
+                                Prescription Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Prescription Info -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <div class="info-box p-3 bg-light rounded">
+                                        <small class="text-muted text-uppercase">Prescription #</small>
+                                        <h5 class="mb-0">RX-@Model.Id.ToString("D6")</h5>
+                                        <small class="text-muted">@Model.PrescriptionDate.ToString("dd MMM yyyy, hh:mm tt")</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-box p-3 bg-light rounded">
+                                        <small class="text-muted text-uppercase">Status</small>
+                                        <div>
+                                            @if (Model.Status == PrescriptionStatus.Pending)
+                                            {
+                                                <span class="badge bg-warning px-3 py-2">
+                                                    <i class="bi bi-clock-history"></i> Pending Dispensing
+                                                </span>
+                                            }
+                                            else if (Model.Status == PrescriptionStatus.Completed)
+                                            {
+                                                <span class="badge bg-success px-3 py-2">
+                                                    <i class="bi bi-check-circle"></i> Dispensed
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Patient & Doctor Info -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="bi bi-person-circle me-1"></i> Patient Information
+                                    </h6>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body py-2">
+                                            <p class="mb-1"><strong>@(Model.Patient?.User?.FullName ?? "N/A")</strong></p>
+                                            <p class="mb-1 text-muted small">
+                                                <i class="bi bi-envelope"></i> @(Model.Patient?.User?.Email ?? "N/A")
+                                            </p>
+                                            <p class="mb-0 text-muted small">
+                                                <i class="bi bi-telephone"></i> @(Model.Patient?.User?.PhoneNumber ?? "N/A")
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-2">
+                                        <i class="bi bi-person-badge me-1"></i> Prescribing Doctor
+                                    </h6>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body py-2">
+                                            <p class="mb-1"><strong>Dr. @(Model.Doctor?.User?.FullName ?? "N/A")</strong></p>
+                                            <p class="mb-0 text-muted small">
+                                                <i class="bi bi-stethoscope"></i> @(Model.Doctor?.Specialization.Name ?? "General")
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Prescription Items Table -->
+                            <h6 class="text-muted mb-3">
+                                <i class="bi bi-capsule me-1"></i> Prescribed Medications
+                            </h6>
+
+                            <form id="processForm" asp-action="DispensePrescription" method="post">
+                                <input type="hidden" name="id" value="@Model.Id" />
+
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 40px">
+                                                    <input type="checkbox" id="selectAll" class="form-check-input">
+                                                </th>
+                                                <th>Medicine</th>
+                                                <th>Dosage</th>
+                                                <th>Quantity</th>
+                                                <th>Stock</th>
+                                                <th>Unit Price</th>
+                                                <th>Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsTableBody">
+                                            @if (Model.PrescriptionItems != null && Model.PrescriptionItems.Any())
+                                            {
+                                                foreach (var item in Model.PrescriptionItems)
+                                                {
+                                                    var stockAvailable = item.Drug?.Quantity ?? 0;
+                                                    var isInStock = stockAvailable >= item.Quantity;
+                                                    <tr class="prescription-item @(!isInStock ? "table-danger" : "")">
+                                                        <td class="text-center">
+                                                            <input type="checkbox"
+                                                                   name="selectedItemIds"
+                                                                   value="@item.Id"
+                                                                   class="form-check-input item-checkbox"
+                                                                   data-item-id="@item.Id"
+                                                                   data-quantity="@item.Quantity"
+                                                                   data-price="@(item.Drug?.Price ?? 0)"
+                                                                   @(!isInStock ? "disabled" : "")>
+                                                        </td>
+                                                        <td>
+                                                            <strong>@(item.Drug?.Name ?? "Unknown")</strong>
+                                                            @if (!isInStock)
+                                                            {
+                                                                <div class="text-danger small mt-1">
+                                                                    <i class="bi bi-exclamation-triangle"></i> Insufficient stock (Available: @stockAvailable)
+                                                                </div>
+                                                                <button type="button" class="btn btn-sm btn-outline-warning mt-1"
+                                                                        onclick="showAlternatives(@item.Drug?.Id, '@item.Drug?.Name')">
+                                                                    <i class="bi bi-arrow-repeat"></i> Suggest Alternative
+                                                                </button>
+                                                            }
+                                                        </td>
+                                                        <td>@item.Dosage</td>
+                                                        <td>@item.Quantity</td>
+                                                        <td>
+                                                            <span class="badge @(stockAvailable > 10 ? "bg-success" : stockAvailable > 0 ? "bg-warning" : "bg-danger")">
+                                                                @stockAvailable units
+                                                            </span>
+                                                        </td>
+                                                        <td>@(item.Drug?.Price.ToString("C") ?? "$0.00")</td>
+                                                        <td class="item-subtotal" data-item-id="@item.Id">
+                                                            @(((item.Drug?.Price ?? 0) * item.Quantity).ToString("C"))
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <td colspan="7" class="text-center py-4">
+                                                        <i class="bi bi-inbox display-6 text-muted"></i>
+                                                        <p class="mt-2 mb-0">No medications found in this prescription</p>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="5" class="text-end fw-bold">Total Amount:</td>
+                                                <td colspan="2">
+                                                    <h5 class="mb-0" id="totalAmount">$0.00</h5>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="5" class="text-end fw-bold">Tax (5%):</td>
+                                                <td colspan="2">
+                                                    <span id="taxAmount">$0.00</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="5" class="text-end fw-bold">Grand Total:</td>
+                                                <td colspan="2">
+                                                    <h4 class="mb-0 text-primary" id="grandTotal">$0.00</h4>
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                <!-- Dispensing Notes -->
+                                <div class="mt-4">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-chat-text"></i> Dispensing Notes / Instructions
+                                    </label>
+                                    <textarea name="dispensingNotes" class="form-control" rows="3"
+                                              placeholder="Add any special instructions for the patient..."></textarea>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="mt-4 d-flex justify-content-between">
+                                    <div>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
+                                            <i class="bi bi-x-circle"></i> Cancel
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-warning me-2" id="holdButton">
+                                            <i class="bi bi-pause-circle"></i> Hold Prescription
+                                        </button>
+                                        <button type="submit" class="btn btn-success" id="dispenseButton" disabled>
+                                            <i class="bi bi-check2-circle"></i> Dispense & Send to Billing
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar - Summary & Billing Info -->
+                <div class="col-lg-4">
+                    <!-- Billing Information Card -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-credit-card me-2 text-primary"></i>
+                                Billing Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <small>Payment will be processed at the billing counter. This prescription will be sent to billing after dispensing.</small>
+                            </div>
+
+                            <div class="billing-summary">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Medications Total:</span>
+                                    <span id="sidebarTotal" class="fw-bold">$0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tax (5%):</span>
+                                    <span id="sidebarTax">$0.00</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="fw-bold">Amount to be Paid:</span>
+                                    <span id="sidebarGrandTotal" class="fw-bold text-primary fs-5">$0.00</span>
+                                </div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-receipt"></i> Invoice will be generated at billing counter
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stock Alerts -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-exclamation-triangle me-2 text-warning"></i>
+                                Stock Alerts
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="stockAlerts">
+                                @if (Model.PrescriptionItems != null)
+                                {
+                                    var lowStockItems = Model.PrescriptionItems
+                                    .Where(i => i.Drug != null && i.Drug.Quantity < 10)
+                                    .ToList();
+
+                                    if (lowStockItems.Any())
+                                    {
+                                        foreach (var item in lowStockItems)
+                                        {
+                                            <div class="alert alert-warning alert-sm mb-2">
+                                                <i class="bi bi-box-seam"></i>
+                                                <strong>@(item.Drug?.Name)</strong><br>
+                                                <small>Only @(item.Drug?.Quantity) units remaining</small>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-center text-muted py-3">
+                                            <i class="bi bi-check-circle"></i>
+                                            <p class="mb-0">All medications have sufficient stock</p>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Tips -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-question-circle me-2 text-info"></i>
+                                Quick Tips
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <small>Verify patient identity before dispensing</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <small>Check for drug allergies in patient records</small>
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <small>Provide clear dosage instructions</small>
+                                </li>
+                                <li>
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    <small>Send to billing only after dispensing</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alternative Medications Modal -->
+<div class="modal fade" id="alternativesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-arrow-repeat me-2"></i>Alternative Medications
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Original Medication:</strong> <span id="originalDrugName"></span></p>
+                <div id="alternativesList" class="mt-3">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Calculate totals based on selected items
+        function calculateTotals() {
+            let total = 0;
+            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+
+            checkboxes.forEach(checkbox => {
+                const quantity = parseFloat(checkbox.dataset.quantity);
+                const price = parseFloat(checkbox.dataset.price);
+                total += quantity * price;
+            });
+
+            const tax = total * 0.05;
+            const grandTotal = total + tax;
+
+            // Update all displays
+            document.getElementById('totalAmount').textContent = formatCurrency(total);
+            document.getElementById('taxAmount').textContent = formatCurrency(tax);
+            document.getElementById('grandTotal').textContent = formatCurrency(grandTotal);
+
+            document.getElementById('sidebarTotal').textContent = formatCurrency(total);
+            document.getElementById('sidebarTax').textContent = formatCurrency(tax);
+            document.getElementById('sidebarGrandTotal').textContent = formatCurrency(grandTotal);
+
+            // Enable/disable dispense button
+            const dispenseBtn = document.getElementById('dispenseButton');
+            dispenseBtn.disabled = checkboxes.length === 0;
+        }
+
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD'
+            }).format(amount);
+        }
+
+        // Select All functionality
+        document.getElementById('selectAll')?.addEventListener('change', function(e) {
+            const checkboxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = e.target.checked);
+            calculateTotals();
+        });
+
+        // Individual checkbox changes
+        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', calculateTotals);
+        });
+
+        // Initial calculation
+        calculateTotals();
+
+        // Show alternatives function
+        async function showAlternatives(drugId, drugName) {
+            document.getElementById('originalDrugName').textContent = drugName;
+            const alternativesList = document.getElementById('alternativesList');
+            alternativesList.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div></div>';
+
+            const modal = new bootstrap.Modal(document.getElementById('alternativesModal'));
+            modal.show();
+
+            try {
+                const response = await fetch(`/Pharmacist/GetAlternatives?drugId=${drugId}`);
+                const data = await response.json();
+
+                if (data.success && data.alternatives && data.alternatives.length > 0) {
+                    let html = '<div class="list-group">';
+                    data.alternatives.forEach(alt => {
+                        const expiryBadge = alt.expiryStatus === 'Expired' ? 'danger' :
+                                           (alt.expiryStatus === 'Expiring Soon' ? 'warning' : 'success');
+                        html += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-0">${alt.name}</h6>
+                                        <small class="text-muted">${alt.supplier} | Stock: ${alt.stock} units</small>
+                                        <div>
+                                            <span class="badge bg-${expiryBadge} badge-sm mt-1">${alt.expiryStatus}</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-primary">${formatCurrency(alt.price)}</div>
+                                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="useAlternative(${alt.id}, '${alt.name}')">
+                                            <i class="bi bi-check"></i> Select
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    alternativesList.innerHTML = html;
+                } else {
+                    alternativesList.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> No alternatives found. Please consult with the prescribing doctor.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                alternativesList.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Error loading alternatives. Please try again.
+                    </div>
+                `;
+            }
+        }
+
+        // Use alternative medication
+        function useAlternative(drugId, drugName) {
+            if (confirm(`Replace with ${drugName}? This will notify the prescribing doctor for approval.`)) {
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('alternativesModal')).hide();
+                alert(`Alternative selected. Doctor will be notified for approval of ${drugName}.`);
+                // Reload to show updated prescription
+                location.reload();
+            }
+        }
+
+        // Hold prescription
+        document.getElementById('holdButton')?.addEventListener('click', async function() {
+            if (confirm('Hold this prescription? It will remain in pending queue for later processing.')) {
+                const formData = new FormData();
+                formData.append('id', '@Model.Id');
+
+                const holdBtn = document.getElementById('holdButton');
+                holdBtn.disabled = true;
+                holdBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Holding...';
+
+                try {
+                    const response = await fetch('/Pharmacist/HoldPrescription', {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        window.location.href = '/Pharmacist/Prescriptions?status=pending';
+                    } else {
+                        alert('Error: ' + result.message);
+                        holdBtn.disabled = false;
+                        holdBtn.innerHTML = '<i class="bi bi-pause-circle"></i> Hold Prescription';
+                    }
+                } catch (error) {
+                    alert('Error holding prescription');
+                    holdBtn.disabled = false;
+                    holdBtn.innerHTML = '<i class="bi bi-pause-circle"></i> Hold Prescription';
+                }
+            }
+        });
+
+        // Form submission
+        document.getElementById('processForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const selectedItems = document.querySelectorAll('.item-checkbox:checked');
+            if (selectedItems.length === 0) {
+                alert('Please select at least one medication to dispense.');
+                return;
+            }
+
+            if (confirm('Dispense selected medications and send to billing?')) {
+                const formData = new FormData(this);
+
+                const dispenseBtn = document.getElementById('dispenseButton');
+                dispenseBtn.disabled = true;
+                dispenseBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+                try {
+                    const response = await fetch('/Pharmacist/DispensePrescription', {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        },
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // Show success message and redirect
+                        alert(result.message);
+                        window.location.href = '/Pharmacist/Prescriptions?status=pending';
+                    } else {
+                        alert('Error: ' + result.message);
+                        dispenseBtn.disabled = false;
+                        dispenseBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Dispense & Send to Billing';
+                    }
+                } catch (error) {
+                    alert('Error processing prescription');
+                    dispenseBtn.disabled = false;
+                    dispenseBtn.innerHTML = '<i class="bi bi-check2-circle"></i> Dispense & Send to Billing';
+                }
+            }
+        });
+    </script>
+}
+
+<style>
+    .shadow-sm {
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075) !important;
+    }
+
+    .info-box {
+        border-left: 4px solid #0d6efd;
+    }
+
+    .table td, .table th {
+        vertical-align: middle;
+    }
+
+    .prescription-item {
+        transition: background-color 0.2s;
+    }
+
+    .alert-sm {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+
+    .badge-sm {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    @@media (max-width: 768px) {
+        .container-fluid {
+            padding: 1rem !important;
+        }
+
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+
+        .btn-group-mobile {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+            .btn-group-mobile .btn {
+                width: 100%;
+            }
+    }
+</style>

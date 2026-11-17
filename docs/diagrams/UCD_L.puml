@@ -1,0 +1,51 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+left to right direction
+actor "Lab Technician" as A
+actor "Doctor" as Doctor
+actor "Patient" as Patient
+rectangle "Laboratory System" {
+  usecase "Log In / Log Out\n(UC-L01)" as UC_L01
+  usecase "View Incoming Requests\n(UC-L02)" as UC_L02
+  usecase "Receive Lab Test Request from Doctor\n(UC-L03)" as UC_L03
+  usecase "Receive Test Request Cancellation\n(UC-L04)" as UC_L04
+  usecase "Receive Appointment Booking from Patient\n(UC-L05)" as UC_L05
+  usecase "Manage Tests\n(UC-L06)" as UC_L06
+  usecase "Add Lab Note\n(UC-L07)" as UC_L07
+  usecase "Search Issued Results\n(UC-L08)" as UC_L08
+  usecase "View Patient's Test History\n(UC-L09)" as UC_L09
+  usecase "Send Alert When Result Is Issued\n(UC-L10)" as UC_L10
+  usecase "Generate Daily Lab Activity Report\n(UC-L11)" as UC_L11
+}
+A -- UC_L01
+A -- UC_L02
+A -- UC_L03
+A -- UC_L04
+A -- UC_L05
+A -- UC_L06
+A -- UC_L07
+A -- UC_L08
+A -- UC_L09
+A -- UC_L10
+A -- UC_L11
+UC_L03 -- Doctor
+UC_L04 -- Doctor
+UC_L05 -- Patient
+UC_L10 -- Patient
+@enduml

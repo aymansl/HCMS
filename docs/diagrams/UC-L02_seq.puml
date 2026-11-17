@@ -1,0 +1,46 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L02: View Incoming Requests - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Lab Technician" as U
+participant ":LabRequestsView" as V
+participant ":LabRequestController" as C
+participant ":LabRequestService" as S
+database "HCMS Database" as DB
+U -> V : open incoming requests
+V -> C : Index(filter)
+C -> S : GetIncomingAsync(filter)
+S -> DB : SELECT incoming requests
+DB --> S : rows
+S --> C : List<LabRequestDto>
+alt list not empty
+  C --> V : render list sorted by arrival
+else empty
+  C --> V : "no requests"
+end
+U -> V : select request
+V -> C : Details(id)
+C -> S : GetByIdAsync(id)
+S --> C : LabRequestDto
+C --> V : show details
+@enduml

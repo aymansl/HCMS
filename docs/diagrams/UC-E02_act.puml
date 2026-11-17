@@ -1,0 +1,42 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-E02: Register Emergency Case and Assign Doctor - Activity
+|Supervisor|
+start
+:Select "New case";
+:Enter patient, arrival time, category;
+|System|
+if (Patient has file?) then (yes)
+  :Link case to patient file;
+else (no)
+  :Create basic patient file;
+endif
+:Show available doctors (UC-E03);
+if (Doctor available?) then (yes)
+  |Supervisor|
+  :Select doctor;
+  |System|
+  :Save case (Assigned) and log times;
+  :Notify doctor;
+else (no)
+  :Queue case (Waiting);
+  :Alert admin;
+endif
+stop
+@enduml

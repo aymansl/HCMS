@@ -1,0 +1,595 @@
+@model HCMS4.ViewModels.DoctorAppointmentsViewModel
+
+@{
+    ViewData["Title"] = "My Appointments";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">
+                    <i class="bi bi-calendar-check me-2"></i>My Appointments
+                </h1>
+                <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                </a>
+            </div>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card dashboard-card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3 align-items-end">
+                        <input type="hidden" name="viewMode" value="@Model.ViewMode" />
+                        @if (Model.SelectedDate.HasValue)
+                        {
+                            <input type="hidden" name="selectedDate" value="@Model.SelectedDate.Value.ToString("yyyy-MM-dd")" />
+                        }
+                        @if (Model.StartDate.HasValue)
+                        {
+                            <input type="hidden" name="startDate" value="@Model.StartDate.Value.ToString("yyyy-MM-dd")" />
+                        }
+                        @if (Model.EndDate.HasValue)
+                        {
+                            <input type="hidden" name="endDate" value="@Model.EndDate.Value.ToString("yyyy-MM-dd")" />
+                        }
+                        <div class="col-md-4">
+                            <label class="form-label">Risk Filter</label>
+                            <select name="riskLevel" class="form-select">
+                                <option value="all" selected="@(Model.SelectedRiskLevel == "all")">All Risk Levels</option>
+                                <option value="high" selected="@(Model.SelectedRiskLevel == "high")">High Risk</option>
+                                <option value="medium" selected="@(Model.SelectedRiskLevel == "medium")">Medium Risk</option>
+                                <option value="low" selected="@(Model.SelectedRiskLevel == "low")">Low Risk</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel me-1"></i>Apply Filter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Today's Appointments</h6>
+                                    <h3 class="mb-0">@Model.TotalTodayAppointments</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-info">
+                                    <i class="bi bi-calendar-day"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Upcoming</h6>
+                                    <h3 class="mb-0">@Model.TotalUpcomingAppointments</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-success">
+                                    <i class="bi bi-calendar-week"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card dashboard-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-2">Past Appointments</h6>
+                                    <h3 class="mb-0">@Model.TotalPastAppointments</h3>
+                                </div>
+                                <div class="header-icon bg-gradient-secondary">
+                                    <i class="bi bi-calendar-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model.TodayAppointments.Any())
+            {
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-day me-2"></i>Today's Appointments
+                            <span class="badge bg-info ms-2">@Model.TodayAppointments.Count</span>
+                        </h5>
+                        <span class="text-muted">@DateTime.Today.ToString("dddd, MMMM dd, yyyy")</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Risk</th>
+                                        <th>Time</th>
+                                        <th>Patient</th>
+                                        <th>Contact</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var appointment in Model.TodayAppointments.OrderBy(a => a.AppointmentDateTime))
+                                    {
+                                        var riskScore = Model.AppointmentRiskScores.GetValueOrDefault(appointment.Id);
+                                        var riskClass = riskScore >= 0.7 ? "bg-danger" : (riskScore >= 0.4 ? "bg-warning text-dark" : "bg-success");
+                                        <tr>
+                                            <td>
+                                                <span class="badge @riskClass">@($"{riskScore:P0}")</span>
+                                            </td>
+                                            <td>
+                                                <strong>@appointment.AppointmentDateTime.ToString("hh:mm tt")</strong>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div>
+                                                        <strong>@appointment.Patient?.User?.FullName</strong>
+                                                        <div class="text-muted small">ID: @appointment.PatientId</div>
+                                                        <div class="text-muted small">@appointment.Patient?.User?.Email</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(appointment.Patient?.EmergencyContact))
+                                                {
+                                                    <div>@appointment.Patient.EmergencyContact</div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No contact</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-clock me-1"></i>Scheduled
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group-uniform">
+                                                    @if (appointment.Status == AppointmentStatus.Scheduled && riskScore > 0.7)
+                                                    {
+                                                        <form method="post" asp-controller="Admin" asp-action="SendReminder" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@appointment.Id" />
+                                                            <button type="submit" class="btn btn-gradient-warning btn-icon" title="Send Reminder">
+                                                                <i class="bi bi-bell"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    <a asp-controller="Admin" asp-action="RescheduleAppointment" asp-route-id="@appointment.Id"
+                                                       class="btn btn-gradient-secondary btn-icon" title="Reschedule">
+                                                        <i class="bi bi-calendar-week"></i>
+                                                    </a>
+
+                                                    <a asp-action="PatientRecord" asp-route-patientId="@appointment.PatientId"
+                                                       class="btn btn-gradient-info btn-icon" title="View Medical Record">
+                                                        <i class="bi bi-person-vcard"></i>
+                                                    </a>
+                                                    @if (!string.IsNullOrEmpty(appointment.Patient?.ChronicConditions))
+                                                    {
+                                                        <button type="button" class="btn btn-gradient-warning btn-icon"
+                                                                title="Chronic Conditions" data-bs-toggle="tooltip"
+                                                                data-bs-html="true"
+                                                                data-bs-title="<strong>Chronic Conditions:</strong><br>@appointment.Patient.ChronicConditions">
+                                                            <i class="bi bi-info-circle"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (Model.ViewMode == "today" || Model.ViewMode == "date")
+            {
+                <div class="card dashboard-card mb-4">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-calendar-x display-1 text-muted"></i>
+                        <h4 class="mt-3">No Scheduled Appointments</h4>
+                        <p class="text-muted">
+                            @if (Model.ViewMode == "today")
+                            {
+                                <text>You have no appointments scheduled for today.</text>
+                            }
+                            else if (Model.ViewMode == "date" && Model.SelectedDate.HasValue)
+                            {
+                                <text>You have no appointments scheduled for @Model.SelectedDate.Value.ToString("MMMM dd, yyyy").</text>
+                            }
+                        </p>
+                    </div>
+                </div>
+            }
+
+            @if (Model.UpcomingAppointments.Any())
+            {
+                <div class="card dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-week me-2"></i>Upcoming Appointments
+                            <span class="badge bg-info ms-2">@Model.UpcomingAppointments.Count</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Risk</th>
+                                        <th>Date & Time</th>
+                                        <th>Patient</th>
+                                        <th>Days Until</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var appointment in Model.UpcomingAppointments.OrderBy(a => a.AppointmentDateTime))
+                                    {
+                                        var daysUntil = (appointment.AppointmentDateTime.Date - DateTime.Today).Days;
+                                        var riskScore = Model.AppointmentRiskScores.GetValueOrDefault(appointment.Id);
+                                        var riskClass = riskScore >= 0.7 ? "bg-danger" : (riskScore >= 0.4 ? "bg-warning text-dark" : "bg-success");
+                                        <tr>
+                                            <td>
+                                                <span class="badge @riskClass">@($"{riskScore:P0}")</span>
+                                            </td>
+                                            <td>
+                                                <strong>@appointment.AppointmentDateTime.ToString("MMM dd, yyyy")</strong>
+                                                <div class="text-muted small">@appointment.AppointmentDateTime.ToString("hh:mm tt")</div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div>
+                                                        <strong>@appointment.Patient?.User?.FullName</strong>
+                                                        <div class="text-muted small">@appointment.Patient?.User?.Email</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (daysUntil == 0)
+                                                {
+                                                    <span class="badge bg-info">Today</span>
+                                                }
+                                                else if (daysUntil == 1)
+                                                {
+                                                    <span class="badge bg-warning">Tomorrow</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">@daysUntil days</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-clock me-1"></i>Scheduled
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group-uniform">
+                                                    @if (riskScore > 0.7)
+                                                    {
+                                                        <form method="post" asp-controller="Admin" asp-action="SendReminder" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@appointment.Id" />
+                                                            <button type="submit" class="btn btn-gradient-warning btn-icon" title="Send Reminder">
+                                                                <i class="bi bi-bell"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    <a asp-controller="Admin" asp-action="RescheduleAppointment" asp-route-id="@appointment.Id"
+                                                       class="btn btn-gradient-secondary btn-icon" title="Reschedule">
+                                                        <i class="bi bi-calendar-week"></i>
+                                                    </a>
+
+                                                    <a asp-action="PatientRecord" asp-route-patientId="@appointment.PatientId"
+                                                       class="btn btn-gradient-info btn-icon" title="View Medical Record">
+                                                        <i class="bi bi-person-vcard"></i>
+                                                    </a>
+
+                                                    @if (!string.IsNullOrEmpty(appointment.Patient?.ChronicConditions))
+                                                    {
+                                                        <button type="button" class="btn btn-gradient-warning btn-icon"
+                                                                title="Chronic Conditions" data-bs-toggle="tooltip"
+                                                                data-bs-html="true"
+                                                                data-bs-title="<strong>Chronic Conditions:</strong><br>@appointment.Patient.ChronicConditions">
+                                                            <i class="bi bi-info-circle"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.PastAppointments.Any() && Model.ViewMode == "range")
+            {
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>Past Appointments
+                            <span class="badge bg-info ms-2">@Model.PastAppointments.Count</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date & Time</th>
+                                        <th>Patient</th>
+                                        <th>Status</th>
+                                        <th>Fee</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var appointment in Model.PastAppointments.OrderByDescending(a => a.AppointmentDateTime))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@appointment.AppointmentDateTime.ToString("MMM dd, yyyy")</strong>
+                                                <div class="text-muted small">@appointment.AppointmentDateTime.ToString("hh:mm tt")</div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div>
+                                                        <strong>@appointment.Patient?.User?.FullName</strong>
+                                                        <div class="text-muted small">@appointment.Patient?.User?.Email</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @await Html.PartialAsync("_AppointmentStatusBadge", appointment.Status)
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold">@string.Format("{0:C2}", appointment.ConsultationFee)</span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group-uniform">
+                                                    <a asp-action="PatientRecord" asp-route-patientId="@appointment.PatientId"
+                                                       class="btn btn-gradient-info btn-icon" title="View Medical Record">
+                                                        <i class="bi bi-person-vcard"></i>
+                                                    </a>
+
+                                                    @if (appointment.Status == AppointmentStatus.Canceled && !string.IsNullOrEmpty(appointment.CancellationReason))
+                                                    {
+                                                        <button type="button" class="btn btn-gradient-warning btn-icon view-reason-btn"
+                                                                title="View Cancellation Reason"
+                                                                data-reason="@appointment.CancellationReason">
+                                                            <i class="bi bi-info-circle"></i>
+                                                        </button>
+                                                    }
+
+                                                    @if (!string.IsNullOrEmpty(appointment.Patient?.ChronicConditions))
+                                                    {
+                                                        <button type="button" class="btn btn-gradient-secondary btn-icon"
+                                                                title="Chronic Conditions" data-bs-toggle="tooltip"
+                                                                data-bs-html="true"
+                                                                data-bs-title="<strong>Chronic Conditions:</strong><br>@appointment.Patient.ChronicConditions">
+                                                            <i class="bi bi-info-circle"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- View Cancellation Reason Modal -->
+<div class="modal fade" id="reasonModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancellation Reason</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <p id="reasonText" class="mb-0"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chronic Conditions Modal -->
+<div class="modal fade" id="chronicConditionsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chronic Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <p id="chronicConditionsText" class="mb-0"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            var today = new Date().toISOString().split('T')[0];
+
+            if (!document.getElementById('selectedDate').value && '@Model.ViewMode' === 'date') {
+                document.getElementById('selectedDate').value = today;
+            }
+
+            if (!document.getElementById('startDate').value && '@Model.ViewMode' === 'range') {
+                document.getElementById('startDate').value = today;
+            }
+
+            if (!document.getElementById('endDate').value && '@Model.ViewMode' === 'range') {
+                var nextWeek = new Date();
+                nextWeek.setDate(nextWeek.getDate() + 7);
+                document.getElementById('endDate').value = nextWeek.toISOString().split('T')[0];
+            }
+
+            document.querySelectorAll('.view-reason-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const reason = this.getAttribute('data-reason');
+                    document.getElementById('reasonText').textContent = reason;
+                    const modal = new bootstrap.Modal(document.getElementById('reasonModal'));
+                    modal.show();
+                });
+            });
+
+            document.querySelectorAll('.chronic-conditions-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const conditions = this.getAttribute('data-conditions');
+                    document.getElementById('chronicConditionsText').textContent = conditions;
+                    const modal = new bootstrap.Modal(document.getElementById('chronicConditionsModal'));
+                    modal.show();
+                });
+            });
+        });
+
+        function toggleDateFilters() {
+            var viewMode = document.getElementById('viewMode').value;
+            var specificDateGroup = document.getElementById('specificDateGroup');
+            var startDateGroup = document.getElementById('startDateGroup');
+            var endDateGroup = document.getElementById('endDateGroup');
+
+            specificDateGroup.style.display = 'none';
+            startDateGroup.style.display = 'none';
+            endDateGroup.style.display = 'none';
+
+            if (viewMode === 'date') {
+                specificDateGroup.style.display = 'block';
+            } else if (viewMode === 'range') {
+                startDateGroup.style.display = 'block';
+                endDateGroup.style.display = 'block';
+            }
+        }
+
+        function filterAppointments() {
+            const searchInput = document.getElementById('searchAppointments');
+            const filter = searchInput.value.toLowerCase();
+            const rows = document.querySelectorAll('.appointment-row');
+
+            rows.forEach(row => {
+                const patientName = row.querySelector('.patient-name').textContent.toLowerCase();
+                const patientEmail = row.querySelector('.patient-email').textContent.toLowerCase();
+
+                if (patientName.includes(filter) || patientEmail.includes(filter)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .btn-group-uniform {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .btn-gradient-info {
+            background: linear-gradient(45deg, #17a2b8, #20c997);
+            border: none;
+            color: white;
+        }
+
+            .btn-gradient-info:hover {
+                background: linear-gradient(45deg, #138496, #1e9e8a);
+                color: white;
+            }
+
+        .btn-gradient-warning {
+            background: linear-gradient(45deg, #ffc107, #fd7e14);
+            border: none;
+            color: white;
+        }
+
+        .btn-gradient-secondary {
+            background: linear-gradient(45deg, #6c757d, #495057);
+            border: none;
+            color: white;
+        }
+
+        .btn-icon {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        .patient-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .btn-gradient-info:focus {
+            box-shadow: 0 0 0 0.25rem rgba(23, 162, 184, 0.5);
+        }
+    </style>
+}

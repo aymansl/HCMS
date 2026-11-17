@@ -1,0 +1,38 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-R02: Manage Imaging Session Appointments - Activity
+|Radiologist|
+start
+:Open imaging schedule;
+:Select pending request;
+:Pick device and time;
+|System|
+:Check device, room and patient conflicts;
+if (Conflict?) then (yes)
+  :Refuse slot;
+  :Suggest nearest free slot;
+  |Radiologist|
+  :Accept suggestion or pick again;
+  |System|
+else (no)
+endif
+:Confirm session (Scheduled);
+:Notify patient;
+stop
+@enduml

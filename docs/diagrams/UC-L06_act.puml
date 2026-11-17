@@ -1,0 +1,44 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L06: Manage Tests - Activity
+|Lab Technician|
+start
+:Open tests catalog;
+:Choose Add / Edit / Delete;
+if (Delete?) then (yes)
+  |System|
+  if (Test used in past requests?) then (yes)
+    :Deactivate test;
+  else (no)
+    :Delete test;
+  endif
+  stop
+else (no)
+  |Lab Technician|
+  :Enter name, unit, reference range, price;
+  |System|
+  if (Data valid and name unique?) then (yes)
+    :Save test;
+    :Refresh catalog;
+  else (no)
+    :Show validation error;
+  endif
+endif
+stop
+@enduml

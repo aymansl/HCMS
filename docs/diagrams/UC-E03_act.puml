@@ -1,0 +1,36 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-E03: View Available Doctors - Activity
+|Supervisor|
+start
+:Request available doctors;
+|System|
+:Load doctors on current shift;
+:Exclude doctors on leave or with active case;
+if (Filter by specialty?) then (yes)
+  :Apply specialty filter;
+else (no)
+endif
+if (Any doctor?) then (yes)
+  :Show list with specialty and today's cases;
+else (no)
+  :Show "no doctor available";
+endif
+stop
+@enduml

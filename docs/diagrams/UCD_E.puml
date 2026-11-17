@@ -1,0 +1,38 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+left to right direction
+actor "Department Supervisor" as A
+actor "Doctor" as Doctor
+rectangle "Emergency System" {
+  usecase "Search and Verify Case\n(UC-E01)" as UC_E01
+  usecase "Register Emergency Case and Assign Doctor\n(UC-E02)" as UC_E02
+  usecase "View Available Doctors\n(UC-E03)" as UC_E03
+  usecase "Record and View Preliminary Patient Info\n(UC-E04)" as UC_E04
+  usecase "View Emergency Cases List\n(UC-E05)" as UC_E05
+  usecase "Issue Daily Emergency Report\n(UC-E06)" as UC_E06
+}
+A -- UC_E01
+A -- UC_E02
+A -- UC_E03
+A -- UC_E04
+A -- UC_E05
+A -- UC_E06
+UC_E02 -- Doctor
+UC_E02 ..> UC_E03 : <<include>>
+@enduml

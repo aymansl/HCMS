@@ -1,0 +1,348 @@
+﻿@model IEnumerable<HCMS4.Models.Prescription>
+
+@{
+    ViewData["Title"] = "Pending Prescriptions";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Pending Prescriptions</h1>
+                <div>
+                    <span class="badge bg-warning me-2">
+                        <i class="bi bi-clock-history me-1"></i>
+                        Pending: @Model.Count()
+                    </span>
+                </div>
+            </div>
+
+        
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (Model.Any())
+            {
+               
+                <div class="row mb-4">
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card dashboard-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-2">Total Pending</h6>
+                                        <h3 class="mb-0">@Model.Count()</h3>
+                                    </div>
+                                    <div class="header-icon bg-gradient-warning">
+                                        <i class="bi bi-clock-history"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card dashboard-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-2">Today's</h6>
+                                        <h3 class="mb-0">@Model.Count(p => p.PrescriptionDate.Date == DateTime.Today)</h3>
+                                    </div>
+                                    <div class="header-icon bg-gradient-info">
+                                        <i class="bi bi-calendar-day"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card dashboard-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-2">Over 7 Days</h6>
+                                        <h3 class="mb-0">@Model.Count(p => (DateTime.Now - p.PrescriptionDate).Days > 7)</h3>
+                                    </div>
+                                    <div class="header-icon bg-gradient-danger">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6">
+                        <div class="card dashboard-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted mb-2">Avg. Pending Days</h6>
+                                        <h3 class="mb-0">
+                                            @{
+                                                var avgDays = Model.Any() ? 
+                                                    Model.Average(p => (DateTime.Now - p.PrescriptionDate).Days) : 0;
+                                                <text>@avgDays.ToString("F1")</text>
+                                            }
+                                        </h3>
+                                    </div>
+                                    <div class="header-icon bg-gradient-secondary">
+                                        <i class="bi bi-calendar-week"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="card dashboard-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-prescription me-2"></i>Pending Prescriptions
+                            <span class="badge bg-warning ms-2">@Model.Count()</span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="accordion" id="prescriptionsAccordion">
+                            @foreach (var prescription in Model.OrderBy(p => p.PrescriptionDate))
+                            {
+                                var pendingDays = (DateTime.Now - prescription.PrescriptionDate).Days;
+                                var accordionId = $"prescription-{prescription.Id}";
+                                
+                                <div class="accordion-item mb-3 border @GetBorderClass(pendingDays)">
+                                    <h2 class="accordion-header" id="heading-@prescription.Id">
+                                        <button class="accordion-button @(pendingDays > 7 ? "bg-warning-subtle" : "")" 
+                                                type="button" data-bs-toggle="collapse" 
+                                                data-bs-target="#collapse-@prescription.Id" 
+                                                aria-expanded="false" aria-controls="collapse-@prescription.Id">
+                                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                                <div>
+                                                    <strong class="me-3">
+                                                        @prescription.Patient?.User?.FullName
+                                                    </strong>
+                                                    <span class="text-muted me-3">
+                                                        <i class="bi bi-person-badge me-1"></i>
+                                                        Dr. @prescription.Doctor?.User?.FullName
+                                                    </span>
+                                                    <span class="text-muted">
+                                                        <i class="bi bi-calendar me-1"></i>
+                                                        @prescription.PrescriptionDate.ToString("MMM dd, yyyy")
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span class="badge @GetPendingBadgeClass(pendingDays) me-2">
+                                                        <i class="bi bi-clock me-1"></i>
+                                                        @pendingDays day@(pendingDays != 1 ? "s" : "")
+                                                    </span>
+                                                    <span class="badge bg-info">
+                                                        @prescription.PrescriptionItems.Count item@(prescription.PrescriptionItems.Count != 1 ? "s" : "")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="collapse-@prescription.Id" class="accordion-collapse collapse" 
+                                         aria-labelledby="heading-@prescription.Id" 
+                                         data-bs-parent="#prescriptionsAccordion">
+                                        <div class="accordion-body">
+                                           
+                                            <div class="row mb-4">
+                                                <div class="col-md-6">
+                                                    <h6>Patient Information</h6>
+                                                    <ul class="list-unstyled">
+                                                        <li><strong>Name:</strong> @prescription.Patient?.User?.FullName</li>
+                                                        <li><strong>Email:</strong> @prescription.Patient?.User?.Email</li>
+                                                        <li><strong>Phone:</strong> @prescription.Patient?.User?.PhoneNumber</li>
+                                                    </ul>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h6>Prescribing Doctor</h6>
+                                                    <ul class="list-unstyled">
+                                                        <li><strong>Name:</strong> Dr. @prescription.Doctor?.User?.FullName</li>
+                                                        <li><strong>Specialization:</strong> @prescription.Doctor?.Specialization</li>
+                                                        <li><strong>Date:</strong> @prescription.PrescriptionDate.ToString("MMMM dd, yyyy hh:mm tt")</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+
+                                            <h6>Prescribed Drugs</h6>
+                                            @if (prescription.PrescriptionItems.Any())
+                                            {
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Drug Name</th>
+                                                                <th>Dosage</th>
+                                                                <th>Frequency</th>
+                                                                <th>Duration</th>
+                                                                <th>Instructions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach (var item in prescription.PrescriptionItems)
+                                                            {
+                                                                <tr>
+                                                                    <td>
+                                                                        <strong>@item.Drug?.Name</strong>
+                                                                        @if (item.Drug?.Quantity < 10)
+                                                                        {
+                                                                            <span class="badge bg-danger ms-1">Low Stock</span>
+                                                                        }
+                                                                    </td>
+                                                                    <td>@item.Dosage</td>
+                                                                    <td>@item.Frequency</td>
+                                                                    <td>@item.Duration days</td>
+                                                                    <td>@item.Instructions</td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <div class="alert alert-info">
+                                                    <i class="bi bi-info-circle me-2"></i>
+                                                    No drugs prescribed.
+                                                </div>
+                                            }
+
+                                            @if (!string.IsNullOrEmpty(prescription.Notes))
+                                            {
+                                                <div class="mt-3">
+                                                    <h6>Doctor's Notes</h6>
+                                                    <div class="card bg-light">
+                                                        <div class="card-body">
+                                                            @prescription.Notes
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+
+                                            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                                                <a asp-action="PatientDetails" asp-route-id="@prescription.PatientId" 
+                                                   class="btn btn-outline-info">
+                                                    <i class="bi bi-person me-1"></i>View Patient
+                                                </a>
+                                                <a asp-action="DoctorSchedule" asp-route-id="@prescription.DoctorId" 
+                                                   class="btn btn-outline-secondary">
+                                                    <i class="bi bi-person-badge me-1"></i>View Doctor
+                                                </a>
+                                                <form asp-action="MarkPrescriptionCompleted" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@prescription.Id" />
+                                                    <button type="submit" class="btn btn-success" 
+                                                            onclick="return confirm('Mark this prescription as completed?')">
+                                                        <i class="bi bi-check-circle me-1"></i>Mark as Completed
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+         
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Showing <strong>@Model.Count()</strong> pending prescriptions sorted by oldest first.
+                    @{
+                        var oldest = Model.Min(p => p.PrescriptionDate);
+                        <text>The oldest prescription is from <strong>@oldest.ToString("MMMM dd, yyyy")</strong>.</text>
+                    }
+                </div>
+            }
+            else
+            {
+             
+                <div class="text-center py-5">
+                    <i class="bi bi-check-circle display-1 text-success"></i>
+                    <h4 class="mt-3">No Pending Prescriptions</h4>
+                    <p class="text-muted">All prescriptions have been processed. Great job!</p>
+                    <div class="mt-3">
+                        <a asp-action="Dashboard" class="btn btn-outline-primary">
+                            <i class="bi bi-house me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const firstPrescription = document.querySelector('.accordion-button');
+            if (firstPrescription) {
+                firstPrescription.click();
+            }
+            
+            
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'form-control mb-3';
+            searchInput.placeholder = 'Search patients, doctors, or drugs...';
+            
+            searchInput.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const accordionItems = document.querySelectorAll('.accordion-item');
+                
+                accordionItems.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(searchTerm)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+            
+            const accordion = document.getElementById('prescriptionsAccordion');
+            if (accordion && @Model.Any()) {
+                const parent = accordion.parentNode;
+                const searchContainer = document.createElement('div');
+                searchContainer.className = 'mb-3';
+                searchContainer.appendChild(searchInput);
+                parent.insertBefore(searchContainer, accordion);
+            }
+        });
+    </script>
+}
+
+@functions {
+    string GetBorderClass(int pendingDays)
+    {
+        if (pendingDays > 14) return "border-danger";
+        if (pendingDays > 7) return "border-warning";
+        return "";
+    }
+    
+    string GetPendingBadgeClass(int pendingDays)
+    {
+        if (pendingDays > 14) return "bg-danger";
+        if (pendingDays > 7) return "bg-warning";
+        return "bg-secondary";
+    }
+}

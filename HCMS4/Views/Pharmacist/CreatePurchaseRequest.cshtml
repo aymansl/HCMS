@@ -1,0 +1,442 @@
+﻿<!-- Views/Pharmacist/CreatePurchaseRequest.cshtml -->
+@model HCMS4.ViewModels.CreatePurchaseRequestViewModel
+
+@{
+    ViewData["Title"] = "New Purchase Request";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">
+                        <i class="bi bi-cart-plus me-2 text-primary"></i>
+                        New Purchase Request
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a asp-action="PurchaseRequests">Purchase Requests</a></li>
+                            <li class="breadcrumb-item active">Create Request</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a asp-action="PurchaseRequests" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+
+            @if (TempData["WarningMessage"] != null)
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["WarningMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <form asp-action="CreatePurchaseRequest" method="post" id="purchaseRequestForm">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="row">
+                    <!-- Main Form Section -->
+                    <div class="col-lg-8">
+                        <div class="card dashboard-card mb-4">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>Request Information
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Supplier Selection -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-building me-1"></i>Supplier
+                                    </label>
+                                    <select asp-for="SupplierId" class="form-select">
+                                        <option value="">-- Select Supplier --</option>
+                                        @foreach (var supplier in Model.AvailableSuppliers)
+                                        {
+                                            <option value="@supplier.Id">
+                                                @supplier.Name @(!string.IsNullOrEmpty(supplier.ContactPerson) ? $" - {supplier.ContactPerson}" : "")
+                                            </option>
+                                        }
+                                    </select>
+                                    <div class="form-text">Select the supplier for this purchase request.</div>
+                                </div>
+
+                                <!-- Notes -->
+                                <div class="mb-4">
+                                    <label asp-for="Notes" class="form-label fw-bold">
+                                        <i class="bi bi-chat-text me-1"></i>Notes
+                                    </label>
+                                    <textarea asp-for="Notes" class="form-control" rows="3"
+                                              placeholder="Add any special instructions or notes..."></textarea>
+                                    <div class="form-text">Optional: Add notes for the admin reviewer.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Add Items Section -->
+                        <div class="card dashboard-card">
+                            <div class="card-header bg-gradient-info text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-plus-circle me-2"></i>Add Items
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-5">
+                                        <label class="form-label">Select Drug</label>
+                                        <select id="drugSelect" class="form-select">
+                                            <option value="">-- Select Drug --</option>
+                                            @foreach (var drug in Model.AvailableDrugs)
+                                            {
+                                                <option value="@drug.Id" data-price="@drug.Price" data-stock="@drug.CurrentStock">
+                                                    @drug.DisplayText
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Quantity</label>
+                                        <input type="number" id="quantityInput" class="form-control" min="1" value="1" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Unit Price</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" id="unitPriceInput" class="form-control" step="0.01" min="0.01" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-primary w-100" onclick="addItem()">
+                                            <i class="bi bi-plus-circle"></i> Add
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Items Table -->
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="itemsTable">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Drug</th>
+                                                <th>Quantity</th>
+                                                <th>Unit Price</th>
+                                                <th>Subtotal</th>
+                                                <th>Notes</th>
+                                                <th style="width: 50px"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="itemsTableBody">
+                                            @if (Model.Items != null && Model.Items.Any())
+                                            {
+                                                for (int i = 0; i < Model.Items.Count; i++)
+                                                {
+                                                    <tr data-index="@i">
+                                                        <td>
+                                                            <input type="hidden" name="Items[@i].DrugId" value="@Model.Items[i].DrugId" />
+                                                            <input type="hidden" name="Items[@i].DrugName" value="@Model.Items[i].DrugName" />
+                                                            <strong>@Model.Items[i].DrugName</strong>
+                                                        </td>
+                                                        <td>
+                                                            <input type="number" name="Items[@i].Quantity" value="@Model.Items[i].Quantity" class="form-control form-control-sm item-quantity" style="width: 80px" />
+                                                        </td>
+                                                        <td>
+                                                            <div class="input-group input-group-sm">
+                                                                <span class="input-group-text">$</span>
+                                                                <input type="number" name="Items[@i].UnitPrice" value="@Model.Items[i].UnitPrice" class="form-control form-control-sm item-price" step="0.01" />
+                                                            </div>
+                                                        </td>
+                                                        <td class="item-subtotal">@Model.Items[i].Subtotal.ToString("C2")</td>
+                                                        <td>
+                                                            <input type="text" name="Items[@i].Notes" value="@Model.Items[i].Notes" class="form-control form-control-sm" placeholder="Notes" />
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(this)">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            }
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">Total Amount:</td>
+                                                <td colspan="3">
+                                                    <h5 class="mb-0 text-primary" id="totalAmount">$0.00</h5>
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="col-lg-4">
+                        <div class="card dashboard-card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>Request Summary
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <small class="text-muted">Request Date</small>
+                                    <p class="fw-bold mb-0">@DateTime.Now.ToString("dd MMM yyyy HH:mm")</p>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Total Items</small>
+                                    <p class="fw-bold mb-0" id="totalItemsCount">@(Model.Items?.Count ?? 0)</p>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Total Amount</small>
+                                    <p class="fw-bold text-success fs-4 mb-0" id="sidebarTotal">$0.00</p>
+                                </div>
+                                <hr />
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    <small>After submission, this request will be sent to the admin for review and approval.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card dashboard-card">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-lightbulb me-2"></i>Quick Tips
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        <small>Select a supplier before adding items</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        <small>Check current stock levels before ordering</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        <small>Add notes for urgent requests</small>
+                                    </li>
+                                    <li>
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        <small>Review all items before submitting</small>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="PurchaseRequests" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-gradient-success" id="submitBtn">
+                                <i class="bi bi-send"></i> Submit Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        let itemIndex = @(Model.Items?.Count ?? 0);
+
+        function updateTotals() {
+            let total = 0;
+            let itemCount = 0;
+
+            document.querySelectorAll('#itemsTableBody tr').forEach(row => {
+                const quantity = parseFloat(row.querySelector('.item-quantity')?.value) || 0;
+                const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+                const subtotal = quantity * price;
+
+                const subtotalCell = row.querySelector('.item-subtotal');
+                if (subtotalCell) {
+                    subtotalCell.textContent = '$' + subtotal.toFixed(2);
+                }
+
+                total += subtotal;
+                itemCount++;
+            });
+
+            document.getElementById('totalAmount').textContent = '$' + total.toFixed(2);
+            document.getElementById('sidebarTotal').textContent = '$' + total.toFixed(2);
+            document.getElementById('totalItemsCount').textContent = itemCount;
+        }
+
+        function addItem() {
+            const drugSelect = document.getElementById('drugSelect');
+            const drugId = drugSelect.value;
+            const drugName = drugSelect.options[drugSelect.selectedIndex]?.text.split(' - ')[0];
+            const quantity = parseInt(document.getElementById('quantityInput').value);
+            let unitPrice = parseFloat(document.getElementById('unitPriceInput').value);
+
+            if (!drugId) {
+                alert('Please select a drug.');
+                return;
+            }
+
+            if (!quantity || quantity < 1) {
+                alert('Please enter a valid quantity.');
+                return;
+            }
+
+            const selectedOption = drugSelect.options[drugSelect.selectedIndex];
+            const defaultPrice = parseFloat(selectedOption?.dataset.price);
+
+            if (isNaN(unitPrice) || unitPrice <= 0) {
+                unitPrice = defaultPrice;
+            }
+
+            const tbody = document.getElementById('itemsTableBody');
+            const newRow = tbody.insertRow();
+            const currentIndex = itemIndex++;
+
+            newRow.innerHTML = `
+                <td>
+                    <input type="hidden" name="Items[${currentIndex}].DrugId" value="${drugId}" />
+                    <input type="hidden" name="Items[${currentIndex}].DrugName" value="${drugName}" />
+                    <strong>${drugName}</strong>
+                </td>
+                <td>
+                    <input type="number" name="Items[${currentIndex}].Quantity" value="${quantity}" class="form-control form-control-sm item-quantity" style="width: 80px" onchange="updateTotals()" />
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">$</span>
+                        <input type="number" name="Items[${currentIndex}].UnitPrice" value="${unitPrice.toFixed(2)}" class="form-control form-control-sm item-price" step="0.01" onchange="updateTotals()" />
+                    </div>
+                </td>
+                <td class="item-subtotal">$${(quantity * unitPrice).toFixed(2)}</td>
+                <td>
+                    <input type="text" name="Items[${currentIndex}].Notes" class="form-control form-control-sm" placeholder="Notes" />
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+
+            // Reset inputs
+            document.getElementById('quantityInput').value = 1;
+            document.getElementById('unitPriceInput').value = '';
+
+            updateTotals();
+        }
+
+        function removeItem(button) {
+            const row = button.closest('tr');
+            row.remove();
+            updateTotals();
+        }
+
+        // Update unit price when drug is selected
+        document.getElementById('drugSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const defaultPrice = selectedOption?.dataset.price;
+            if (defaultPrice) {
+                document.getElementById('unitPriceInput').value = defaultPrice;
+            }
+        });
+
+        // Update totals when quantity or price changes
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('item-quantity') || e.target.classList.contains('item-price')) {
+                updateTotals();
+            }
+        });
+
+        // Form validation
+        document.getElementById('purchaseRequestForm').addEventListener('submit', function(e) {
+            const items = document.querySelectorAll('#itemsTableBody tr');
+            if (items.length === 0) {
+                e.preventDefault();
+                alert('Please add at least one item to the purchase request.');
+                return false;
+            }
+
+            const supplierId = document.getElementById('SupplierId').value;
+            if (!supplierId) {
+                e.preventDefault();
+                alert('Please select a supplier.');
+                return false;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+        });
+
+        // Initialize totals
+        updateTotals();
+    </script>
+}
+
+<style>
+    .dashboard-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #90caf9, #047edf) !important;
+    }
+
+    .btn-gradient-success {
+        background: linear-gradient(135deg, #42e695, #3bb2b8) !important;
+        color: white !important;
+        border: none;
+        padding: 10px 24px;
+    }
+
+        .btn-gradient-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(66, 230, 149, 0.3);
+        }
+
+    .table th, .table td {
+        vertical-align: middle;
+    }
+
+    .form-control-sm {
+        font-size: 0.875rem;
+    }
+
+    @@media (max-width: 768px) {
+        .d-flex.justify-content-end {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>

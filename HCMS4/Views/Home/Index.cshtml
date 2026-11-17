@@ -1,0 +1,97 @@
+@model List<HCMS4.Models.MedicalArticle>
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<section id="hero" class="hero section light-background">
+    <img src="assets/img/hero-bg.jpg" alt="" data-aos="fade-in">
+
+    <div class="container position-relative">
+        <div class="welcome position-relative" data-aos="fade-down" data-aos-delay="100">
+            <h2>Your Health, Our Commitment.</h2>
+            <p>At Our Hospital, we bring you advanced medicine and compassionate care in a supportive environment. Your well-being is our primary focus.</p>
+        </div>
+
+        <div class="content row gy-4">
+            <div class="col-lg-4 d-flex align-items-stretch">
+                <div class="why-box" data-aos="zoom-out" data-aos-delay="200">
+                    <h3>Why Choose Our Hospital?</h3>
+                    <p>
+                        You're in Expert Hands: Board-certified specialists using state-of-the-art technology.<br />
+                        Care Designed for You: Personalized treatment plans that fit your unique life and goals. <br />
+                        Support at Every Step: From financial counseling to wellness programs, we're here for you.
+                    </p>
+                    <div class="text-center">
+                        <a asp-action="About" class="more-btn"><span>Learn More</span> <i class="bi bi-chevron-right"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 d-flex align-items-stretch">
+                <div class="d-flex flex-column justify-content-center">
+                    <div class="row gy-4">
+                        <div class="col-xl-4 d-flex align-items-stretch">
+                            <div class="icon-box" data-aos="zoom-out" data-aos-delay="300">
+                                <i class="bi bi-clipboard-data"></i>
+                                <h4>Cancer Care</h4>
+                                <p>From diagnosis through treatment and survivorship, our oncology team provides compassionate, comprehensive care tailored to your journey.</p>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 d-flex align-items-stretch">
+                            <div class="icon-box" data-aos="zoom-out" data-aos-delay="400">
+                                <i class="bi bi-gem"></i>
+                                <h4>General Surgery</h4>
+                                <p>Trust our skilled surgeons for a wide range of common and complex procedures, performed with precision and a focus on faster recovery.</p>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 d-flex align-items-stretch">
+                            <div class="icon-box" data-aos="zoom-out" data-aos-delay="500">
+                                <i class="bi bi-inboxes"></i>
+                                <h4>Heart Care</h4>
+                                <p>Comprehensive care for your heart, from prevention to advanced surgery and recovery.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="mb-1">Medical Articles</h3>
+                <p class="text-muted mb-0">Published by our doctors for patients and visitors.</p>
+            </div>
+        </div>
+
+        @if (Model.Any())
+        {
+            <div class="row gy-4">
+                @foreach (var article in Model)
+                {
+                    <div class="col-lg-4 col-md-6">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="small text-muted mb-2">@article.Category</div>
+                                <h5>@article.Title</h5>
+                                <p class="text-muted">@(article.Summary ?? article.Content.Substring(0, Math.Min(article.Content.Length, 160)))</p>
+                                <div class="small">
+                                    By Dr. @article.Doctor?.FullName
+                                    <span class="text-muted">on @(article.PublishedAt?.ToString("yyyy-MM-dd") ?? article.CreatedAt.ToString("yyyy-MM-dd"))</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-light border">No published medical articles yet.</div>
+        }
+    </div>
+</section>

@@ -1,0 +1,35 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-E01: Search and Verify Case - Activity
+|Supervisor|
+start
+:Enter name / national ID / phone;
+|System|
+:Search patients and emergency cases;
+if (Patient found?) then (yes)
+  if (Open emergency case?) then (yes)
+    :Warn and show open case;
+  else (no)
+    :Show patient basic data;
+  endif
+else (no)
+  :Show "no file" + option to register new case;
+endif
+stop
+@enduml

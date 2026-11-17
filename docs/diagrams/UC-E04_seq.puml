@@ -1,0 +1,43 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-E04: Record and View Preliminary Patient Info - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Department Supervisor" as U
+participant ":EmergencyCaseView" as V
+participant ":EmergencyController" as C
+participant ":EmergencyService" as S
+database "HCMS Database" as DB
+participant ":AuditService" as A
+U -> V : enter preliminary info
+V -> C : SaveTriage(caseId, TriageDto)
+C -> C : validate vital signs ranges
+alt valid
+  C -> S : SaveTriageAsync(caseId, dto)
+  S -> DB : check case open
+  S -> DB : INSERT / UPDATE TriageInfo (recordedAt)
+  S -> A : Log(user, caseId, "triage updated")
+  C --> V : saved
+else invalid
+  C --> V : validation errors
+end
+@enduml

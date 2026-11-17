@@ -1,0 +1,197 @@
+﻿@model HCMS4.ViewModels.BookAppointmentViewModel
+
+@{
+    ViewData["Title"] = "Book New Appointment";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Book New Appointment</h1>
+                <a asp-action="ManageAppointments" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Appointments
+                </a>
+            </div>
+
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <form asp-action="BookAppointment" method="post" id="bookAppointmentForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="row">
+                         
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-person me-2"></i>Select Patient
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="PatientId" class="form-label">Patient</label>
+                                        <select asp-for="PatientId" class="form-select" required>
+                                            <option value="">-- Select Patient --</option>
+                                            @foreach (var patient in Model.AvailablePatients)
+                                            {
+                                                <option value="@patient.Id">@patient.FullName (@patient.Email)</option>
+                                            }
+                                        </select>
+                                        <span asp-validation-for="PatientId" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                           
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-person-badge me-2"></i>Select Doctor
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="DoctorId" class="form-label">Doctor</label>
+                                        <select asp-for="DoctorId" class="form-select" id="doctorSelect" required>
+                                            <option value="">-- Select Doctor --</option>
+                                            @foreach (var doctor in Model.AvailableDoctors)
+                                            {
+                                                <option value="@doctor.Id">
+                                                    Dr. @doctor.FullName - @doctor.Specialization
+                                                </option>
+                                            }
+                                        </select>
+                                        <span asp-validation-for="DoctorId" class="text-danger"></span>
+                                    </div>
+                                    <div class="mt-2" id="feeDisplay" style="display:none;">
+                                        <strong>Consultation Fee: </strong><span id="consultationFeeText" class="text-primary fw-bold"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-calendar me-2"></i>Select Date & Time
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="AppointmentDateTime" class="form-label">Appointment Date</label>
+                                        <input asp-for="AppointmentDateTime" type="datetime-local" 
+                                               class="form-control" id="appointmentDate" 
+                                               min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                                        <span asp-validation-for="AppointmentDateTime" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-4">
+                                    <h6 class="section-title mb-3">
+                                        <i class="bi bi-clipboard-pulse me-2"></i>Visit Details
+                                    </h6>
+                                    <div class="mb-3">
+                                        <label asp-for="Symptoms" class="form-label">Reason for Visit / Symptoms</label>
+                                        <textarea asp-for="Symptoms" class="form-control" rows="3" 
+                                                  placeholder="e.g., Cough, fever, headache, etc. (Optional)"
+                                                  maxlength="200"></textarea>
+                                        <div class="form-text">Optional: Enter symptoms or reason for visit.</div>
+                                        <span asp-validation-for="Symptoms" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                       
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a asp-action="ManageAppointments" class="btn btn-danger">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-gradient-info">
+                                <i class="bi bi-check-circle me-1"></i>Book Appointment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          
+            function fixJQueryValidation() {
+                if (typeof $ !== 'undefined' && typeof $.validator !== 'undefined') {
+               
+                    $.validator.setDefaults({
+                        ignore: ":hidden:not(select)",
+                        errorClass: "text-danger",
+                        validClass: "is-valid",
+                        errorElement: "span",
+                        highlight: function(element, errorClass, validClass) {
+                            $(element).addClass("is-invalid").removeClass(validClass);
+                        },
+                        unhighlight: function(element, errorClass, validClass) {
+                            $(element).removeClass("is-invalid").addClass(validClass);
+                        }
+                    });
+                    
+                    $('form').removeData('validator');
+                    $('form').removeData('unobtrusiveValidation');
+                    $.validator.unobtrusive.parse('form');
+                    
+                    console.log('jQuery validation fixed');
+                } else {
+                    console.warn('jQuery validation not available');
+                }
+            }
+ 
+            fixJQueryValidation();
+  
+            setTimeout(fixJQueryValidation, 100);
+
+            const appointmentDate = document.getElementById('appointmentDate');
+            if (appointmentDate && !appointmentDate.value) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(9, 0, 0, 0);
+                appointmentDate.value = tomorrow.toISOString().slice(0, 16);
+            }
+
+            // Update consultation fee when doctor is selected
+            const doctorSelect = document.getElementById('DoctorId');
+            const feeDisplay = document.getElementById('feeDisplay');
+            const consultationFeeText = document.getElementById('consultationFeeText');
+            if (doctorSelect) {
+                doctorSelect.addEventListener('change', function() {
+                    const doctorId = this.value;
+                    if (doctorId) {
+                        $.get('/Admin/GetDoctorConsultationFee', { doctorId: doctorId }, function(data) {
+                            if (consultationFeeText) {
+                                consultationFeeText.textContent = '$' + parseFloat(data).toFixed(2);
+                            }
+                            if (feeDisplay) {
+                                feeDisplay.style.display = 'block';
+                            }
+                        });
+                    } else {
+                        if (feeDisplay) {
+                            feeDisplay.style.display = 'none';
+                        }
+                    }
+                });
+
+                // Trigger change on page load if doctor is pre-selected
+                if (doctorSelect.value) {
+                    doctorSelect.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+    </script>
+}

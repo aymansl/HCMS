@@ -1,0 +1,320 @@
+﻿@model HCMS4.Models.Drug
+
+@{
+    ViewData["Title"] = "Add New Drug";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3">Add New Drug</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a asp-action="Drugs">Drugs Inventory</a></li>
+                            <li class="breadcrumb-item active">Add New Drug</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a asp-action="Drugs" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Inventory
+                </a>
+            </div>
+
+            <!-- Main Form Card -->
+            <div class="card dashboard-card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="bi bi-capsule me-2"></i>Drug Information</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CreateDrug" method="post" id="createDrugForm">
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <!-- Basic Information -->
+                        <h5 class="text-primary mb-3">Basic Information</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label asp-for="Name" class="form-label">Drug Name <span class="text-danger">*</span></label>
+                                    <input asp-for="Name" class="form-control" placeholder="Enter drug name (e.g., Paracetamol, Amoxicillin)" />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="Supplier" class="form-label">Supplier</label>
+                                    <input asp-for="Supplier" class="form-control" placeholder="Enter supplier name" />
+                                    <span asp-validation-for="Supplier" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing and Stock -->
+                        <h5 class="text-primary mb-3 mt-4">Pricing & Stock</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="Price" class="form-label">Price <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input asp-for="Price" class="form-control" placeholder="0.00" step="0.01" min="0.01" />
+                                    </div>
+                                    <span asp-validation-for="Price" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="Quantity" class="form-label">Quantity in Stock <span class="text-danger">*</span></label>
+                                    <input asp-for="Quantity" type="number" class="form-control" min="0" placeholder="Enter quantity" />
+                                    <span asp-validation-for="Quantity" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label asp-for="ExpiryDate" class="form-label">Expiry Date <span class="text-danger">*</span></label>
+                                    <input asp-for="ExpiryDate" type="date" class="form-control"
+                                           min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+                                    <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <h5 class="text-primary mb-3 mt-4">Additional Information</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label asp-for="Description" class="form-label">Description</label>
+                                    <textarea asp-for="Description" class="form-control" rows="4"
+                                              placeholder="Enter drug description, usage instructions, side effects, or any additional information..."></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                    <small class="text-muted">Maximum 500 characters</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        
+
+                        <!-- Form Actions -->
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <div class="d-flex justify-content-between">
+                                    <a asp-action="Drugs" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-circle me-1"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                                        <i class="bi bi-check-circle me-1"></i> Add Drug
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Tips Card -->
+            <div class="card dashboard-card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb me-2"></i>Quick Tips</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="bi bi-exclamation-triangle text-warning fs-1"></i>
+                                <h6 class="mt-2">Expiry Alerts</h6>
+                                <p class="small text-muted">Drugs expiring within 30 days will appear in alerts</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="bi bi-box text-info fs-1"></i>
+                                <h6 class="mt-2">Low Stock Warning</h6>
+                                <p class="small text-muted">Items with quantity below 10 are marked as low stock</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="bi bi-calendar-x text-danger fs-1"></i>
+                                <h6 class="mt-2">Expired Drugs</h6>
+                                <p class="small text-muted">Expired drugs cannot be prescribed and should be removed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Set minimum date for expiry date picker
+        document.addEventListener('DOMContentLoaded', function() {
+            const expiryDateInput = document.getElementById('ExpiryDate');
+            if (expiryDateInput) {
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                expiryDateInput.min = tomorrow.toISOString().split('T')[0];
+
+                // Set default value to tomorrow if not set
+                if (!expiryDateInput.value) {
+                    expiryDateInput.value = tomorrow.toISOString().split('T')[0];
+                }
+            }
+
+            // Price input validation
+            const priceInput = document.getElementById('Price');
+            if (priceInput) {
+                priceInput.addEventListener('input', function(e) {
+                    let value = this.value.replace(/[^0-9.]/g, '');
+                    // Ensure only one decimal point
+                    const parts = value.split('.');
+                    if (parts.length > 2) {
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+                    // Limit to 2 decimal places
+                    if (parts.length === 2 && parts[1].length > 2) {
+                        value = parts[0] + '.' + parts[1].substring(0, 2);
+                    }
+                    this.value = value;
+                });
+
+                priceInput.addEventListener('blur', function(e) {
+                    if (this.value) {
+                        // Format to 2 decimal places
+                        const num = parseFloat(this.value);
+                        if (!isNaN(num)) {
+                            this.value = num.toFixed(2);
+                        }
+                    }
+                });
+            }
+
+            // Quantity input validation
+            const quantityInput = document.getElementById('Quantity');
+            if (quantityInput) {
+                quantityInput.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            }
+
+            // Drug name validation
+            const nameInput = document.getElementById('Name');
+            if (nameInput) {
+                nameInput.addEventListener('input', function(e) {
+                    // Capitalize first letter of each word
+                    this.value = this.value.replace(/\b\w/g, char => char.toUpperCase());
+                });
+            }
+        });
+
+        // Character counter for description
+        document.getElementById('Description')?.addEventListener('input', function() {
+            const maxLength = 500;
+            const currentLength = this.value.length;
+            const remaining = maxLength - currentLength;
+
+            // Create or update counter
+            let counter = document.querySelector('.description-counter');
+            if (!counter) {
+                counter = document.createElement('small');
+                counter.className = 'text-muted float-end description-counter';
+                this.parentElement.appendChild(counter);
+            }
+
+            counter.textContent = `${currentLength}/${maxLength} characters`;
+
+            if (remaining < 50) {
+                counter.classList.add('text-warning');
+            } else {
+                counter.classList.remove('text-warning');
+            }
+        });
+
+        // Prevent double submission
+        document.getElementById('createDrugForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Adding...';
+        });
+
+        // Confirm before leaving with unsaved changes
+        let formChanged = false;
+        document.getElementById('createDrugForm').addEventListener('input', function() {
+            formChanged = true;
+        });
+
+        window.addEventListener('beforeunload', function(e) {
+            if (formChanged) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+            }
+        });
+
+        document.getElementById('createDrugForm').addEventListener('submit', function() {
+            formChanged = false;
+        });
+    </script>
+}
+
+<style>
+    /* Custom styles for the create drug form */
+    .input-group-text {
+        background-color: #f8f9fa;
+    }
+
+    .card-header.bg-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    /* Required field indicator */
+    label span.text-danger {
+        font-size: 1.2em;
+        margin-left: 2px;
+    }
+
+    /* Alert styling */
+    .alert-info {
+        background-color: #f0f7ff;
+        border-left: 4px solid #667eea;
+    }
+
+    /* Quick tips icons */
+    .quick-tip-icon {
+        font-size: 2rem;
+        color: #667eea;
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn-outline-secondary {
+            width: 100%;
+        }
+    }
+</style>

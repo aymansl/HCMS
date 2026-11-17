@@ -1,0 +1,44 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-R04: Manage Request and Imaging Types - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor Radiologist as U
+participant ":ImagingTypesView" as V
+participant ":ImagingTypeController" as C
+participant ":ImagingTypeService" as S
+database "HCMS Database" as DB
+U -> V : add / edit type
+V -> C : Save(ImagingTypeDto)
+C -> C : validate (duration > 0, price >= 0)
+alt valid
+  C -> S : SaveAsync(dto)
+  S -> DB : check name unique, INSERT / UPDATE
+  C --> V : list updated
+else invalid
+  C --> V : validation errors
+end
+U -> V : delete type
+V -> C : Delete(id)
+C -> S : DeleteAsync(id)
+S -> DB : deactivate if used, else delete
+@enduml

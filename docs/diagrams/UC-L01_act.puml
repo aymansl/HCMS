@@ -1,0 +1,46 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L01: Log In / Log Out - Activity
+|Lab Technician|
+start
+:Request login;
+|System|
+:Show login form;
+|Lab Technician|
+:Enter email and password;
+|System|
+if (Account locked or suspended?) then (yes)
+  :Show "account locked" message;
+  stop
+endif
+if (Credentials valid?) then (yes)
+  :Create session;
+  :Open lab dashboard;
+else (no)
+  :Increase failed attempts;
+  :Show "invalid email or password";
+  stop
+endif
+|Lab Technician|
+:Work in lab dashboard;
+:Request logout;
+|System|
+:End session and return to login page;
+stop
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L07: Add Lab Note - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Lab Technician" as U
+participant ":LabRequestsView" as V
+participant ":LabRequestController" as C
+participant ":LabRequestService" as S
+database "HCMS Database" as DB
+participant ":NotificationHub" as H
+U -> V : write note
+V -> C : AddNote(id, text, urgent)
+C -> S : AddNoteAsync(id, text, urgent)
+S -> DB : get request status
+alt text not empty and status not Cancelled
+  S -> DB : INSERT LabNote (author, createdAt)
+  opt urgent
+    S ->> H : NotifyDoctor(id, text)
+  end
+  C --> V : note added
+else invalid
+  C --> V : error
+end
+@enduml

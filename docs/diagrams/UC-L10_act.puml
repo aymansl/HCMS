@@ -1,0 +1,50 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L10: Send Alert When Result Is Issued - Activity
+|Lab Technician|
+start
+:Enter result values;
+|System|
+if (Request cancelled?) then (yes)
+  :Block result entry;
+  stop
+else (no)
+endif
+:Compare with reference ranges;
+|Lab Technician|
+:Approve result;
+|System|
+if (All values entered?) then (no)
+  :Block approval;
+  stop
+else (yes)
+endif
+:Set status Issued and log time;
+if (Critical value?) then (yes)
+  :Mark critical;
+  :Send urgent alert to doctor;
+else (no)
+endif
+fork
+  :Alert doctor;
+fork again
+  :Alert patient;
+end fork
+stop
+@enduml

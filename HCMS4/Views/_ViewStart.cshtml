@@ -1,0 +1,11 @@
+﻿@{
+    // Choose layout based on authentication
+    if (User.Identity.IsAuthenticated)
+    {
+        Layout = "_LayoutAuth";  // Use authenticated layout
+    }
+    else
+    {
+        Layout = "_Layout";      // Use guest layout
+    }
+}

@@ -1,0 +1,41 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L04: Receive Test Request Cancellation - Activity
+|Doctor|
+start
+:Cancel request with reason;
+|System|
+if (Result already issued?) then (yes)
+  :Refuse cancellation;
+  :Inform doctor;
+  stop
+else (no)
+  :Set status Cancelled;
+  :Log time and reason;
+  :Notify lab;
+endif
+|Lab Technician|
+:See cancellation;
+if (Sample already taken?) then (yes)
+  :Add note "sample taken - cancelled";
+else (no)
+endif
+:Stop work on request;
+stop
+@enduml

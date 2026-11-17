@@ -1,0 +1,46 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L03: Receive Lab Test Request from Doctor - Activity
+|Doctor|
+start
+:Submit test request from patient file;
+|System|
+if (Patient record exists?) then (no)
+  :Reject request;
+  :Alert doctor;
+  stop
+else (yes)
+  :Save request (Requested);
+  :Notify lab in real time;
+endif
+|Lab Technician|
+:Open request;
+:Check patient and tests;
+if (Request complete?) then (yes)
+  :Confirm receipt;
+  |System|
+  :Set status Received and log time;
+else (no)
+  |Lab Technician|
+  :Write note;
+  |System|
+  :Return request to doctor with note;
+endif
+stop
+@enduml

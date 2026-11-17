@@ -1,0 +1,40 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L11: Generate Daily Lab Activity Report - Activity
+|Lab Technician|
+start
+:Open reports page;
+:Select date (default today);
+|System|
+:Count requests by status and test type;
+:Compute median turnaround time;
+if (Any activity?) then (yes)
+  :Show report summary;
+  |Lab Technician|
+  if (Export PDF?) then (yes)
+    |System|
+    :Generate PDF file;
+  else (no)
+  endif
+else (no)
+  |System|
+  :Show "no activity";
+endif
+stop
+@enduml

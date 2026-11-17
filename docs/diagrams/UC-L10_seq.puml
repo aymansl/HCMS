@@ -1,0 +1,47 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L10: Send Alert When Result Is Issued - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Lab Technician" as U
+participant ":ResultEntryView" as V
+participant ":LabResultController" as C
+participant ":LabResultService" as S
+database "HCMS Database" as DB
+participant ":NotificationHub" as H
+U -> V : enter values and approve
+V -> C : Issue(requestId, values)
+C -> S : IssueAsync(requestId, values)
+S -> DB : get request status
+alt status Received / InProgress and values complete
+  S -> S : compare with reference ranges
+  S -> DB : INSERT result, status = Issued
+  par
+    S ->> H : NotifyDoctor(requestId, isCritical)
+  else
+    S ->> H : NotifyPatient(requestId)
+  end
+  C --> V : result issued
+else cancelled or incomplete
+  C --> V : error
+end
+@enduml

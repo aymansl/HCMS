@@ -1,0 +1,51 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L04: Receive Test Request Cancellation - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor Doctor as D
+actor "Lab Technician" as U
+participant ":PatientFileView" as DV
+participant ":LabRequestsView" as V
+participant ":LabRequestController" as C
+participant ":LabRequestService" as S
+database "HCMS Database" as DB
+participant ":NotificationHub" as H
+D -> DV : cancel request with reason
+DV -> C : Cancel(id, reason)
+C -> S : CancelAsync(id, reason)
+S -> DB : get request status
+alt status before ResultIssued
+  S -> DB : UPDATE status = Cancelled
+  S ->> H : NotifyLab(id, "cancelled")
+  H ->> V : cancellation alert
+  C --> DV : cancelled
+else result issued
+  S --> C : InvalidTransition
+  C --> DV : "result already issued"
+end
+U -> V : view cancelled request
+opt sample already taken
+  V -> C : AddNote(id, text)
+  C -> S : AddNoteAsync(id, text)
+end
+@enduml

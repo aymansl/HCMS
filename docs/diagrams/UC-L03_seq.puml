@@ -1,0 +1,59 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L03: Receive Lab Test Request from Doctor - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor Doctor as D
+actor "Lab Technician" as U
+participant ":PatientFileView" as DV
+participant ":LabRequestsView" as V
+participant ":LabRequestController" as C
+participant ":LabRequestService" as S
+database "HCMS Database" as DB
+participant ":NotificationHub" as H
+D -> DV : submit test request
+DV -> C : Create(LabRequestDto)
+C -> S : CreateAsync(dto)
+S -> DB : find patient
+alt patient exists
+  S -> DB : INSERT LabRequest (Requested)
+  S ->> H : NotifyLab(requestId)
+  H ->> V : new request alert
+  C --> DV : request sent
+else patient not found
+  C --> DV : request rejected (patient not found)
+end
+U -> V : open request
+V -> C : Details(id)
+alt request complete
+  U -> V : confirm receipt
+  V -> C : Receive(id)
+  C -> S : ReceiveAsync(id)
+  S -> DB : UPDATE status = Received
+  C --> V : status Received
+else incomplete
+  U -> V : return with note
+  V -> C : ReturnToDoctor(id, note)
+  C -> S : ReturnAsync(id, note)
+  S ->> H : NotifyDoctor(id, note)
+end
+@enduml

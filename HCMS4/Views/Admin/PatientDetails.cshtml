@@ -1,0 +1,193 @@
+﻿@model HCMS4.Models.Patient
+
+@{
+    ViewData["Title"] = "Patient Details";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">Patient Details</h1>
+                <div>
+                    <a asp-action="EditPatient" asp-route-id="@Model.Id" class="btn btn-primary me-2">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    <a asp-action="Patients" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+             
+                <div class="col-md-4">
+                    <div class="card dashboard-card">
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <div class="avatar-xl mx-auto mb-3">
+                                </div>
+                                <h4 class="mb-1">@Model.User?.FullName</h4>
+                                <p class="text-muted">@Model.User?.UserName</p>
+                            </div>
+                            
+                            <div class="text-start">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Email</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-envelope me-2"></i> @Model.User?.Email
+                                    </p>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label text-muted">Date of Birth</label>
+                                    <p class="mb-0">
+                                        <i class="bi bi-calendar me-2"></i> 
+                                        @Model.DateOfBirth?.ToString("MMMM dd, yyyy")
+                                    </p>
+                                </div>
+                                
+                                @if (!string.IsNullOrEmpty(Model.Address))
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Address</label>
+                                        <p class="mb-0">
+                                            <i class="bi bi-geo-alt me-2"></i> @Model.Address
+                                        </p>
+                                    </div>
+                                }
+                                
+                                @if (!string.IsNullOrEmpty(Model.EmergencyContact))
+                                {
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Emergency Contact</label>
+                                        <p class="mb-0">
+                                            <i class="bi bi-telephone me-2"></i> @Model.EmergencyContact
+                                        </p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+               
+                <div class="col-md-8">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card dashboard-card h-100">
+                                <div class="card-body text-center">
+                                    <div class="header-icon bg-gradient-info mx-auto mb-3">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </div>
+                                    <h3>@Model.Appointments?.Count</h3>
+                                    <p class="text-muted mb-0">Appointments</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card dashboard-card h-100">
+                                <div class="card-body text-center">
+                                    <div class="header-icon bg-gradient-success mx-auto mb-3">
+                                        <i class="bi bi-prescription"></i>
+                                    </div>
+                                    <h3>@Model.Prescriptions?.Count</h3>
+                                    <p class="text-muted mb-0">Prescriptions</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card dashboard-card h-100">
+                                <div class="card-body text-center">
+                                    <div class="header-icon bg-gradient-danger mx-auto mb-3">
+                                        <i class="bi bi-receipt"></i>
+                                    </div>
+                                    <h3>@Model.Invoices?.Count</h3>
+                                    <p class="text-muted mb-0">Invoices</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                 
+                    <div class="card dashboard-card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Appointments</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Appointments?.Any() == true)
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Doctor</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var appointment in Model.Appointments.Take(5))
+                                            {
+                                                <tr>
+                                                    <td>@appointment.AppointmentDateTime.ToString("MMM dd, yyyy")</td>
+                                                    <td>@appointment.Doctor?.User?.FullName</td>
+                                                    <td>
+                                                        <span class="badge bg-info">@appointment.Status</span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted text-center mb-0">No appointments found</p>
+                            }
+                        </div>
+                    </div>
+                    
+             
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Recent Prescriptions</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Prescriptions?.Any() == true)
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Doctor</th>
+                                                <th>Medication</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var prescription in Model.Prescriptions.Take(5))
+                                            {
+                                                <tr>
+                                                    <td>@prescription.PrescriptionDate.ToString("MMM dd, yyyy")</td>
+                                                    <td>@prescription.Doctor?.User?.FullName</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted text-center mb-0">No prescriptions found</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,46 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-L08: Search Issued Results - Sequence
+skinparam defaultFontSize 15
+skinparam ParticipantFontSize 15
+skinparam ActorFontSize 15
+skinparam DatabaseFontSize 15
+hide footbox
+actor "Lab Technician" as U
+participant ":ResultsView" as V
+participant ":LabResultController" as C
+participant ":LabResultService" as S
+database "HCMS Database" as DB
+participant ":PdfReportService" as R
+U -> V : enter criteria
+V -> C : Search(criteria)
+C -> S : SearchIssuedAsync(criteria)
+S -> DB : SELECT issued results
+DB --> S : rows
+alt found
+  C --> V : results list
+  U -> V : print result
+  V -> C : Pdf(resultId)
+  C -> R : GenerateResultPdf(resultId)
+  R --> C : file
+  C --> V : download PDF
+else none
+  C --> V : "no matching results"
+end
+@enduml

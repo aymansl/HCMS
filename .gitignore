@@ -1,0 +1,16 @@
+# Build output
+bin/
+obj/
+TestResults/
+# IDE
+.vs/
+*.user
+# Local .NET CLI folders
+.dotnet/
+.dotnet_home/
+# Python
+__pycache__/
+.venv/
+*.pyc
+# Local settings
+appsettings.*.local.json

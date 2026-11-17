@@ -1,0 +1,43 @@
+@startuml
+skinparam dpi 170
+skinparam shadowing false
+skinparam defaultFontName DejaVu Sans
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam ActivityBackgroundColor #EEF4FB
+skinparam ActivityBorderColor #2F5597
+skinparam ActivityDiamondBackgroundColor #FFF7E0
+skinparam SwimlaneTitleFontStyle bold
+skinparam ParticipantBackgroundColor #EEF4FB
+skinparam ParticipantBorderColor #2F5597
+skinparam SequenceLifeLineBorderColor #888888
+skinparam UsecaseBackgroundColor #EEF4FB
+skinparam UsecaseBorderColor #2F5597
+skinparam ActorBorderColor #2F5597
+skinparam DatabaseBackgroundColor #EEF4FB
+skinparam SequenceGroupHeaderFontStyle bold
+title UC-R04: Manage Request and Imaging Types - Activity
+|Radiologist|
+start
+:Open imaging types;
+:Choose Add / Edit / Delete;
+if (Delete?) then (yes)
+  |System|
+  if (Type used in requests?) then (yes)
+    :Deactivate type;
+  else (no)
+    :Delete type;
+  endif
+  stop
+else (no)
+  |Radiologist|
+  :Enter name, device, duration, price;
+  |System|
+  if (Valid and unique?) then (yes)
+    :Save type;
+  else (no)
+    :Show error;
+  endif
+endif
+stop
+@enduml
