@@ -1,16 +1,73 @@
-# Build output
+# ---------------------------------------------------------------
+# .NET / Visual Studio
+# ---------------------------------------------------------------
 bin/
 obj/
-TestResults/
-# IDE
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ll]og/
+[Ll]ogs/
 .vs/
 *.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+_ReSharper*/
+*.DotSettings.user
+.idea/
+
+# Test results and coverage
+TestResults/
+[Tt]est[Rr]esult*/
+coverage*.xml
+coverage*.json
+*.coverage
+*.coveragexml
+coveragereport/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+!**/packages/build/
+
+# Publish output
+publish/
+*.Publish.xml
+*.pubxml.user
+
 # Local .NET CLI folders
 .dotnet/
 .dotnet_home/
-# Python
-__pycache__/
-.venv/
-*.pyc
-# Local settings
+
+# Local settings and secrets
 appsettings.*.local.json
+*.env
+.env
+
+# Runtime uploads (stored outside source control)
+**/wwwroot/uploads/
+**/App_Data/uploads/
+
+# ---------------------------------------------------------------
+# Python (AI service)
+# ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.egg-info/
+
+# ---------------------------------------------------------------
+# OS
+# ---------------------------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
