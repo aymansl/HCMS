@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HCMS4\HCMS4.csproj" />
+    <ProjectReference Include="..\..\src\HCMS4\HCMS4.csproj" />
   </ItemGroup>
 
 </Project>
