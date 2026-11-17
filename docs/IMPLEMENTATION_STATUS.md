@@ -1,4 +1,4 @@
-# HCMS4 Requirements Implementation Status Report
+﻿# HCMS4 Requirements Implementation Status Report
 
 ## Summary
 This report compares the requirements specification (SpecificationJson.json) against the actual implementation in the codebase.

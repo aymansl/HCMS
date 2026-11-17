@@ -1,8 +1,8 @@
-# Quick Testing Guide - New Features
+﻿# Quick Testing Guide - New Features
 
 ## 🔐 Admin Login Credentials
-- **Email:** admin@gmail.com
-- **Password:** SecureP@ssw0rd123
+> **Outdated.** Credentials are no longer documented here. The admin account is created from the
+> `AdminSettings:*` User Secrets — see "Configure secrets" in the root `README.md`.
 
 ---
 
