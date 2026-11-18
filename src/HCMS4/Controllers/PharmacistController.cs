@@ -1097,35 +1097,5 @@ namespace HCMS4.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> AddItemToRequest(int drugId, int quantity, decimal unitPrice, string? notes)
-        {
-            try
-            {
-                var drug = await _context.Drugs.FindAsync(drugId);
-                if (drug == null)
-                {
-                    return Json(new { success = false, message = "Drug not found." });
-                }
-
-                var item = new
-                {
-                    DrugId = drug.Id,
-                    DrugName = drug.Name,
-                    Quantity = quantity,
-                    UnitPrice = unitPrice > 0 ? unitPrice : drug.Price,
-                    Notes = notes,
-                    Subtotal = quantity * (unitPrice > 0 ? unitPrice : drug.Price)
-                };
-
-                return Json(new { success = true, item = item });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error adding item to request");
-                return Json(new { success = false, message = ex.Message });
-            }
-        }
-
     }
 }

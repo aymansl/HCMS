@@ -3,6 +3,7 @@ using HCMS4.Models;
 using HCMS4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
@@ -13,7 +14,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Validate the antiforgery token on every unsafe request (POST, PUT, DELETE, ...).
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 
 
 builder.Services.AddSession(options =>
