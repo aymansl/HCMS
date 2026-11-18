@@ -110,9 +110,20 @@ app.MapRazorPages();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+    if (dbContext.Database.IsRelational())
+    {
+        dbContext.Database.Migrate();
+    }
+    else
+    {
+        // Non-relational providers (integration tests) cannot run migrations.
+        dbContext.Database.EnsureCreated();
+    }
 
     await AdminSeeder.SeedAdminUser(scope.ServiceProvider);
 }
 
 app.Run();
+
+// Exposes the entry point to WebApplicationFactory in the integration tests.
+public partial class Program { }
