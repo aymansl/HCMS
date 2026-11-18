@@ -17,7 +17,7 @@ namespace HCMS4.Controllers
         private readonly ILeaveService _leaveService;
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
-        private readonly IWebHostEnvironment _environment;
+        private readonly IComplaintAttachmentService _attachmentService;
 
         public PatientController(
             ApplicationDbContext context,
@@ -26,14 +26,14 @@ namespace HCMS4.Controllers
             ILeaveService leaveService,
             INotificationService notificationService,
             IActivityLogService activityLogService,
-            IWebHostEnvironment environment)
+            IComplaintAttachmentService attachmentService)
             : base(context, logger)
         {
             _appointmentService = appointmentService;
             _leaveService = leaveService;
             _notificationService = notificationService;
             _activityLogService = activityLogService;
-            _environment = environment;
+            _attachmentService = attachmentService;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -937,29 +937,15 @@ namespace HCMS4.Controllers
             string? attachmentPath = null;
             if (model.Attachment != null)
             {
-                var extension = Path.GetExtension(model.Attachment.FileName).ToLowerInvariant();
-                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".pdf", ".doc", ".docx" };
-
-                if (!allowedExtensions.Contains(extension))
+                var upload = await _attachmentService.SaveAsync(model.Attachment);
+                if (!upload.Success)
                 {
-                    ModelState.AddModelError(nameof(model.Attachment), "File type not supported.");
+                    ModelState.AddModelError(nameof(model.Attachment), upload.Message);
                     return View(model);
                 }
 
-                if (model.Attachment.Length > BusinessRules.ComplaintAttachmentMaxBytes)
-                {
-                    ModelState.AddModelError(nameof(model.Attachment), "File size exceeds the allowed limit.");
-                    return View(model);
-                }
-
-                var uploadsPath = Path.Combine(_environment.WebRootPath, "uploads", "complaints");
-                Directory.CreateDirectory(uploadsPath);
-
-                var storedFileName = $"{Guid.NewGuid():N}{extension}";
-                var fullPath = Path.Combine(uploadsPath, storedFileName);
-                await using var stream = System.IO.File.Create(fullPath);
-                await model.Attachment.CopyToAsync(stream);
-                attachmentPath = $"/uploads/complaints/{storedFileName}";
+                // Only the stored file name is kept; the file is served by ComplaintAttachmentsController.
+                attachmentPath = upload.Data;
             }
 
             var complaint = new Complaint

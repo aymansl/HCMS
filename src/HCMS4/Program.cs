@@ -75,6 +75,7 @@ builder.Services.AddScoped<IPharmacistService, PharmacistService>();
 builder.Services.AddScoped<ILeaveService, LeaveService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<IComplaintAttachmentService, ComplaintAttachmentService>();
 builder.Services.AddHostedService<DailyReportBackgroundService>();
 
 builder.Services.AddHttpClient("NoShowAPI", client =>

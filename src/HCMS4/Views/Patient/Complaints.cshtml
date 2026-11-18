@@ -50,7 +50,7 @@
                                     <td>
                                         @if (!string.IsNullOrWhiteSpace(complaint.AttachmentPath))
                                         {
-                                            <a href="@complaint.AttachmentPath" target="_blank">View</a>
+                                            <a asp-controller="ComplaintAttachments" asp-action="Download" asp-route-id="@complaint.Id" target="_blank">View</a>
                                         }
                                         else
                                         {

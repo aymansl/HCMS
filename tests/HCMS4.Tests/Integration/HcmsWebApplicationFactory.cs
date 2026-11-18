@@ -25,6 +25,9 @@ namespace HCMS4.Tests.Integration
         private const string SelectorScheme = "TestOrIdentity";
         private readonly string _databaseName = $"hcms-tests-{Guid.NewGuid()}";
 
+        /// <summary>Temporary folder used instead of App_Data for complaint attachments.</summary>
+        public string UploadsPath { get; } = Path.Combine(Path.GetTempPath(), $"hcms-tests-uploads-{Guid.NewGuid():N}");
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
@@ -38,7 +41,8 @@ namespace HCMS4.Tests.Integration
                     ["AdminSettings:UserName"] = "testadmin",
                     ["AdminSettings:Password"] = AdminPassword,
                     ["AiService:BaseUrl"] = "http://127.0.0.1:1",
-                    ["AiService:ApiKey"] = "test-key"
+                    ["AiService:ApiKey"] = "test-key",
+                    ["Uploads:ComplaintsPath"] = UploadsPath
                 });
             });
 
