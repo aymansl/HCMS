@@ -1,10 +1,10 @@
-﻿@model HCMS4.Models.Prescription
+﻿@model HCMS4.Modules.Pharmacy.Models.Prescription
 
 @{
     ViewData["Title"] = "Prescription Details";
     Layout = "_LayoutAuth";
-    var pharmacistNotes = ViewBag.PharmacistNotes as List<HCMS4.Models.PharmacistPrescriptionNote> ?? new();
-    var doctorReviewRequests = ViewBag.DoctorReviewRequests as List<HCMS4.Models.DoctorReviewRequest> ?? new();
+    var pharmacistNotes = ViewBag.PharmacistNotes as List<HCMS4.Modules.Pharmacy.Models.PharmacistPrescriptionNote> ?? new();
+    var doctorReviewRequests = ViewBag.DoctorReviewRequests as List<HCMS4.Modules.Pharmacy.Models.DoctorReviewRequest> ?? new();
 }
 
 <div class="container-fluid p-4">

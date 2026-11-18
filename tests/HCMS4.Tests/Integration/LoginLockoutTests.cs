@@ -1,5 +1,5 @@
+using HCMS4.Shared.Identity.Models;
 using System.Net;
-using HCMS4.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 

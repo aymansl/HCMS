@@ -1,4 +1,4 @@
-using HCMS4.Models;
+using HCMS4.Modules.Pharmacy.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.ViewModels

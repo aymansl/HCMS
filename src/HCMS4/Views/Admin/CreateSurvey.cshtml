@@ -35,7 +35,7 @@
                     </div>
                     <div class="col-md-4">
                         <label asp-for="TargetAudience" class="form-label"></label>
-                        <select asp-for="TargetAudience" asp-items="Html.GetEnumSelectList<HCMS4.Models.SurveyTargetAudience>()" class="form-select" id="targetAudience"></select>
+                        <select asp-for="TargetAudience" asp-items="Html.GetEnumSelectList<HCMS4.Modules.Feedback.Models.SurveyTargetAudience>()" class="form-select" id="targetAudience"></select>
                     </div>
                     <div class="col-md-4" id="targetCriteriaGroup">
                         <label asp-for="TargetCriteria" class="form-label"></label>
@@ -72,7 +72,7 @@
                                 <div class="col-md-4">
                                     <label class="form-label">Question Type</label>
                                     <select name="Questions[@i].QuestionType" class="form-select question-type">
-                                        @foreach (var type in Enum.GetValues<HCMS4.Models.SurveyQuestionType>())
+                                        @foreach (var type in Enum.GetValues<HCMS4.Modules.Feedback.Models.SurveyQuestionType>())
                                         {
                                             <option value="@type" selected="@(Model.Questions[i].QuestionType == type)">@type</option>
                                         }

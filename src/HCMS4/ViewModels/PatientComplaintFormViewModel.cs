@@ -1,4 +1,4 @@
-using HCMS4.Models;
+using HCMS4.Modules.Feedback.Models;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 

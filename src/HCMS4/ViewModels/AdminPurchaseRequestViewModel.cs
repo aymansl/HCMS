@@ -1,6 +1,5 @@
+using HCMS4.Modules.Pharmacy.Models;
 // ViewModels/AdminPurchaseRequestViewModel.cs
-using HCMS4.Models;
-
 namespace HCMS4.ViewModels
 {
     public class AdminPurchaseRequestListViewModel

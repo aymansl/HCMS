@@ -1,8 +1,8 @@
+using HCMS4.Modules.Feedback.Models;
+using HCMS4.Modules.Records.Models;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
-using HCMS4.Models;
-
 namespace HCMS4.Tests.Integration
 {
     // Regression tests: "View attachment" downloaded PDFs instead of opening them, and

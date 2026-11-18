@@ -1,5 +1,5 @@
-﻿// ViewModels/DailyReportFilterViewModel.cs
-using HCMS4.Models;
+﻿using HCMS4.Modules.Billing.Models;
+// ViewModels/DailyReportFilterViewModel.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.ViewModels

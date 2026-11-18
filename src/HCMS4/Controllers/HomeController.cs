@@ -1,7 +1,7 @@
+using HCMS4.Modules.Feedback.Models;
 using HCMS4.Shared.Common;
 using Microsoft.AspNetCore.Authorization;
 using HCMS4.Data;
-using HCMS4.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;

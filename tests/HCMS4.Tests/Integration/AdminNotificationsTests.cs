@@ -1,5 +1,6 @@
+using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Notifications.Models;
 using System.Net;
-using HCMS4.Models;
 using HCMS4.Services;
 
 namespace HCMS4.Tests.Integration

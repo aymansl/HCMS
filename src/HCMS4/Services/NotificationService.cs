@@ -1,6 +1,6 @@
+using HCMS4.Shared.Notifications.Models;
 using HCMS4.Shared.Common;
 using HCMS4.Data;
-using HCMS4.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace HCMS4.Services

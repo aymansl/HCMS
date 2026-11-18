@@ -1,4 +1,5 @@
-﻿using HCMS4.Models;
+﻿using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.ViewModels

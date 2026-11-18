@@ -33,7 +33,7 @@
 
                         <div class="mb-3">
                             <label asp-for="LeaveType" class="form-label"></label>
-                            <select asp-for="LeaveType" class="form-select" asp-items="Html.GetEnumSelectList<HCMS4.Models.LeaveType>()" required>
+                            <select asp-for="LeaveType" class="form-select" asp-items="Html.GetEnumSelectList<HCMS4.Modules.Staff.Models.LeaveType>()" required>
                                 <option value="">-- Select Leave Type --</option>
                             </select>
                             <span asp-validation-for="LeaveType" class="text-danger"></span>

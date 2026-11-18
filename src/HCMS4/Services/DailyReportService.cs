@@ -1,6 +1,7 @@
+using HCMS4.Modules.Billing.Models;
+using HCMS4.Shared.Reporting.Models;
 using HCMS4.Shared.Common;
 using HCMS4.Data;
-using HCMS4.Models;
 using HCMS4.ViewModels;
 using Microsoft.EntityFrameworkCore;
 

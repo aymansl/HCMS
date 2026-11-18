@@ -1,6 +1,11 @@
+using HCMS4.Modules.Billing.Models;
+using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Identity.Models;
+using HCMS4.Shared.Notifications.Models;
 using HCMS4.Shared.Common;
 using HCMS4.Data;
-using HCMS4.Models;
 using HCMS4.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;

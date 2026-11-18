@@ -1,7 +1,9 @@
+using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using HCMS4.Models;
 using HCMS4.Services;
 
 namespace HCMS4.Tests

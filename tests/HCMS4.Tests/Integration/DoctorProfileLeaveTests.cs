@@ -1,6 +1,5 @@
+using HCMS4.Modules.Staff.Models;
 using System.Net;
-using HCMS4.Models;
-
 namespace HCMS4.Tests.Integration
 {
     public class DoctorProfileLeaveTests : IClassFixture<HcmsWebApplicationFactory>

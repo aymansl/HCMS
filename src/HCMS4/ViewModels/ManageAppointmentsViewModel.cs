@@ -1,5 +1,6 @@
-﻿using HCMS4.Models;
-
+﻿using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
 namespace HCMS4.ViewModels
 {
     public class ManageAppointmentsViewModel

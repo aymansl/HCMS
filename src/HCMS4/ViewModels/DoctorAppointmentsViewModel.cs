@@ -1,5 +1,4 @@
-﻿using HCMS4.Models;
-
+﻿using HCMS4.Modules.Appointments.Models;
 namespace HCMS4.ViewModels
 {
     public class DoctorAppointmentsViewModel

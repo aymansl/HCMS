@@ -1,4 +1,4 @@
-﻿@model IEnumerable<HCMS4.Models.Drug>
+﻿@model IEnumerable<HCMS4.Modules.Pharmacy.Models.Drug>
 
 @{
     ViewData["Title"] = "Manage Drugs Inventory";
@@ -400,7 +400,7 @@
 }
 
 @functions {
-    string GetRowClass(HCMS4.Models.Drug drug, int daysUntilExpiry)
+    string GetRowClass(HCMS4.Modules.Pharmacy.Models.Drug drug, int daysUntilExpiry)
     {
         if (daysUntilExpiry <= 0)
             return "table-danger";

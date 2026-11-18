@@ -1,5 +1,4 @@
-﻿using HCMS4.Models;
-
+﻿using HCMS4.Modules.Pharmacy.Models;
 namespace HCMS4.ViewModels
 {
     public class PharmacistDashboardViewModel

@@ -1,5 +1,4 @@
-using HCMS4.Models;
-
+using HCMS4.Modules.Feedback.Models;
 namespace HCMS4.ViewModels
 {
     public class SurveyResponseViewModel

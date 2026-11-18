@@ -1,8 +1,9 @@
+using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using HCMS4.Models;
-
 namespace HCMS4.Tests.Integration
 {
     // Regression tests: the dispensing page called /Pharmacist/HoldPrescription and /Pharmacist/GetAlternatives,

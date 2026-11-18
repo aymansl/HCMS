@@ -1,4 +1,4 @@
-@model List<HCMS4.Models.PrescriptionReissueRequest>
+@model List<HCMS4.Modules.Pharmacy.Models.PrescriptionReissueRequest>
 
 @{
     ViewData["Title"] = "Re-issuance Requests";
@@ -27,7 +27,7 @@
                             <div class="alert alert-light mt-3 mb-0">@request.DoctorResponse</div>
                         }
 
-                        @if (request.Status == HCMS4.Models.ReissueRequestStatus.Pending)
+                        @if (request.Status == HCMS4.Modules.Pharmacy.Models.ReissueRequestStatus.Pending)
                         {
                             <form asp-action="ReviewReissueRequest" method="post" class="mt-3">
                                 @Html.AntiForgeryToken()

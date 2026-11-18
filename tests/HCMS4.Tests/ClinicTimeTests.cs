@@ -1,5 +1,7 @@
+using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
 using HCMS4.Shared.Common;
-using HCMS4.Models;
 using HCMS4.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;

@@ -1,6 +1,5 @@
-﻿// ViewModels/PurchaseRequestDetailViewModel.cs
-using HCMS4.Models;
-
+﻿using HCMS4.Modules.Pharmacy.Models;
+// ViewModels/PurchaseRequestDetailViewModel.cs
 namespace HCMS4.ViewModels
 {
     public class PurchaseRequestDetailViewModel

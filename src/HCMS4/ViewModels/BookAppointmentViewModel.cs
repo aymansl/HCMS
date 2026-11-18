@@ -1,6 +1,8 @@
-﻿using HCMS4.Models;
+﻿using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
 using System.ComponentModel.DataAnnotations;
-using static HCMS4.Models.Appointment;
+using static HCMS4.Modules.Appointments.Models.Appointment;
 
 namespace HCMS4.ViewModels
 {

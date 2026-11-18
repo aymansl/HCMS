@@ -1,4 +1,4 @@
-@model List<HCMS4.Models.MedicalArticle>
+@model List<HCMS4.Modules.Feedback.Models.MedicalArticle>
 
 @{
     ViewData["Title"] = "Medical Articles";
@@ -41,7 +41,7 @@
                         <tbody>
                             @foreach (var article in Model)
                             {
-                                var isPublished = article.Status == HCMS4.Models.ArticleStatus.Published;
+                                var isPublished = article.Status == HCMS4.Modules.Feedback.Models.ArticleStatus.Published;
                                 <tr>
                                     <td>@article.Title</td>
                                     <td>@article.Category</td>

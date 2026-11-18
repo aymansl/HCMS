@@ -1,5 +1,14 @@
+using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Billing.Models;
+using HCMS4.Modules.Feedback.Models;
+using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Audit.Models;
+using HCMS4.Shared.Identity.Models;
+using HCMS4.Shared.Notifications.Models;
+using HCMS4.Shared.Reporting.Models;
 using HCMS4.Shared.Common;
-using HCMS4.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,5 +1,5 @@
-using HCMS4.Models;
-
+using HCMS4.Modules.Feedback.Models;
+using HCMS4.Shared.Notifications.Models;
 namespace HCMS4.ViewModels
 {
     public class PatientDashboardViewModel

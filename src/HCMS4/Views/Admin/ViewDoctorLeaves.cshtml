@@ -95,11 +95,11 @@
                                                 }
                                             </td>
                                             <td>
-                                                @if (request.Status == HCMS4.Models.LeaveStatus.Pending)
+                                                @if (request.Status == HCMS4.Modules.Staff.Models.LeaveStatus.Pending)
                                                 {
                                                     <span class="badge bg-warning">Pending</span>
                                                 }
-                                                else if (request.Status == HCMS4.Models.LeaveStatus.Approved)
+                                                else if (request.Status == HCMS4.Modules.Staff.Models.LeaveStatus.Approved)
                                                 {
                                                     <span class="badge bg-success">Approved</span>
                                                 }
@@ -190,11 +190,11 @@
                                                 }
                                             </td>
                                             <td>
-                                                @if (leave.Status == HCMS4.Models.LeaveStatus.Approved)
+                                                @if (leave.Status == HCMS4.Modules.Staff.Models.LeaveStatus.Approved)
                                                 {
                                                     <span class="badge bg-success">Approved</span>
                                                 }
-                                                else if (leave.Status == HCMS4.Models.LeaveStatus.Pending)
+                                                else if (leave.Status == HCMS4.Modules.Staff.Models.LeaveStatus.Pending)
                                                 {
                                                     <span class="badge bg-warning">Pending</span>
                                                 }

@@ -1,5 +1,4 @@
-﻿using HCMS4.Models;
-
+﻿using HCMS4.Modules.Records.Models;
 namespace HCMS4.ViewModels
 {
     public class PatientStatsViewModel

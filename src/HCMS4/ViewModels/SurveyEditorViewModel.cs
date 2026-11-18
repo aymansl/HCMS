@@ -1,5 +1,5 @@
+using HCMS4.Modules.Feedback.Models;
 using HCMS4.Shared.Common;
-using HCMS4.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.ViewModels

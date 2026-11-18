@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using static HCMS4.Models.Appointment;
+using static HCMS4.Modules.Appointments.Models.Appointment;
 
 namespace HCMS4.ViewModels
 {

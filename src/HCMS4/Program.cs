@@ -1,6 +1,8 @@
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Identity.Models;
 using HCMS4.Shared.Common;
 using HCMS4.Data;
-using HCMS4.Models;
 using HCMS4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

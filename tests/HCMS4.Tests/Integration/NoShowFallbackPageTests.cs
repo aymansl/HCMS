@@ -1,6 +1,8 @@
+using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
 using System.Net;
 using HCMS4.Data;
-using HCMS4.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

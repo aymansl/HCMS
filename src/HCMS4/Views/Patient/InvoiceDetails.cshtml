@@ -3,8 +3,8 @@
 @{
     ViewData["Title"] = "تفاصيل الفاتورة";
     Layout = "_LayoutAuth";
-    var invoice = ViewBag.Invoice as HCMS4.Models.Invoice;
-    var items = invoice?.Prescription?.PrescriptionItems ?? new List<HCMS4.Models.PrescriptionItem>();
+    var invoice = ViewBag.Invoice as HCMS4.Modules.Billing.Models.Invoice;
+    var items = invoice?.Prescription?.PrescriptionItems ?? new List<HCMS4.Modules.Pharmacy.Models.PrescriptionItem>();
 }
 
 <div class="container py-4" dir="rtl" lang="ar">

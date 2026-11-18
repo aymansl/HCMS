@@ -1,9 +1,11 @@
+using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Identity.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using HCMS4.Data;
-using HCMS4.Models;
-
 namespace HCMS4.Tests
 {
     public static class TestDbContextFactory

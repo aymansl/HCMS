@@ -1,5 +1,5 @@
-﻿// Services/DailyReportService.cs
-using HCMS4.Models;
+﻿using HCMS4.Modules.Billing.Models;
+// Services/DailyReportService.cs
 using HCMS4.ViewModels;
 using Microsoft.Extensions.Logging;
 

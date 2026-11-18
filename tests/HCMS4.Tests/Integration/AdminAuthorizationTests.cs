@@ -1,7 +1,9 @@
+using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
 using System.Net;
 using System.Reflection;
 using HCMS4.Controllers;
-using HCMS4.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

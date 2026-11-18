@@ -4,7 +4,7 @@
 @{
     ViewData["Title"] = $"Purchase Request #{Model.PurchaseRequest.RequestNumber}";
     Layout = "_LayoutAuth";
-    var isPending = Model.PurchaseRequest.Status == HCMS4.Models.PurchaseRequestStatus.Pending;
+    var isPending = Model.PurchaseRequest.Status == HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Pending;
 }
 
 <div class="container-fluid p-4">
@@ -52,19 +52,19 @@
                 @{
                     var statusClass = Model.PurchaseRequest.Status switch
                     {
-                        HCMS4.Models.PurchaseRequestStatus.Pending => "bg-warning text-dark",
-                        HCMS4.Models.PurchaseRequestStatus.Approved => "bg-success",
-                        HCMS4.Models.PurchaseRequestStatus.Rejected => "bg-danger",
-                        HCMS4.Models.PurchaseRequestStatus.Ordered => "bg-warning",
-                        HCMS4.Models.PurchaseRequestStatus.Received => "bg-info",
+                        HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Pending => "bg-warning text-dark",
+                        HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Approved => "bg-success",
+                        HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Rejected => "bg-danger",
+                        HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Ordered => "bg-warning",
+                        HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Received => "bg-info",
                         _ => "bg-secondary"
                     };
                 }
                 <span class="badge @statusClass px-3 py-2 fs-6">
-                    <i class="bi @(Model.PurchaseRequest.Status == HCMS4.Models.PurchaseRequestStatus.Pending ? "bi-clock-history" :
-                               Model.PurchaseRequest.Status == HCMS4.Models.PurchaseRequestStatus.Approved ? "bi-check-circle" :
-                               Model.PurchaseRequest.Status == HCMS4.Models.PurchaseRequestStatus.Rejected ? "bi-x-circle" :
-                               Model.PurchaseRequest.Status == HCMS4.Models.PurchaseRequestStatus.Received ? "bi-box-seam" : "bi-receipt") me-1"></i>
+                    <i class="bi @(Model.PurchaseRequest.Status == HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Pending ? "bi-clock-history" :
+                               Model.PurchaseRequest.Status == HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Approved ? "bi-check-circle" :
+                               Model.PurchaseRequest.Status == HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Rejected ? "bi-x-circle" :
+                               Model.PurchaseRequest.Status == HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Received ? "bi-box-seam" : "bi-receipt") me-1"></i>
                     @Model.PurchaseRequest.Status
                 </span>
                 @if (!isPending)
@@ -212,7 +212,7 @@
                     }
 
                     <!-- Approval History Timeline -->
-                    @if (Model.PurchaseRequest.ApprovedDate.HasValue || Model.PurchaseRequest.Status == HCMS4.Models.PurchaseRequestStatus.Rejected)
+                    @if (Model.PurchaseRequest.ApprovedDate.HasValue || Model.PurchaseRequest.Status == HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Rejected)
                     {
                         <div class="card dashboard-card mt-4">
                             <div class="card-header bg-white">
@@ -230,7 +230,7 @@
                                             <p class="mb-0"><strong>Request Submitted</strong> by pharmacist</p>
                                         </div>
                                     </div>
-                                    @if (Model.PurchaseRequest.Status == HCMS4.Models.PurchaseRequestStatus.Approved && Model.PurchaseRequest.ApprovedDate.HasValue)
+                                    @if (Model.PurchaseRequest.Status == HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Approved && Model.PurchaseRequest.ApprovedDate.HasValue)
                                     {
                                         <div class="timeline-item">
                                             <div class="timeline-marker bg-success"></div>
@@ -240,7 +240,7 @@
                                             </div>
                                         </div>
                                     }
-                                    @if (Model.PurchaseRequest.Status == HCMS4.Models.PurchaseRequestStatus.Rejected)
+                                    @if (Model.PurchaseRequest.Status == HCMS4.Modules.Pharmacy.Models.PurchaseRequestStatus.Rejected)
                                     {
                                         <div class="timeline-item">
                                             <div class="timeline-marker bg-danger"></div>

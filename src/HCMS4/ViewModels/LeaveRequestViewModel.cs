@@ -1,6 +1,5 @@
+using HCMS4.Modules.Staff.Models;
 using System.ComponentModel.DataAnnotations;
-using HCMS4.Models;
-
 namespace HCMS4.ViewModels
 {
     public class LeaveRequestViewModel

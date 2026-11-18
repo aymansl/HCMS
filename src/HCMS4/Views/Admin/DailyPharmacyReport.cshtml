@@ -74,8 +74,8 @@
                             <label class="form-label">Payment Status</label>
                             <select name="PaymentStatus" class="form-select">
                                 <option value="">All</option>
-                                <option value="0" selected="@(ViewBag.Filters?.PaymentStatus == HCMS4.Models.PaymentStatus.Pending)">Pending</option>
-                                <option value="1" selected="@(ViewBag.Filters?.PaymentStatus == HCMS4.Models.PaymentStatus.Paid)">Paid</option>
+                                <option value="0" selected="@(ViewBag.Filters?.PaymentStatus == HCMS4.Modules.Billing.Models.PaymentStatus.Pending)">Pending</option>
+                                <option value="1" selected="@(ViewBag.Filters?.PaymentStatus == HCMS4.Modules.Billing.Models.PaymentStatus.Paid)">Paid</option>
                             </select>
                         </div>
                         <div class="col-md-3">

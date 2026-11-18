@@ -1,4 +1,4 @@
-﻿@model HCMS4.Models.Drug
+﻿@model HCMS4.Modules.Pharmacy.Models.Drug
 
 @{
     ViewData["Title"] = "Edit Drug";
@@ -371,7 +371,7 @@
 }
 
 @functions {
-    string GetExpiryAlertClass(HCMS4.Models.Drug drug)
+    string GetExpiryAlertClass(HCMS4.Modules.Pharmacy.Models.Drug drug)
     {
         var daysUntilExpiry = (drug.ExpiryDate - ClinicTime.Now).Days;
         if (daysUntilExpiry <= 0)
@@ -381,7 +381,7 @@
         return "alert-success";
     }
 
-    string GetExpiryIconClass(HCMS4.Models.Drug drug)
+    string GetExpiryIconClass(HCMS4.Modules.Pharmacy.Models.Drug drug)
     {
         var daysUntilExpiry = (drug.ExpiryDate - ClinicTime.Now).Days;
         if (daysUntilExpiry <= 0)

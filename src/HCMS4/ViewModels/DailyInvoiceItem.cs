@@ -1,6 +1,5 @@
-﻿// ViewModels/DailyInvoiceItem.cs
-using HCMS4.Models;
-
+﻿using HCMS4.Modules.Billing.Models;
+// ViewModels/DailyInvoiceItem.cs
 namespace HCMS4.ViewModels
 {
     public class DailyInvoiceItem

@@ -1,4 +1,7 @@
-﻿using HCMS4.Models;
+﻿using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Billing.Models;
+using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Records.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.ViewModels

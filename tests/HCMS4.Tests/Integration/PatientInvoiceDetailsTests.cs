@@ -1,6 +1,6 @@
+using HCMS4.Modules.Billing.Models;
+using HCMS4.Modules.Records.Models;
 using System.Net;
-using HCMS4.Models;
-
 namespace HCMS4.Tests.Integration
 {
     // Regression tests: the patient's "View" invoice button failed because Views/Patient/InvoiceDetails.cshtml did not exist.

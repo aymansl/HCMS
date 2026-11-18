@@ -1,4 +1,4 @@
-@model List<HCMS4.Models.SurveyAssignment>
+@model List<HCMS4.Modules.Feedback.Models.SurveyAssignment>
 
 @{
     ViewData["Title"] = "Surveys";
@@ -44,7 +44,7 @@
                                     <td>@assignment.AssignedAt.ToString("yyyy-MM-dd")</td>
                                     <td>@(assignment.Survey.EndDate?.ToString("yyyy-MM-dd") ?? "Open")</td>
                                     <td>
-                                        @if (assignment.Status == HCMS4.Models.SurveyAssignmentStatus.Pending)
+                                        @if (assignment.Status == HCMS4.Modules.Feedback.Models.SurveyAssignmentStatus.Pending)
                                         {
                                             <a asp-action="TakeSurvey" asp-route-assignmentId="@assignment.Id" class="btn btn-sm btn-success">Start Survey</a>
                                         }

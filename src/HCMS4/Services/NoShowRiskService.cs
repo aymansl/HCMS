@@ -1,8 +1,9 @@
+using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Records.Models;
 using HCMS4.Shared.Common;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using HCMS4.Data;
-using HCMS4.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 

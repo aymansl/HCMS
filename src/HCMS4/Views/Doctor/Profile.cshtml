@@ -56,7 +56,7 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between mb-3">
                                 <span>Pending Requests</span>
-                                <span class="badge bg-warning">@Model.LeaveRequests.Count(lr => lr.Status == HCMS4.Models.LeaveStatus.Pending)</span>
+                                <span class="badge bg-warning">@Model.LeaveRequests.Count(lr => lr.Status == HCMS4.Modules.Staff.Models.LeaveStatus.Pending)</span>
                             </div>
                             <div class="d-flex justify-content-between mb-3">
                                 <span>Approved Leaves</span>
@@ -98,11 +98,11 @@
                                                     <td>@request.EndDate.ToString("yyyy-MM-dd")</td>
                                                     <td><span class="badge bg-info">@request.LeaveType</span></td>
                                                     <td>
-                                                        @if (request.Status == HCMS4.Models.LeaveStatus.Pending)
+                                                        @if (request.Status == HCMS4.Modules.Staff.Models.LeaveStatus.Pending)
                                                         {
                                                             <span class="badge bg-warning">Pending</span>
                                                         }
-                                                        else if (request.Status == HCMS4.Models.LeaveStatus.Approved)
+                                                        else if (request.Status == HCMS4.Modules.Staff.Models.LeaveStatus.Approved)
                                                         {
                                                             <span class="badge bg-success">Approved</span>
                                                         }
@@ -207,7 +207,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="LeaveType" class="form-label">Leave Type <span class="text-danger">*</span></label>
-                        <select name="LeaveType" id="LeaveType" class="form-select" asp-items="Html.GetEnumSelectList<HCMS4.Models.LeaveType>()" required>
+                        <select name="LeaveType" id="LeaveType" class="form-select" asp-items="Html.GetEnumSelectList<HCMS4.Modules.Staff.Models.LeaveType>()" required>
                             <option value="">-- Select Leave Type --</option>
                         </select>
                     </div>

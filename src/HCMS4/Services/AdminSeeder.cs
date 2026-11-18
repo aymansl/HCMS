@@ -1,4 +1,6 @@
-﻿using HCMS4.Models;
+﻿using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Identity.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 

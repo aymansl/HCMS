@@ -1,7 +1,7 @@
+using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Records.Models;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
-using HCMS4.Models;
-
 namespace HCMS4.Tests
 {
     public class DrugServiceTests

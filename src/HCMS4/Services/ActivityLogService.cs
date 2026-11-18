@@ -1,7 +1,6 @@
+using HCMS4.Shared.Audit.Models;
 using HCMS4.Shared.Common;
 using HCMS4.Data;
-using HCMS4.Models;
-
 namespace HCMS4.Services
 {
     public interface IActivityLogService
