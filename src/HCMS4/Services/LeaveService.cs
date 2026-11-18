@@ -21,11 +21,13 @@ namespace HCMS4.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<LeaveService> _logger;
+        private readonly INotificationService _notificationService;
 
-        public LeaveService(ApplicationDbContext context, ILogger<LeaveService> logger)
+        public LeaveService(ApplicationDbContext context, ILogger<LeaveService> logger, INotificationService notificationService)
         {
             _context = context;
             _logger = logger;
+            _notificationService = notificationService;
         }
 
         public async Task<LeaveRequest> CreateLeaveRequestAsync(LeaveRequest request)
@@ -37,6 +39,9 @@ namespace HCMS4.Services
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Leave request created for doctor {DoctorId}", request.DoctorId);
+
+            await NotifyManagerAsync(request.DoctorId,
+                $"New leave request from {request.StartDate:yyyy-MM-dd} to {request.EndDate:yyyy-MM-dd}.");
 
             return request;
         }
@@ -183,10 +188,19 @@ namespace HCMS4.Services
                                 dl.EndDate >= date);
         }
 
-        public Task NotifyManagerAsync(int doctorId, string message)
+        public async Task NotifyManagerAsync(int doctorId, string message)
         {
-            _logger.LogInformation("Notification for doctor {DoctorId}: {Message}", doctorId, message);
-            return Task.CompletedTask;
+            // Managers are the users in the Admin role; they review leaves on the doctor's leave page.
+            await _notificationService.CreateForRoleAsync(
+                "Admin",
+                "Doctor leave request",
+                message,
+                NotificationType.General,
+                $"/Admin/ViewDoctorLeaves/{doctorId}",
+                nameof(Doctor),
+                doctorId);
+
+            _logger.LogInformation("Managers notified about doctor {DoctorId}: {Message}", doctorId, message);
         }
     }
 }
