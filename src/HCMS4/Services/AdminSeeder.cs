@@ -33,14 +33,18 @@ namespace HCMS4.Services
             var adminUserName = config["AdminSettings:UserName"];
             var adminPassword = config["AdminSettings:Password"];
 
-            // If no User Secrets are configured, fall back to defaults (with a warning)
-            if (string.IsNullOrEmpty(adminEmail) || string.IsNullOrEmpty(adminPassword))
+            // Fail fast: never fall back to a hard-coded admin account.
+            if (string.IsNullOrWhiteSpace(adminEmail) || string.IsNullOrWhiteSpace(adminPassword))
             {
-                logger.LogWarning("Admin credentials not found in User Secrets. Using default admin credentials. " +
-                    "Run: dotnet user-secrets set \"AdminSettings:Email\" \"admin@hospital.com\"");
-                adminEmail = "admin@hospital.com";
-                adminUserName = "admin";
-                adminPassword = "Admin@123";
+                const string message = "AdminSettings:Email and AdminSettings:Password must be configured " +
+                    "(User Secrets in development, environment variables elsewhere). See README.md.";
+                logger.LogCritical(message);
+                throw new InvalidOperationException(message);
+            }
+
+            if (string.IsNullOrWhiteSpace(adminUserName))
+            {
+                adminUserName = adminEmail;
             }
 
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
@@ -65,8 +69,9 @@ namespace HCMS4.Services
                 }
                 else
                 {
-                    logger.LogError("Error creating admin user: {Errors}",
-                        string.Join(", ", result.Errors.Select(e => e.Description)));
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    logger.LogCritical("Error creating admin user: {Errors}", errors);
+                    throw new InvalidOperationException($"Could not create the admin user: {errors}");
                 }
             }
             else
