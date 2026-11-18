@@ -132,6 +132,8 @@ namespace HCMS4.Services
                 var client = _httpClientFactory.CreateClient("NoShowAPI");
                 client.Timeout = TimeSpan.FromSeconds(10);
 
+                // TODO(A1): send real patient features (gender, chronic conditions, SMS reminders, ...);
+                // the model currently sees only age and the two dates (CODEBASE_ANALYSIS #26).
                 var request = new NoShowAppointmentRequest
                 {
                     PatientId = appointment.PatientId,
