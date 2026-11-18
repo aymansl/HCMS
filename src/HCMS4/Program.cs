@@ -13,7 +13,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();
 
 
 builder.Services.AddSession(options =>
@@ -103,8 +102,6 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.MapRazorPages();
 
 // Seed admin on startup
 using (var scope = app.Services.CreateScope())
