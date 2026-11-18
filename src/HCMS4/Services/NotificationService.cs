@@ -11,6 +11,9 @@ namespace HCMS4.Services
             string? linkUrl = null, string? relatedEntityType = null, int? relatedEntityId = null);
         Task CreateForRoleAsync(string roleName, string title, string message, NotificationType type,
             string? linkUrl = null, string? relatedEntityType = null, int? relatedEntityId = null);
+
+        /// <summary>The user's most recent notifications, newest first.</summary>
+        Task<List<UserNotification>> GetRecentForUserAsync(string userId, int count = 5);
     }
 
     public class NotificationService : INotificationService
@@ -20,6 +23,21 @@ namespace HCMS4.Services
         public NotificationService(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<List<UserNotification>> GetRecentForUserAsync(string userId, int count = 5)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return new List<UserNotification>();
+            }
+
+            return await _context.UserNotifications
+                .AsNoTracking()
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(count)
+                .ToListAsync();
         }
 
         public async Task CreateForUserAsync(string userId, string title, string message, NotificationType type,

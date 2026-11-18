@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using static HCMS4.ViewModels.GenerateInvoiceViewModel;
 
 namespace HCMS4.Controllers
@@ -64,6 +65,10 @@ namespace HCMS4.Controllers
             ViewBag.ActiveSurveysCount = await _context.Surveys.CountAsync(s => s.Status == SurveyStatus.Active);
             var todayReport = await _reportService.GetDailyReportAsync(ClinicTime.Today);
             ViewBag.TodayReport = todayReport;
+
+            // Admins receive leave requests and other alerts as notifications; show the latest ones.
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            ViewBag.RecentNotifications = await _notificationService.GetRecentForUserAsync(currentUserId, 8);
 
             return View();
         }
