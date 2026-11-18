@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using HCMS4.Data;
 using HCMS4.Models;
@@ -11,11 +10,17 @@ namespace HCMS4.Services
     public interface INoShowRiskService
     {
         Task<double> CalculateRiskScoreAsync(int patientId);
-        Task<Dictionary<int, double>> CalculateRiskScoresAsync(IEnumerable<int> appointmentIds);
-        bool IsServiceAvailable { get; }
-        bool IsUsingAI { get; }
-        string? LastErrorMessage { get; }
+
+        /// <summary>Scores the appointments; the result says whether the AI model or the local estimate was used.</summary>
+        Task<NoShowRiskResult> CalculateRiskScoresAsync(IEnumerable<int> appointmentIds);
     }
+
+    /// <summary>Outcome of one scoring call. The service keeps no state between calls (issue #27).</summary>
+    public record NoShowRiskResult(
+        Dictionary<int, double> Scores,
+        bool IsServiceAvailable,
+        bool IsUsingAI,
+        string? ErrorMessage);
 
     public class NoShowRiskService : INoShowRiskService
     {
@@ -24,14 +29,6 @@ namespace HCMS4.Services
         private readonly ILogger<NoShowRiskService> _logger;
         private readonly string _apiBaseUrl;
         private readonly string? _apiKey;
-        private bool _apiFailedInThisRequest;
-        private bool _serviceAvailable = true;
-        private bool _isUsingAI = false;
-        private string? _lastErrorMessage;
-
-        public bool IsServiceAvailable => _serviceAvailable;
-        public bool IsUsingAI => _isUsingAI;
-        public string? LastErrorMessage => _lastErrorMessage;
 
         public NoShowRiskService(
             ApplicationDbContext context,
@@ -46,14 +43,22 @@ namespace HCMS4.Services
             _apiKey = configuration["AiService:ApiKey"];
         }
 
-        public async Task<Dictionary<int, double>> CalculateRiskScoresAsync(IEnumerable<int> appointmentIds)
+        // Per-call state, so concurrent calls on the same scoped instance cannot interfere.
+        private sealed class ScoringRun
+        {
+            public bool ApiFailed { get; set; }
+            public bool UsedAI { get; set; }
+            public string? ErrorMessage { get; set; }
+        }
+
+        public async Task<NoShowRiskResult> CalculateRiskScoresAsync(IEnumerable<int> appointmentIds)
         {
             var scores = new Dictionary<int, double>();
             var appointmentList = appointmentIds.ToList();
-            _isUsingAI = false;
+            var run = new ScoringRun();
 
             if (!appointmentList.Any())
-                return scores;
+                return new NoShowRiskResult(scores, true, false, null);
 
             try
             {
@@ -64,9 +69,6 @@ namespace HCMS4.Services
                     .Where(a => appointmentList.Contains(a.Id))
                     .ToListAsync();
 
-                if (!appointments.Any())
-                    return scores;
-
                 foreach (var appointment in appointments)
                 {
                     if (appointment.NoShowRiskScore.HasValue)
@@ -75,53 +77,40 @@ namespace HCMS4.Services
                         continue;
                     }
 
-                    var prediction = await GetPredictionFromAPIAsync(appointment);
+                    var prediction = await GetPredictionFromAPIAsync(appointment, run);
                     if (prediction.HasValue)
                     {
                         scores[appointment.Id] = prediction.Value;
-                        _isUsingAI = true;
+                        run.UsedAI = true;
                     }
                     else
                     {
-                        var localScore = await CalculateRiskScoreAsync(appointment.PatientId);
-                        scores[appointment.Id] = localScore;
+                        scores[appointment.Id] = await CalculateRiskScoreAsync(appointment.PatientId);
                     }
                 }
 
-                if (_isUsingAI)
+                if (run.UsedAI)
                 {
-                    _serviceAvailable = true;
                     _logger.LogInformation("Retrieved {Count} predictions from AI API", scores.Count);
                 }
 
-                return scores;
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "Failed to connect to No-Show Prediction API at {Url}", _apiBaseUrl);
-                _serviceAvailable = false;
-                _lastErrorMessage = "Failed to connect to AI Prediction service";
-
-                return await CalculateRiskScoresLocallyAsync(appointmentList);
+                // The local estimate is still shown when the AI service is unavailable ("Rule-Based Mode").
+                return new NoShowRiskResult(scores, true, run.UsedAI, run.ErrorMessage);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating risk scores via AI API");
-                _serviceAvailable = false;
-                _lastErrorMessage = "Error communicating with AI Prediction service";
-
-                return await CalculateRiskScoresLocallyAsync(appointmentList);
+                _logger.LogError(ex, "Error calculating no-show risk scores");
+                return new NoShowRiskResult(scores, false, false, "Error calculating no-show risk scores");
             }
         }
 
-        private async Task<double?> GetPredictionFromAPIAsync(Appointment appointment)
+        private async Task<double?> GetPredictionFromAPIAsync(Appointment appointment, ScoringRun run)
         {
             // Without a key the service would reject the call; after one failure, skip the remaining
             // appointments so a slow or stopped service cannot hold the page (graceful degradation).
-            // IsServiceAvailable stays true: the local estimate is still shown ("Rule-Based Mode").
-            if (string.IsNullOrWhiteSpace(_apiKey) || _apiFailedInThisRequest)
+            if (string.IsNullOrWhiteSpace(_apiKey) || run.ApiFailed)
             {
-                _lastErrorMessage ??= string.IsNullOrWhiteSpace(_apiKey)
+                run.ErrorMessage ??= string.IsNullOrWhiteSpace(_apiKey)
                     ? "AI service API key is not configured"
                     : "AI Prediction service is unavailable";
                 return null;
@@ -178,39 +167,12 @@ namespace HCMS4.Services
                 _logger.LogWarning(ex, "Failed to get prediction from API for appointment {Id}", appointment.Id);
             }
 
-            _apiFailedInThisRequest = true;
-            _lastErrorMessage ??= "AI Prediction service is unavailable";
+            run.ApiFailed = true;
+            run.ErrorMessage ??= "AI Prediction service is unavailable";
             return null;
         }
 
-        private async Task<Dictionary<int, double>> CalculateRiskScoresLocallyAsync(List<int> appointmentIds)
-        {
-            var scores = new Dictionary<int, double>();
-            _isUsingAI = false;
-
-            foreach (var appointmentId in appointmentIds)
-            {
-                var appointment = await _context.Appointments
-                    .Include(a => a.Patient)
-                    .FirstOrDefaultAsync(a => a.Id == appointmentId);
-
-                if (appointment != null)
-                {
-                    if (appointment.NoShowRiskScore.HasValue)
-                    {
-                        scores[appointmentId] = Math.Clamp(appointment.NoShowRiskScore.Value, 0.0, 1.0);
-                        continue;
-                    }
-
-                    var score = await CalculateRiskScoreAsync(appointment.PatientId);
-                    scores[appointmentId] = score;
-                }
-            }
-
-            return scores;
-        }
-
-        private int CalculateAge(DateTime? dateOfBirth)
+        private static int CalculateAge(DateTime? dateOfBirth)
         {
             if (!dateOfBirth.HasValue)
                 return 30;
@@ -267,7 +229,6 @@ namespace HCMS4.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error calculating risk score for patient {PatientId}", patientId);
-                _serviceAvailable = false;
                 return 0.3;
             }
         }

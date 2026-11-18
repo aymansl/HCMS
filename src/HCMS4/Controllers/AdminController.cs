@@ -398,9 +398,10 @@ namespace HCMS4.Controllers
             {
                 if (allAppointments.Any())
                 {
-                    riskScores = await _noShowRiskService.CalculateRiskScoresAsync(allAppointments);
-                    analyticsAvailable = _noShowRiskService.IsServiceAvailable;
-                    isUsingAI = _noShowRiskService.IsUsingAI;
+                    var risk = await _noShowRiskService.CalculateRiskScoresAsync(allAppointments);
+                    riskScores = risk.Scores;
+                    analyticsAvailable = risk.IsServiceAvailable;
+                    isUsingAI = risk.IsUsingAI;
                 }
             }
             catch (Exception ex)

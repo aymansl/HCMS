@@ -205,9 +205,10 @@ namespace HCMS4.Controllers
 
                 if (appointmentIds.Any())
                 {
-                    viewModel.AppointmentRiskScores = await _noShowRiskService.CalculateRiskScoresAsync(appointmentIds);
-                    viewModel.AnalyticsServiceAvailable = _noShowRiskService.IsServiceAvailable;
-                    viewModel.IsUsingAI = _noShowRiskService.IsUsingAI;
+                    var risk = await _noShowRiskService.CalculateRiskScoresAsync(appointmentIds);
+                    viewModel.AppointmentRiskScores = risk.Scores;
+                    viewModel.AnalyticsServiceAvailable = risk.IsServiceAvailable;
+                    viewModel.IsUsingAI = risk.IsUsingAI;
 
                     viewModel.TodayAppointments = viewModel.TodayAppointments
                         .Where(a => RiskLevelHelper.Matches(riskLevel, viewModel.AppointmentRiskScores.GetValueOrDefault(a.Id)))

@@ -75,13 +75,15 @@ namespace HCMS4.Tests
             });
             var service = CreateService(context, handler);
 
-            var scores = await service.CalculateRiskScoresAsync(ids);
+            var result = await service.CalculateRiskScoresAsync(ids);
+
+            var scores = result.Scores;
 
             var request = Assert.Single(handler.Requests);
             Assert.Equal("secret-key", request.Headers.GetValues("X-API-Key").Single());
             Assert.Equal("http://ai.test/predict", request.RequestUri!.ToString());
             Assert.Equal(0.82, scores[ids[0]], 3);
-            Assert.True(service.IsUsingAI);
+            Assert.True(result.IsUsingAI);
         }
 
         [Theory]
@@ -93,12 +95,14 @@ namespace HCMS4.Tests
             var ids = await CreateAppointmentsAsync(context, 1);
             var service = CreateService(context, new FakeHandler(_ => new HttpResponseMessage(status)));
 
-            var scores = await service.CalculateRiskScoresAsync(ids);
+            var result = await service.CalculateRiskScoresAsync(ids);
+
+            var scores = result.Scores;
 
             Assert.True(scores.ContainsKey(ids[0]));
             Assert.InRange(scores[ids[0]], 0.0, 1.0);
-            Assert.False(service.IsUsingAI);
-            Assert.True(service.IsServiceAvailable); // local estimate is still shown
+            Assert.False(result.IsUsingAI);
+            Assert.True(result.IsServiceAvailable); // local estimate is still shown
         }
 
         [Fact]
@@ -109,11 +113,13 @@ namespace HCMS4.Tests
             var handler = new FakeHandler(_ => throw new TaskCanceledException("timeout"));
             var service = CreateService(context, handler);
 
-            var scores = await service.CalculateRiskScoresAsync(ids);
+            var result = await service.CalculateRiskScoresAsync(ids);
+
+            var scores = result.Scores;
 
             Assert.Equal(3, scores.Count);
             Assert.Single(handler.Requests);
-            Assert.False(service.IsUsingAI);
+            Assert.False(result.IsUsingAI);
         }
 
         [Fact]
@@ -124,11 +130,36 @@ namespace HCMS4.Tests
             var handler = new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
             var service = CreateService(context, handler, apiKey: null);
 
-            var scores = await service.CalculateRiskScoresAsync(ids);
+            var result = await service.CalculateRiskScoresAsync(ids);
+
+            var scores = result.Scores;
 
             Assert.Equal(2, scores.Count);
             Assert.Empty(handler.Requests);
-            Assert.True(service.IsServiceAvailable); // local estimate is still shown
+            Assert.True(result.IsServiceAvailable); // local estimate is still shown
+        }
+        [Fact]
+        public async Task CalculateRiskScores_KeepsNoStateBetweenCalls()
+        {
+            using var context = TestDbContextFactory.CreateInMemoryContext();
+            var ids = await CreateAppointmentsAsync(context, 1);
+            var calls = 0;
+            var handler = new FakeHandler(_ => ++calls == 1
+                ? throw new TaskCanceledException("timeout")
+                : new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = JsonContent.Create(new { no_show_probability = 0.5, no_show = false })
+                });
+            var service = CreateService(context, handler);
+
+            var first = await service.CalculateRiskScoresAsync(ids);
+            var second = await service.CalculateRiskScoresAsync(ids);
+
+            // The failure of the first call must not stop the second call from using the AI service (issue #27).
+            Assert.False(first.IsUsingAI);
+            Assert.True(second.IsUsingAI);
+            Assert.Null(second.ErrorMessage);
+            Assert.Equal(2, handler.Requests.Count);
         }
     }
 }
