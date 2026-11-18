@@ -996,7 +996,7 @@ namespace HCMS4.Controllers
                     return RedirectToAction("Dashboard");
                 }
 
-                var leaveRequests = await _leaveService.GetPendingRequestsForDoctorAsync(doctorId.Value);
+                var leaveRequests = await _leaveService.GetRequestsForDoctorAsync(doctorId.Value);
                 var approvedLeaves = await _leaveService.GetDoctorLeavesAsync(doctorId.Value);
 
                 var viewModel = new DoctorLeaveViewModel

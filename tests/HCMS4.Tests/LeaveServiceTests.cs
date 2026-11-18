@@ -80,6 +80,24 @@ namespace HCMS4.Tests
             Assert.Equal("Clinic is understaffed that week", request.RejectionReason);
         }
 
+        // Regression tests: the doctor never saw the rejection because the profile loaded pending requests only.
+        [Fact]
+        public async Task RejectLeaveRequestAsync_NotifiesDoctor_AndRequestStaysVisibleToDoctor()
+        {
+            using var context = TestDbContextFactory.CreateInMemoryContext();
+            var request = await CreatePendingRequestAsync(context);
+            var service = CreateService(context);
+            var doctorUserId = (await context.Doctors.FindAsync(request.DoctorId))!.UserId;
+
+            await service.RejectLeaveRequestAsync(request.Id, "No cover available");
+            var visible = await service.GetRequestsForDoctorAsync(request.DoctorId);
+
+            var shown = Assert.Single(visible);
+            Assert.Equal("No cover available", shown.RejectionReason);
+            var notification = Assert.Single(context.UserNotifications.Where(n => n.UserId == doctorUserId));
+            Assert.Contains("No cover available", notification.Message);
+        }
+
         [Fact]
         public async Task RejectLeaveRequestAsync_WithoutReason_IsRejected()
         {

@@ -9,6 +9,9 @@ namespace HCMS4.Services
     {
         Task<LeaveRequest> CreateLeaveRequestAsync(LeaveRequest request);
         Task<List<LeaveRequest>> GetPendingRequestsForDoctorAsync(int doctorId);
+
+        /// <summary>All of the doctor's requests (pending, approved and rejected), newest first.</summary>
+        Task<List<LeaveRequest>> GetRequestsForDoctorAsync(int doctorId);
         Task<List<DoctorLeave>> GetDoctorLeavesAsync(int doctorId);
         Task<ServiceResult> ApproveLeaveRequestAsync(int requestId, string notes);
         Task<ServiceResult> RejectLeaveRequestAsync(int requestId, string reason);
@@ -50,6 +53,15 @@ namespace HCMS4.Services
         {
             return await _context.LeaveRequests
                 .Where(lr => lr.DoctorId == doctorId && lr.Status == LeaveStatus.Pending)
+                .OrderByDescending(lr => lr.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<LeaveRequest>> GetRequestsForDoctorAsync(int doctorId)
+        {
+            return await _context.LeaveRequests
+                .AsNoTracking()
+                .Where(lr => lr.DoctorId == doctorId)
                 .OrderByDescending(lr => lr.CreatedAt)
                 .ToListAsync();
         }
@@ -113,7 +125,9 @@ namespace HCMS4.Services
         {
             try
             {
-                var request = await _context.LeaveRequests.FindAsync(requestId);
+                var request = await _context.LeaveRequests
+                    .Include(lr => lr.Doctor)
+                    .FirstOrDefaultAsync(lr => lr.Id == requestId);
 
                 if (request == null)
                 {
@@ -134,6 +148,19 @@ namespace HCMS4.Services
                 request.RejectionReason = reason.Trim(); // previously discarded (issue #17)
 
                 await _context.SaveChangesAsync();
+
+                // Tell the doctor why; the reason is also listed on the doctor's profile.
+                if (request.Doctor != null)
+                {
+                    await _notificationService.CreateForUserAsync(
+                        request.Doctor.UserId,
+                        "Leave request rejected",
+                        $"Your leave request from {request.StartDate:yyyy-MM-dd} to {request.EndDate:yyyy-MM-dd} was rejected: {request.RejectionReason}",
+                        NotificationType.General,
+                        "/Doctor/Profile",
+                        nameof(LeaveRequest),
+                        request.Id);
+                }
 
                 _logger.LogInformation("Leave request {RequestId} rejected", requestId);
 
