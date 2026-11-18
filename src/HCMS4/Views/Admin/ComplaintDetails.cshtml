@@ -11,6 +11,20 @@
             <h4 class="mb-0">Complaint @Model.TrackingNumber</h4>
         </div>
         <div class="card-body">
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
             <div class="mb-3"><strong>Patient:</strong> @Model.Patient?.User?.FullName</div>
             <div class="mb-3"><strong>Type:</strong> @Model.Type</div>
             <div class="mb-3"><strong>Title:</strong> @Model.Title</div>
@@ -25,7 +39,8 @@
                 <input type="hidden" name="id" value="@Model.Id" />
                 <div class="mb-3">
                     <label class="form-label">Status</label>
-                    <select name="status" asp-items="Html.GetEnumSelectList<HCMS4.Models.ComplaintStatus>()" class="form-select"></select>
+                    @* Bound to the current status so saving notes does not reset it to the first option. *@
+                    <select asp-for="Status" asp-items="Html.GetEnumSelectList<HCMS4.Models.ComplaintStatus>()" class="form-select"></select>
                 </div>
                 <div class="mb-4">
                     <label class="form-label">Resolution Notes</label>
