@@ -29,6 +29,25 @@ namespace HCMS4.Tests.Integration
             return (doctorUserId, patientId, drugId);
         }
 
+        // Regression test: the drug-row template sat inside the form as a hidden <div> with required inputs,
+        // so the browser refused to submit ("An invalid form control ... is not focusable").
+        [Fact]
+        public async Task CreatePrescriptionPage_TemplateInputsAreNotPartOfTheForm()
+        {
+            var (doctorUserId, patientId, _) = await SeedAsync();
+            var client = _factory.CreateClientAs("Doctor", doctorUserId);
+
+            var html = await client.GetStringAsync($"/Doctor/CreatePrescription?patientId={patientId}");
+
+            Assert.Contains("<template id=\"drugItemTemplate\">", html);
+            var form = System.Text.RegularExpressions.Regex.Match(
+                html, "<form[^>]*id=\"prescriptionForm\".*?</form>", System.Text.RegularExpressions.RegexOptions.Singleline).Value;
+            var liveForm = System.Text.RegularExpressions.Regex.Replace(
+                form, "<template\\b.*?</template>", string.Empty, System.Text.RegularExpressions.RegexOptions.Singleline);
+            Assert.NotEmpty(form);
+            Assert.DoesNotContain("{{index}}", liveForm);
+        }
+
         [Theory]
         [InlineData("Take after meals")]
         [InlineData("")] // the Instructions field is optional on the form

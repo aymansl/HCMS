@@ -154,7 +154,8 @@
                         </div>
                         
                         
-                        <div id="drugItemTemplate" style="display: none;">
+                        @* <template> content is inert: its required inputs are not part of the form until a row is added. *@
+                        <template id="drugItemTemplate">
                             <div class="card mb-3 drug-item">
                                 <div class="card-body">
                                     <input type="hidden" name="Items[{{index}}].SelectedDrugId" value="{{drugId}}" />
@@ -256,7 +257,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </template>
                         
                         
                         <div class="card mb-4">
