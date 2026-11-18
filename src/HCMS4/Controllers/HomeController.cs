@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using HCMS4.Data;
 using HCMS4.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ using System.Diagnostics;
 
 namespace HCMS4.Controllers
 {
+    [AllowAnonymous]
     public class HomeController : Controller
     {
         private readonly ApplicationDbContext _context;

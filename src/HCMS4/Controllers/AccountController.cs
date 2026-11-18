@@ -1,4 +1,5 @@
-﻿using HCMS4.Data;
+﻿using Microsoft.AspNetCore.Authorization;
+using HCMS4.Data;
 using HCMS4.Models;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Identity;
@@ -27,6 +28,7 @@ namespace HCMS4.Controllers
             _logger = logger;
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
@@ -34,6 +36,7 @@ namespace HCMS4.Controllers
             return View();
         }
 
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult AccessDenied()
         {
@@ -42,6 +45,7 @@ namespace HCMS4.Controllers
         }
 
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
@@ -114,6 +118,7 @@ namespace HCMS4.Controllers
         }
 
         
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Register()
         {
@@ -122,6 +127,7 @@ namespace HCMS4.Controllers
         }
 
 
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)

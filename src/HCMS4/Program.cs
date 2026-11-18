@@ -1,6 +1,7 @@
 using HCMS4.Data;
 using HCMS4.Models;
 using HCMS4.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -48,6 +49,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddAuthorization(options =>
 {
+    // Every endpoint requires a signed-in user unless it is marked [AllowAnonymous].
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
     options.AddPolicy("DoctorOnly", policy => policy.RequireRole("Doctor"));
     options.AddPolicy("PatientOnly", policy => policy.RequireRole("Patient"));

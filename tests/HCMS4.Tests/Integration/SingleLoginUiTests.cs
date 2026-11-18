@@ -18,7 +18,8 @@ namespace HCMS4.Tests.Integration
         [InlineData("/Identity/Account/Manage")]
         public async Task ScaffoldedIdentityPages_AreNotServed(string url)
         {
-            var client = _factory.CreateClientAs(role: null);
+            // Signed in, so the fallback policy does not turn the missing page into a login redirect.
+            var client = _factory.CreateClientAs("Patient");
 
             var response = await client.GetAsync(url);
 
