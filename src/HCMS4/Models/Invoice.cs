@@ -47,6 +47,10 @@ namespace HCMS4.Models
         [DataType(DataType.Currency)]
         public decimal? AmountPaid { get; set; }
 
+        /// <summary>Method of the most recent payment; null for invoices paid before it was recorded.</summary>
+        [Display(Name = "Payment Method")]
+        public PaymentMethod? PaymentMethod { get; set; }
+
         [StringLength(500)]
         public string? Notes { get; set; }
 
@@ -67,6 +71,24 @@ namespace HCMS4.Models
         public DateTime? DispensedAt { get; set; }
     }
 
+
+    public enum PaymentMethod
+    {
+        [Display(Name = "Credit Card")]
+        CreditCard,
+
+        [Display(Name = "Debit Card")]
+        DebitCard,
+
+        [Display(Name = "Bank Transfer")]
+        BankTransfer,
+
+        [Display(Name = "Cash")]
+        Cash,
+
+        [Display(Name = "Other")]
+        Other
+    }
 
     public enum PaymentStatus
     {

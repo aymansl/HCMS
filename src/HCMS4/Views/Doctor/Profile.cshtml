@@ -109,6 +109,10 @@
                                                         else
                                                         {
                                                             <span class="badge bg-danger">Rejected</span>
+                                                            @if (!string.IsNullOrWhiteSpace(request.RejectionReason))
+                                                            {
+                                                                <div class="small text-muted mt-1">@request.RejectionReason</div>
+                                                            }
                                                         }
                                                     </td>
                                                     <td>@request.CreatedAt?.ToString("yyyy-MM-dd")</td>

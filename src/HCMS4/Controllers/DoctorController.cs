@@ -1010,6 +1010,7 @@ namespace HCMS4.Controllers
                         EndDate = lr.EndDate,
                         LeaveType = lr.LeaveType,
                         Reason = lr.Reason,
+                        RejectionReason = lr.RejectionReason,
                         Status = lr.Status,
                         CreatedAt = lr.CreatedAt
                     }).ToList(),

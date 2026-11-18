@@ -125,7 +125,13 @@ namespace HCMS4.Services
                     return ServiceResult.Fail("This request has already been processed.");
                 }
 
+                if (string.IsNullOrWhiteSpace(reason))
+                {
+                    return ServiceResult.Fail("Please provide a rejection reason.");
+                }
+
                 request.Status = LeaveStatus.Rejected;
+                request.RejectionReason = reason.Trim(); // previously discarded (issue #17)
 
                 await _context.SaveChangesAsync();
 

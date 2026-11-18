@@ -26,6 +26,8 @@ namespace HCMS4.ViewModels
         [Display(Name = "Reason")]
         public string? Reason { get; set; }
 
+        public string? RejectionReason { get; set; }
+
         public LeaveStatus Status { get; set; } = LeaveStatus.Pending;
         public DateTime? CreatedAt { get; set; }
     }

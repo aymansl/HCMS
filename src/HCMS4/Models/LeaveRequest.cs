@@ -36,6 +36,10 @@ namespace HCMS4.Models
         [Display(Name = "Reason")]
         public string? Reason { get; set; }
 
+        [StringLength(500)]
+        [Display(Name = "Rejection Reason")]
+        public string? RejectionReason { get; set; }
+
         [Display(Name = "Status")]
         public LeaveStatus Status { get; set; } = LeaveStatus.Pending;
 

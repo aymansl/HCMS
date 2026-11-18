@@ -53,6 +53,12 @@
                                             <strong>Payment Date:</strong> @Model.PaymentDate.Value.ToString("yyyy-MM-dd")
                                         </span>
                                     }
+                                    @if (Model.PaymentMethod.HasValue)
+                                    {
+                                        <span class="ms-3">
+                                            <strong>Payment Method:</strong> @Html.DisplayFor(m => m.PaymentMethod)
+                                        </span>
+                                    }
                                 </div>
                             </div>
                         </div>

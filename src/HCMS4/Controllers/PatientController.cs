@@ -469,7 +469,7 @@ namespace HCMS4.Controllers
         [HttpPost]
         [Authorize(Roles = "Patient")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ProcessPayment(int invoiceId, decimal amount, string paymentMethod, string? notes)
+        public async Task<IActionResult> ProcessPayment(int invoiceId, decimal amount, PaymentMethod paymentMethod, string? notes)
         {
             try
             {

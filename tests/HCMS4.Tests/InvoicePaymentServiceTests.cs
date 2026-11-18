@@ -31,7 +31,7 @@ namespace HCMS4.Tests
             using var context = TestDbContextFactory.CreateInMemoryContext();
             var (service, invoice, patientId) = await SetupAsync(context);
 
-            var result = await service.PayAsync(invoice.Id, patientId, 100m, "Cash", null);
+            var result = await service.PayAsync(invoice.Id, patientId, 100m, PaymentMethod.Cash, null);
 
             Assert.True(result.Success);
             Assert.Equal(PaymentStatus.Paid, invoice.PaymentStatus);
@@ -44,9 +44,9 @@ namespace HCMS4.Tests
             using var context = TestDbContextFactory.CreateInMemoryContext();
             var (service, invoice, patientId) = await SetupAsync(context);
 
-            await service.PayAsync(invoice.Id, patientId, 40m, "Cash", null);
+            await service.PayAsync(invoice.Id, patientId, 40m, PaymentMethod.Cash, null);
             Assert.Equal(PaymentStatus.Pending, invoice.PaymentStatus);
-            var second = await service.PayAsync(invoice.Id, patientId, 60m, "Cash", null);
+            var second = await service.PayAsync(invoice.Id, patientId, 60m, PaymentMethod.Cash, null);
 
             Assert.True(second.Success);
             Assert.Equal(100m, invoice.AmountPaid);
@@ -59,7 +59,7 @@ namespace HCMS4.Tests
             using var context = TestDbContextFactory.CreateInMemoryContext();
             var (service, invoice, patientId) = await SetupAsync(context, paid: 70m);
 
-            var result = await service.PayAsync(invoice.Id, patientId, 50m, "Cash", null);
+            var result = await service.PayAsync(invoice.Id, patientId, 50m, PaymentMethod.Cash, null);
 
             Assert.False(result.Success);
             Assert.Equal(70m, invoice.AmountPaid);
@@ -71,7 +71,7 @@ namespace HCMS4.Tests
             using var context = TestDbContextFactory.CreateInMemoryContext();
             var (service, invoice, patientId) = await SetupAsync(context, paid: 100m);
 
-            var result = await service.PayAsync(invoice.Id, patientId, 100m, "Cash", null);
+            var result = await service.PayAsync(invoice.Id, patientId, 100m, PaymentMethod.Cash, null);
 
             Assert.False(result.Success);
             Assert.Equal(100m, invoice.AmountPaid);
@@ -85,7 +85,7 @@ namespace HCMS4.Tests
             using var context = TestDbContextFactory.CreateInMemoryContext();
             var (service, invoice, patientId) = await SetupAsync(context);
 
-            Assert.False((await service.PayAsync(invoice.Id, patientId, amount, "Cash", null)).Success);
+            Assert.False((await service.PayAsync(invoice.Id, patientId, amount, PaymentMethod.Cash, null)).Success);
         }
 
         [Fact]
@@ -95,7 +95,19 @@ namespace HCMS4.Tests
             var (service, invoice, _) = await SetupAsync(context);
             var (_, other) = await TestDbContextFactory.CreateTestPatientAsync(context);
 
-            Assert.False((await service.PayAsync(invoice.Id, other.Id, 10m, "Cash", null)).Success);
+            Assert.False((await service.PayAsync(invoice.Id, other.Id, 10m, PaymentMethod.Cash, null)).Success);
+        }
+
+        // Regression test for issue #31: the payment method was only kept inside the free-text notes.
+        [Fact]
+        public async Task PayAsync_StoresPaymentMethod_EvenWithoutNotes()
+        {
+            using var context = TestDbContextFactory.CreateInMemoryContext();
+            var (service, invoice, patientId) = await SetupAsync(context);
+
+            await service.PayAsync(invoice.Id, patientId, 30m, PaymentMethod.BankTransfer, notes: null);
+
+            Assert.Equal(PaymentMethod.BankTransfer, invoice.PaymentMethod);
         }
     }
 }

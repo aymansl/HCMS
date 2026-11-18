@@ -8,7 +8,7 @@ namespace HCMS4.Services
     public interface IInvoicePaymentService
     {
         /// <summary>Records a (partial) payment by the invoice's own patient; never more than the remaining balance.</summary>
-        Task<ServiceResult> PayAsync(int invoiceId, int patientId, decimal amount, string paymentMethod, string? notes);
+        Task<ServiceResult> PayAsync(int invoiceId, int patientId, decimal amount, PaymentMethod paymentMethod, string? notes);
     }
 
     public class InvoicePaymentService : IInvoicePaymentService
@@ -22,7 +22,7 @@ namespace HCMS4.Services
             _logger = logger;
         }
 
-        public async Task<ServiceResult> PayAsync(int invoiceId, int patientId, decimal amount, string paymentMethod, string? notes)
+        public async Task<ServiceResult> PayAsync(int invoiceId, int patientId, decimal amount, PaymentMethod paymentMethod, string? notes)
         {
             var invoice = await _context.Invoices
                 .FirstOrDefaultAsync(i => i.Id == invoiceId && i.PatientId == patientId);
@@ -49,6 +49,7 @@ namespace HCMS4.Services
             var now = DateTime.Now;
             invoice.AmountPaid = paid + amount;
             invoice.PaymentDate = now;
+            invoice.PaymentMethod = paymentMethod; // persisted in its own column (issue #31)
             invoice.UpdatedAt = now;
             invoice.PaymentStatus = invoice.AmountPaid >= invoice.TotalAmount ? PaymentStatus.Paid : PaymentStatus.Pending;
 
