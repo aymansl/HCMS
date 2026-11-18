@@ -170,12 +170,5 @@ namespace HCMS4.Services
                 return ServiceResult.Fail($"An error occurred: {ex.Message}");
             }
         }
-
-        public async Task<ServiceResult> ProcessPrescriptionAsync(int prescriptionId, string pharmacistUserId)
-        {
-            // ProcessPrescription is essentially the same as MarkPrescriptionCompletedAsync
-            // but we keep it separate for potential future differentiation
-            return await MarkPrescriptionCompletedAsync(prescriptionId, pharmacistUserId);
-        }
     }
 }
