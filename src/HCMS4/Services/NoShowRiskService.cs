@@ -118,9 +118,9 @@ namespace HCMS4.Services
         {
             // Without a key the service would reject the call; after one failure, skip the remaining
             // appointments so a slow or stopped service cannot hold the page (graceful degradation).
+            // IsServiceAvailable stays true: the local estimate is still shown ("Rule-Based Mode").
             if (string.IsNullOrWhiteSpace(_apiKey) || _apiFailedInThisRequest)
             {
-                _serviceAvailable = false;
                 _lastErrorMessage ??= string.IsNullOrWhiteSpace(_apiKey)
                     ? "AI service API key is not configured"
                     : "AI Prediction service is unavailable";
@@ -177,7 +177,6 @@ namespace HCMS4.Services
             }
 
             _apiFailedInThisRequest = true;
-            _serviceAvailable = false;
             _lastErrorMessage ??= "AI Prediction service is unavailable";
             return null;
         }

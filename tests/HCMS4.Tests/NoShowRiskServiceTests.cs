@@ -98,7 +98,7 @@ namespace HCMS4.Tests
             Assert.True(scores.ContainsKey(ids[0]));
             Assert.InRange(scores[ids[0]], 0.0, 1.0);
             Assert.False(service.IsUsingAI);
-            Assert.False(service.IsServiceAvailable);
+            Assert.True(service.IsServiceAvailable); // local estimate is still shown
         }
 
         [Fact]
@@ -128,7 +128,7 @@ namespace HCMS4.Tests
 
             Assert.Equal(2, scores.Count);
             Assert.Empty(handler.Requests);
-            Assert.False(service.IsServiceAvailable);
+            Assert.True(service.IsServiceAvailable); // local estimate is still shown
         }
     }
 }
