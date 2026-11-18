@@ -710,11 +710,11 @@ namespace HCMS4.Controllers
         }
 
         [HttpGet]
-        public IActionResult CreateClinicalNote(int patientId)
+        public async Task<IActionResult> CreateClinicalNote(int patientId)
         {
             try
             {
-                var doctorId = GetCurrentDoctorIdAsync().Result;
+                var doctorId = await GetCurrentDoctorIdAsync();
                 if (!doctorId.HasValue)
                     return RedirectToAction("Login", "Account");
 
