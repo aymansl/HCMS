@@ -308,5 +308,15 @@ namespace HCMS4.Services
 
             return !await query.AnyAsync();
         }
+
+        public async Task<decimal> GetConsultationFeeAsync(int doctorId)
+        {
+            var fee = await _context.Doctors
+                .AsNoTracking()
+                .Where(d => d.Id == doctorId)
+                .Select(d => d.Specialization != null ? (decimal?)d.Specialization.ConsultationFee : null)
+                .FirstOrDefaultAsync();
+            return fee ?? 0;
+        }
     }
 }

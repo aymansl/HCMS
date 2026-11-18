@@ -18,5 +18,8 @@ namespace HCMS4.Services
         Task<ServiceResult> CancelAsync(int id, string reason);
         Task UpdatePastScheduledToCompletedAsync();
         Task<bool> IsTimeSlotAvailableAsync(int doctorId, DateTime dateTime, int? excludeAppointmentId = null);
+
+        /// <summary>Consultation fee of the doctor's specialization; 0 when the doctor or specialization is unknown.</summary>
+        Task<decimal> GetConsultationFeeAsync(int doctorId);
     }
 }

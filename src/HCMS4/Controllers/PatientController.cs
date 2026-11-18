@@ -312,11 +312,7 @@ namespace HCMS4.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDoctorConsultationFee(int doctorId)
         {
-            var doctor = await _context.Doctors
-                .Include(d => d.Specialization)
-                .FirstOrDefaultAsync(d => d.Id == doctorId);
-            var fee = doctor?.Specialization?.ConsultationFee ?? 0;
-            return Ok(fee);
+            return Ok(await _appointmentService.GetConsultationFeeAsync(doctorId));
         }
 
         [Authorize(Roles = "Patient")]
