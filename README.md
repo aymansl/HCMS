@@ -10,7 +10,7 @@ An ASP.NET Core MVC system for small and medium health centers, with a separate 
 
 | Tool | Version |
 |---|---|
-| .NET SDK | 10.0.x (the web app still targets `net6.0`, so the .NET 6 runtime is also required until the upgrade) |
+| .NET SDK | 10.0.x (latest patch recommended) |
 | SQL Server | SQL Server Express (or any SQL Server instance) |
 | Visual Studio | 2022 17.x or later (optional) |
 | Python | 3.11 with `pipenv` (only for the AI service) |
