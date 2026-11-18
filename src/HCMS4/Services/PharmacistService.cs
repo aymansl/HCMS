@@ -104,8 +104,8 @@ namespace HCMS4.Services
 
                 // Batch load all drugs for this prescription
                 var drugIds = prescription.PrescriptionItems
-                    .Where(i => i.DrugId.HasValue)
-                    .Select(i => i.DrugId!.Value)
+                    .Where(i => i.DrugId > 0)
+                    .Select(i => i.DrugId)
                     .Distinct()
                     .ToList();
                 var drugs = await _context.Drugs
@@ -116,7 +116,7 @@ namespace HCMS4.Services
                 var insufficientStock = new List<string>();
                 foreach (var item in prescription.PrescriptionItems)
                 {
-                    if (!item.DrugId.HasValue || !drugs.TryGetValue(item.DrugId.Value, out var drug))
+                    if (item.DrugId <= 0 || !drugs.TryGetValue(item.DrugId, out var drug))
                     {
                         insufficientStock.Add($"Item #{item.Id}: Drug not found");
                         continue;
@@ -138,7 +138,7 @@ namespace HCMS4.Services
                 // Deduct quantities from inventory
                 foreach (var item in prescription.PrescriptionItems)
                 {
-                    if (item.DrugId.HasValue && drugs.TryGetValue(item.DrugId.Value, out var drug))
+                    if (item.DrugId > 0 && drugs.TryGetValue(item.DrugId, out var drug))
                     {
                         drug.Quantity -= item.Quantity;
                         drug.UpdatedAt = DateTime.UtcNow;

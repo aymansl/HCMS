@@ -83,7 +83,7 @@ namespace HCMS4.Services
         public async Task<ServiceResult> CreateAsync(Prescription prescription, List<PrescriptionItem> items)
         {
             // Batch load all drugs upfront to avoid N+1 queries
-            var drugIds = items.Select(i => i.DrugId).Where(id => id.HasValue).Select(id => id.Value).Distinct().ToList();
+            var drugIds = items.Select(i => i.DrugId).Where(id => id > 0).Distinct().ToList();
             var drugs = await _context.Drugs
                 .Where(d => drugIds.Contains(d.Id))
                 .ToDictionaryAsync(d => d.Id);
@@ -93,15 +93,15 @@ namespace HCMS4.Services
 
             foreach (var item in items)
             {
-                if (!item.DrugId.HasValue)
+                if (item.DrugId <= 0)
                 {
                     errors.Add($"Item '{item.DrugName}' has no drug selected.");
                     continue;
                 }
 
-                if (!drugs.TryGetValue(item.DrugId.Value, out var drug))
+                if (!drugs.TryGetValue(item.DrugId, out var drug))
                 {
-                    errors.Add($"Drug ID {item.DrugId.Value} not found.");
+                    errors.Add($"Drug ID {item.DrugId} not found.");
                     continue;
                 }
 
@@ -126,7 +126,7 @@ namespace HCMS4.Services
             {
                 // Calculate medication total using pre-loaded drugs
                 prescription.MedicationTotal = items.Sum(i =>
-                    i.DrugId.HasValue && drugs.TryGetValue(i.DrugId.Value, out var d)
+                    i.DrugId > 0 && drugs.TryGetValue(i.DrugId, out var d)
                         ? i.Quantity * d.Price
                         : 0);
                 prescription.Status = PrescriptionStatus.Pending;
@@ -142,7 +142,7 @@ namespace HCMS4.Services
                     _context.PrescriptionItems.Add(item);
 
                     // Use pre-loaded drug from dictionary
-                    if (item.DrugId.HasValue && drugs.TryGetValue(item.DrugId.Value, out var drug))
+                    if (item.DrugId > 0 && drugs.TryGetValue(item.DrugId, out var drug))
                     {
                         drug.Quantity -= item.Quantity;
                         drug.UpdatedAt = now;
@@ -226,7 +226,7 @@ namespace HCMS4.Services
                 using var transaction = await _context.Database.BeginTransactionAsync();
 
                 // Batch load all drugs for stock restoration
-                var drugIds = prescription.PrescriptionItems.Select(i => i.DrugId).Where(id => id.HasValue).Select(id => id.Value).Distinct().ToList();
+                var drugIds = prescription.PrescriptionItems.Select(i => i.DrugId).Where(id => id > 0).Distinct().ToList();
                 var drugs = await _context.Drugs
                     .Where(d => drugIds.Contains(d.Id))
                     .ToDictionaryAsync(d => d.Id);
@@ -234,7 +234,7 @@ namespace HCMS4.Services
                 // Restore stock
                 foreach (var item in prescription.PrescriptionItems)
                 {
-                    if (item.DrugId.HasValue && drugs.TryGetValue(item.DrugId.Value, out var drug))
+                    if (item.DrugId > 0 && drugs.TryGetValue(item.DrugId, out var drug))
                     {
                         drug.Quantity += item.Quantity;
                         drug.UpdatedAt = DateTime.UtcNow;

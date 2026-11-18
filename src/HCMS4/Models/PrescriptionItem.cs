@@ -16,7 +16,7 @@ namespace HCMS4.Models
         [Required(ErrorMessage = "Drug is required")]
         [ForeignKey("Drug")]
         [Display(Name = "Drug")]
-        public int? DrugId { get; set; }
+        public int DrugId { get; set; }
 
         [Required(ErrorMessage = "Drug name is required")]
         [StringLength(100, ErrorMessage = "Drug name cannot exceed 100 characters")]
