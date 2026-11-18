@@ -402,7 +402,14 @@ namespace HCMS4.Controllers
                 }
             }
 
-            return View(model);
+            // The form is part of the Profile page (there is no ChangePassword view), so go back there with the errors.
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .Where(m => !string.IsNullOrWhiteSpace(m))
+                .Distinct();
+            TempData["ErrorMessage"] = string.Join(" ", errors);
+            return RedirectToAction("Profile");
         }
 
 
