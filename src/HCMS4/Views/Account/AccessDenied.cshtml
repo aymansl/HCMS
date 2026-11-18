@@ -1,0 +1,19 @@
+@{
+    ViewData["Title"] = "غير مصرح بالوصول";
+}
+
+<div class="container mt-5" dir="rtl" lang="ar">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger text-end">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0"><i class="bi bi-shield-lock ms-2"></i>غير مصرح بالوصول</h3>
+                </div>
+                <div class="card-body">
+                    <p class="mb-4">ليس لديك صلاحية لفتح هذه الصفحة. إذا كنت تعتقد أن هذا خطأ، تواصل مع مدير النظام.</p>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-primary">العودة إلى الصفحة الرئيسية</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

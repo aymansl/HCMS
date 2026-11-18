@@ -34,6 +34,13 @@ namespace HCMS4.Controllers
             return View();
         }
 
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            Response.StatusCode = StatusCodes.Status403Forbidden;
+            return View();
+        }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
