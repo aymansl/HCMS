@@ -23,33 +23,51 @@ namespace HCMS4.Services
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                try
-                {
-                    using var scope = _serviceProvider.CreateScope();
-                    var reportService = scope.ServiceProvider.GetRequiredService<IDailyReportService>();
-
-                    var yesterday = DateTime.Today.AddDays(-1);
-                    var result = await reportService.GenerateDailyReportAsync(yesterday);
-
-                    if (result)
-                    {
-                        _logger.LogInformation("Auto-generated daily report for {Date}", yesterday);
-                    }
-                    else
-                    {
-                        _logger.LogWarning("Failed to generate daily report for {Date}", yesterday);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error auto-generating daily report");
-                }
+                await RunDailyTasksAsync();
 
                 // Wait 24 hours before next execution
                 await Task.Delay(TimeSpan.FromDays(1), stoppingToken);
 
                 // Wait until midnight again
                 await WaitForMidnight(stoppingToken);
+            }
+        }
+
+        /// <summary>The nightly work: close past appointments and store yesterday's pharmacy report.</summary>
+        public async Task RunDailyTasksAsync()
+        {
+            using var scope = _serviceProvider.CreateScope();
+
+            try
+            {
+                // Past appointments no longer wait for an admin to open the appointments page (issue #15).
+                var appointmentService = scope.ServiceProvider.GetRequiredService<IAppointmentService>();
+                await appointmentService.UpdatePastScheduledToCompletedAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error completing past appointments");
+            }
+
+            try
+            {
+                var reportService = scope.ServiceProvider.GetRequiredService<IDailyReportService>();
+
+                var yesterday = DateTime.Today.AddDays(-1);
+                var result = await reportService.GenerateDailyReportAsync(yesterday);
+
+                if (result)
+                {
+                    _logger.LogInformation("Auto-generated daily report for {Date}", yesterday);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to generate daily report for {Date}", yesterday);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error auto-generating daily report");
             }
         }
 
