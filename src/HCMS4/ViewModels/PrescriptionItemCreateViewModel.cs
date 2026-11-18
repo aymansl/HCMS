@@ -33,7 +33,7 @@ namespace HCMS4.ViewModels
 
         [StringLength(500, ErrorMessage = "Instructions cannot exceed 500 characters")]
         [Display(Name = "Instructions")]
-        public string Instructions { get; set; } = string.Empty;
+        public string? Instructions { get; set; } // optional on the form
 
         [Display(Name = "Price")]
         public decimal Price { get; set; }

@@ -922,7 +922,7 @@ namespace HCMS4.Controllers
                             Duration = item.Duration,
                             Frequency = item.Frequency,
                             Quantity = item.Quantity,
-                            Instructions = item.Instructions
+                            Instructions = item.Instructions ?? string.Empty
                         };
                     }).ToList();
 
