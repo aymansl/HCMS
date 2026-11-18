@@ -1,3 +1,5 @@
+import hmac
+import os
 import pickle
 
 from flask import Flask
@@ -103,6 +105,18 @@ with open(model_file, 'rb') as f_in:
 
 app = Flask('noshow')
 
+# Every request must carry the shared key in the X-API-Key header.
+API_KEY = os.environ.get('HCMS_AI_API_KEY', '')
+if not API_KEY:
+    raise SystemExit('HCMS_AI_API_KEY environment variable is required to start the AI service.')
+
+
+@app.before_request
+def require_api_key():
+    provided = request.headers.get('X-API-Key', '')
+    if not hmac.compare_digest(provided.encode(), API_KEY.encode()):
+        return jsonify({'error': 'invalid or missing API key'}), 401
+
 @app.route('/predict', methods=['POST'])
 def predict():
     test_appointment = request.get_json()
@@ -122,4 +136,5 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=9696)
+    # Local development only: debug is off and the service listens on the loopback interface.
+    app.run(debug=False, host='127.0.0.1', port=9696)

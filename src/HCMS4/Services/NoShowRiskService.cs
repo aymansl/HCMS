@@ -23,6 +23,8 @@ namespace HCMS4.Services
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<NoShowRiskService> _logger;
         private readonly string _apiBaseUrl;
+        private readonly string? _apiKey;
+        private bool _apiFailedInThisRequest;
         private bool _serviceAvailable = true;
         private bool _isUsingAI = false;
         private string? _lastErrorMessage;
@@ -40,7 +42,8 @@ namespace HCMS4.Services
             _context = context;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
-            _apiBaseUrl = configuration["NoShowAPI:BaseUrl"] ?? "http://localhost:9696";
+            _apiBaseUrl = configuration["AiService:BaseUrl"] ?? "http://localhost:9696";
+            _apiKey = configuration["AiService:ApiKey"];
         }
 
         public async Task<Dictionary<int, double>> CalculateRiskScoresAsync(IEnumerable<int> appointmentIds)
@@ -113,6 +116,17 @@ namespace HCMS4.Services
 
         private async Task<double?> GetPredictionFromAPIAsync(Appointment appointment)
         {
+            // Without a key the service would reject the call; after one failure, skip the remaining
+            // appointments so a slow or stopped service cannot hold the page (graceful degradation).
+            if (string.IsNullOrWhiteSpace(_apiKey) || _apiFailedInThisRequest)
+            {
+                _serviceAvailable = false;
+                _lastErrorMessage ??= string.IsNullOrWhiteSpace(_apiKey)
+                    ? "AI service API key is not configured"
+                    : "AI Prediction service is unavailable";
+                return null;
+            }
+
             try
             {
                 var client = _httpClientFactory.CreateClient("NoShowAPI");
@@ -135,7 +149,12 @@ namespace HCMS4.Services
                     SMSReceived = false
                 };
 
-                var response = await client.PostAsJsonAsync($"{_apiBaseUrl}/predict", request);
+                using var message = new HttpRequestMessage(HttpMethod.Post, $"{_apiBaseUrl}/predict")
+                {
+                    Content = JsonContent.Create(request)
+                };
+                message.Headers.Add("X-API-Key", _apiKey);
+                var response = await client.SendAsync(message);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -153,9 +172,13 @@ namespace HCMS4.Services
             }
             catch (Exception ex)
             {
+                // Includes timeouts (TaskCanceledException) and connection errors.
                 _logger.LogWarning(ex, "Failed to get prediction from API for appointment {Id}", appointment.Id);
             }
 
+            _apiFailedInThisRequest = true;
+            _serviceAvailable = false;
+            _lastErrorMessage ??= "AI Prediction service is unavailable";
             return null;
         }
 

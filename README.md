@@ -35,13 +35,14 @@ Secrets are never stored in tracked files. In development they live in .NET **Us
 # Database connection (replace the server and database names)
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Data Source=.\SQLEXPRESS;Initial Catalog=HCMS;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" --project src/HCMS4
 
-# Initial admin account (created on first start)
+# Initial admin account (required: the app refuses to start without Email and Password).
+# If the admin already exists, use its email; its password is not changed.
 dotnet user-secrets set "AdminSettings:Email" "<admin email>" --project src/HCMS4
 dotnet user-secrets set "AdminSettings:UserName" "<admin user name>" --project src/HCMS4
 dotnet user-secrets set "AdminSettings:Password" "<strong password>" --project src/HCMS4
 
-# AI service key (used once the AI service requires it)
-dotnet user-secrets set "NoShowAPI:ApiKey" "<api key>" --project src/HCMS4
+# AI service key (must equal HCMS_AI_API_KEY on the AI service; without it the app uses the local estimate)
+dotnet user-secrets set "AiService:ApiKey" "<api key>" --project src/HCMS4
 
 # Check which keys are set (prints values — do not share the output)
 dotnet user-secrets list --project src/HCMS4
@@ -70,15 +71,17 @@ Then open `https://localhost:7023`. In Visual Studio, open `HCMS4.sln` and run t
 ### 5. Run the AI service (optional)
 
 The web app keeps working without it and falls back to a local estimate.
+The service refuses to start without `HCMS_AI_API_KEY` and rejects requests without a matching `X-API-Key` header.
 
 ```powershell
 cd ai-service
 pipenv install
+$env:HCMS_AI_API_KEY = "<api key>"
 cd scripts
 pipenv run python predict.py
 ```
 
-The service listens on `http://localhost:9696` (`NoShowAPI:BaseUrl`).
+The service listens on `http://127.0.0.1:9696` (`AiService:BaseUrl`), with debug mode off.
 
 ## Tests
 

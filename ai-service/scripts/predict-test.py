@@ -1,8 +1,11 @@
+import os
+
 import requests
 import pandas as pd
 
 
 url = 'http://localhost:9696/predict'
+headers = {'X-API-Key': os.environ.get('HCMS_AI_API_KEY', '')}
 
 test_appointment = {
                     'PatientId': 377511518121127.0,
@@ -20,6 +23,6 @@ test_appointment = {
                     'SMS_received': True
                     }
 
-response = requests.post(url, json=test_appointment).json()
+response = requests.post(url, json=test_appointment, headers=headers).json()
 print(response)
 
