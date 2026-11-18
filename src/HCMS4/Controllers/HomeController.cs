@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using Microsoft.AspNetCore.Authorization;
 using HCMS4.Data;
 using HCMS4.Models;

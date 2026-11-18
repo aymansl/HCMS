@@ -1,4 +1,4 @@
-using HCMS4.Models.Common;
+using HCMS4.Shared.Common;
 // Models/PurchaseRequest.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;

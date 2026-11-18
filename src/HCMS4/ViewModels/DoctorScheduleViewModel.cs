@@ -1,4 +1,4 @@
-﻿using HCMS4.Models.Common;
+﻿using HCMS4.Shared.Common;
 using HCMS4.Models;
 
 namespace HCMS4.ViewModels

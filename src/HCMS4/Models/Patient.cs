@@ -1,7 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using HCMS4.Models.Common;
-
 namespace HCMS4.Models
 {
     public class Patient

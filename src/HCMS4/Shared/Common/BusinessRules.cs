@@ -1,4 +1,4 @@
-namespace HCMS4.Models.Common
+namespace HCMS4.Shared.Common
 {
     /// <summary>
     /// Centralized business rule constants to avoid magic numbers throughout the codebase.

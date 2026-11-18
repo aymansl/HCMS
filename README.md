@@ -86,7 +86,7 @@ The service listens on `http://127.0.0.1:9696` (`AiService:BaseUrl`), with debug
 ## Time zone
 
 All dates and times are stored and shown in **Damascus time (UTC+3)**. Code reads the time from
-`ClinicTime` / `IClinicClock` (`src/HCMS4/Models/Common/ClinicTime.cs`), never from `DateTime.Now` or `DateTime.UtcNow`,
+`ClinicTime` / `IClinicClock` (`src/HCMS4/Shared/Common/ClinicTime.cs`), never from `DateTime.Now` or `DateTime.UtcNow`,
 and SQL column defaults use the same zone.
 
 ## Tests

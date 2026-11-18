@@ -1,4 +1,4 @@
-namespace HCMS4.Models.Common
+namespace HCMS4.Shared.Common
 {
     public class PaginatedResult<T>
     {

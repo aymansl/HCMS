@@ -1,6 +1,6 @@
+using HCMS4.Shared.Common;
 using HCMS4.Data;
 using HCMS4.Models;
-using HCMS4.Models.Common;
 using HCMS4.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -263,7 +263,7 @@ namespace HCMS4.Controllers
         {
             try
             {
-                var pagination = new Models.Common.PaginationParams
+                var pagination = new PaginationParams
                 {
                     PageNumber = page,
                     PageSize = pageSize
@@ -372,7 +372,7 @@ namespace HCMS4.Controllers
             if (status != "all" && Enum.TryParse<AppointmentStatus>(status, out var statusEnum))
             {
                 var result = await _appointmentService.GetAllAsync(
-                    new Models.Common.PaginationParams { PageNumber = 1, PageSize = 100 }, status);
+                    new PaginationParams { PageNumber = 1, PageSize = 100 }, status);
                 filteredAppointments = result.Items;
             }
 

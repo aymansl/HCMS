@@ -1,8 +1,8 @@
+using HCMS4.Shared.Common;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using HCMS4.Models;
-using HCMS4.Models.Common;
 using HCMS4.Services;
 
 namespace HCMS4.Tests

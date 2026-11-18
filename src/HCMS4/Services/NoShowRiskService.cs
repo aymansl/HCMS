@@ -1,4 +1,4 @@
-using HCMS4.Models.Common;
+using HCMS4.Shared.Common;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using HCMS4.Data;

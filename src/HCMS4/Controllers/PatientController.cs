@@ -1,6 +1,6 @@
+using HCMS4.Shared.Common;
 using HCMS4.Data;
 using HCMS4.Models;
-using HCMS4.Models.Common;
 using HCMS4.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;

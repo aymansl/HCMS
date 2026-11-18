@@ -1,4 +1,4 @@
-namespace HCMS4.Models.Common
+namespace HCMS4.Shared.Common
 {
     /// <summary>
     /// The system's single source of "now". Every date and time is stored and shown in the clinic's time zone

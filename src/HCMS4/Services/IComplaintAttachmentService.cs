@@ -1,5 +1,4 @@
-using HCMS4.Models.Common;
-
+using HCMS4.Shared.Common;
 namespace HCMS4.Services
 {
     public interface IComplaintAttachmentService

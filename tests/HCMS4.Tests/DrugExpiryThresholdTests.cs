@@ -1,6 +1,5 @@
+using HCMS4.Shared.Common;
 using HCMS4.Models;
-using HCMS4.Models.Common;
-
 namespace HCMS4.Tests
 {
     // Regression tests for issue #23: Drug.ExpiryStatus used literals instead of the shared BusinessRules thresholds.
