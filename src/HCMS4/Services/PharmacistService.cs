@@ -16,6 +16,27 @@ namespace HCMS4.Services
             _logger = logger;
         }
 
+        public async Task<ServiceResult> HoldPrescriptionAsync(int prescriptionId)
+        {
+            var prescription = await _context.Prescriptions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == prescriptionId);
+
+            if (prescription == null)
+            {
+                return ServiceResult.Fail("Prescription not found.");
+            }
+
+            if (prescription.Status != PrescriptionStatus.Pending)
+            {
+                return ServiceResult.Fail("Only pending prescriptions can be put on hold.");
+            }
+
+            // Holding leaves the prescription pending, so it stays in the pharmacist's queue.
+            _logger.LogInformation("Prescription {PrescriptionId} put on hold", prescriptionId);
+            return ServiceResult.Ok("Prescription kept in the pending queue.");
+        }
+
         public async Task<Pharmacist> GetByIdAsync(int id)
         {
             return await _context.Pharmacists

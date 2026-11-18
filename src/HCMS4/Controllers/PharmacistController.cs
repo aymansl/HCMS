@@ -412,6 +412,8 @@ namespace HCMS4.Controllers
                         .ThenInclude(pat => pat.User)
                     .Include(p => p.Doctor)
                         .ThenInclude(doc => doc.User)
+                    .Include(p => p.Doctor)
+                        .ThenInclude(doc => doc.Specialization)
                     .Include(p => p.PrescriptionItems)
                         .ThenInclude(pi => pi.Drug)
                     .FirstOrDefaultAsync(p => p.Id == id);
@@ -438,6 +440,26 @@ namespace HCMS4.Controllers
                 TempData["ErrorMessage"] = "An error occurred while loading the prescription.";
                 return RedirectToAction(nameof(Prescriptions));
             }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> HoldPrescription(int id)
+        {
+            var result = await _pharmacistService.HoldPrescriptionAsync(id);
+            if (result.Success)
+            {
+                var user = await _userManager.GetUserAsync(User);
+                await _activityLogService.LogAsync(
+                    "PrescriptionHeld",
+                    nameof(Prescription),
+                    $"Prescription #{id} was put on hold.",
+                    id.ToString(),
+                    user?.Id,
+                    user?.UserName);
+            }
+
+            return Json(new { success = result.Success, message = result.Message });
         }
 
         [HttpPost]

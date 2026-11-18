@@ -111,7 +111,7 @@
                                         <div class="card-body py-2">
                                             <p class="mb-1"><strong>Dr. @(Model.Doctor?.User?.FullName ?? "N/A")</strong></p>
                                             <p class="mb-0 text-muted small">
-                                                <i class="bi bi-stethoscope"></i> @(Model.Doctor?.Specialization.Name ?? "General")
+                                                <i class="bi bi-stethoscope"></i> @(Model.Doctor?.Specialization?.Name ?? "General")
                                             </p>
                                         </div>
                                     </div>
@@ -166,10 +166,6 @@
                                                                 <div class="text-danger small mt-1">
                                                                     <i class="bi bi-exclamation-triangle"></i> Insufficient stock (Available: @stockAvailable)
                                                                 </div>
-                                                                <button type="button" class="btn btn-sm btn-outline-warning mt-1"
-                                                                        onclick="showAlternatives(@item.Drug?.Id, '@item.Drug?.Name')">
-                                                                    <i class="bi bi-arrow-repeat"></i> Suggest Alternative
-                                                                </button>
                                                             }
                                                         </td>
                                                         <td>@item.Dosage</td>
@@ -360,33 +356,6 @@
     </div>
 </div>
 
-<!-- Alternative Medications Modal -->
-<div class="modal fade" id="alternativesModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title">
-                    <i class="bi bi-arrow-repeat me-2"></i>Alternative Medications
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Original Medication:</strong> <span id="originalDrugName"></span></p>
-                <div id="alternativesList" class="mt-3">
-                    <div class="text-center py-3">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <script>
         // Calculate totals based on selected items
@@ -439,73 +408,6 @@
 
         // Initial calculation
         calculateTotals();
-
-        // Show alternatives function
-        async function showAlternatives(drugId, drugName) {
-            document.getElementById('originalDrugName').textContent = drugName;
-            const alternativesList = document.getElementById('alternativesList');
-            alternativesList.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div></div>';
-
-            const modal = new bootstrap.Modal(document.getElementById('alternativesModal'));
-            modal.show();
-
-            try {
-                const response = await fetch(`/Pharmacist/GetAlternatives?drugId=${drugId}`);
-                const data = await response.json();
-
-                if (data.success && data.alternatives && data.alternatives.length > 0) {
-                    let html = '<div class="list-group">';
-                    data.alternatives.forEach(alt => {
-                        const expiryBadge = alt.expiryStatus === 'Expired' ? 'danger' :
-                                           (alt.expiryStatus === 'Expiring Soon' ? 'warning' : 'success');
-                        html += `
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-0">${alt.name}</h6>
-                                        <small class="text-muted">${alt.supplier} | Stock: ${alt.stock} units</small>
-                                        <div>
-                                            <span class="badge bg-${expiryBadge} badge-sm mt-1">${alt.expiryStatus}</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-end">
-                                        <div class="fw-bold text-primary">${formatCurrency(alt.price)}</div>
-                                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="useAlternative(${alt.id}, '${alt.name}')">
-                                            <i class="bi bi-check"></i> Select
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-                    alternativesList.innerHTML = html;
-                } else {
-                    alternativesList.innerHTML = `
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i> No alternatives found. Please consult with the prescribing doctor.
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                alternativesList.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle"></i> Error loading alternatives. Please try again.
-                    </div>
-                `;
-            }
-        }
-
-        // Use alternative medication
-        function useAlternative(drugId, drugName) {
-            if (confirm(`Replace with ${drugName}? This will notify the prescribing doctor for approval.`)) {
-                // Close modal
-                bootstrap.Modal.getInstance(document.getElementById('alternativesModal')).hide();
-                alert(`Alternative selected. Doctor will be notified for approval of ${drugName}.`);
-                // Reload to show updated prescription
-                location.reload();
-            }
-        }
 
         // Hold prescription
         document.getElementById('holdButton')?.addEventListener('click', async function() {
