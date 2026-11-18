@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using HCMS4.Models.Common;
 
 namespace HCMS4.Models
 {
@@ -76,8 +77,8 @@ namespace HCMS4.Models
             {
                 var daysUntilExpiry = (ExpiryDate - DateTime.Now).Days;
                 if (daysUntilExpiry <= 0) return "Expired";
-                if (daysUntilExpiry <= 30) return "Expiring Soon";
-                if (daysUntilExpiry <= 60) return "Expiring Shortly";
+                if (daysUntilExpiry <= BusinessRules.DrugExpiryWarningDays) return "Expiring Soon";
+                if (daysUntilExpiry <= BusinessRules.DrugExpiryShortWarningDays) return "Expiring Shortly";
                 return "Valid";
             }
         }
