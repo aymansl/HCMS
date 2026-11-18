@@ -17,12 +17,4 @@ namespace HCMS4.ViewModels
         public Dictionary<int, double> AppointmentRiskScores { get; set; } = new();
         public string SelectedRiskLevel { get; set; } = "all";
     }
-
-    public class AppointmentRiskIndicator
-    {
-        public int AppointmentId { get; set; }
-        public double RiskScore { get; set; }
-        public string RiskLevel { get; set; } = "Low";
-        public string RiskColor { get; set; } = "green";
-    }
 }
