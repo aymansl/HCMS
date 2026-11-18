@@ -1098,7 +1098,7 @@ namespace HCMS4.Controllers
                 if (!doctorId.HasValue)
                     return RedirectToAction("Login", "Account");
 
-                return RedirectToAction("DailyVisitingPatientsReport", "Admin");
+                return RedirectToAction(nameof(DailyVisitingPatientsReport));
             }
             catch (Exception ex)
             {
@@ -1106,6 +1106,185 @@ namespace HCMS4.Controllers
                 TempData["ErrorMessage"] = "Error loading reports. Please try again.";
                 return RedirectToAction("Dashboard");
             }
+        }
+
+        public async Task<IActionResult> DailyVisitingPatientsReport(DateTime? date = null)
+        {
+            try
+            {
+                var reportDate = date ?? DateTime.Today;
+
+                if (reportDate > DateTime.Today)
+                {
+                    TempData["ErrorMessage"] = "Cannot display report for a future date.";
+                    return View(new DailyVisitingPatientsReportViewModel
+                    {
+                        ReportDate = reportDate,
+                        ErrorMessage = "Cannot display report for a future date."
+                    });
+                }
+
+                var appointments = await _context.Appointments
+                    .Include(a => a.Patient)
+                        .ThenInclude(p => p.User)
+                    .Include(a => a.Doctor)
+                    .Where(a => a.Status == AppointmentStatus.Completed &&
+                               a.AppointmentDateTime.Date == reportDate.Date)
+                    .OrderBy(a => a.AppointmentDateTime)
+                    .ToListAsync();
+
+                var prescriptions = await _context.Prescriptions
+                    .Where(p => p.AppointmentId.HasValue &&
+                               appointments.Select(a => a.Id).Contains(p.AppointmentId.Value))
+                    .Include(p => p.PrescriptionItems)
+                    .ToListAsync();
+
+                var viewModel = new DailyVisitingPatientsReportViewModel
+                {
+                    ReportDate = reportDate,
+                    TotalPatients = appointments.Count,
+                    Patients = appointments.Select(a =>
+                    {
+                        var prescription = prescriptions.FirstOrDefault(p => p.AppointmentId == a.Id);
+                        var hasPrescription = prescription != null;
+                        var diagnosis = GetDiagnosis(prescription);
+                        return new VisitingPatientItem
+                        {
+                            AppointmentId = a.Id,
+                            PatientName = a.Patient?.User?.FullName ?? "Unknown",
+                            PhoneNumber = a.Patient?.User?.PhoneNumber,
+                            AppointmentTime = a.AppointmentDateTime,
+                            VisitType = DetermineVisitType(a.PatientId, a.Id),
+                            Diagnosis = diagnosis,
+                            HasPrescription = hasPrescription
+                        };
+                    }).ToList()
+                };
+
+                if (!viewModel.Patients.Any())
+                {
+                    viewModel.ErrorMessage = "No visiting patients on the selected date.";
+                }
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading daily visiting patients report");
+                TempData["ErrorMessage"] = "Failed to load report data, please try again later.";
+                return View(new DailyVisitingPatientsReportViewModel { ErrorMessage = "Failed to load report data, please try again later." });
+            }
+        }
+
+        private string DetermineVisitType(int patientId, int currentAppointmentId)
+        {
+            var previousAppointments = _context.Appointments
+                .Count(a => a.PatientId == patientId &&
+                           a.Id != currentAppointmentId &&
+                           a.Status == AppointmentStatus.Completed);
+
+            return previousAppointments > 0 ? "Follow-up" : "Consultation";
+        }
+
+        private string? GetDiagnosis(Prescription? prescription)
+        {
+            if (prescription != null && prescription.PrescriptionItems.Any())
+            {
+                var drugName = prescription.PrescriptionItems.First().DrugName;
+                return drugName?.Length > 20
+                    ? drugName.Substring(0, 20) + "..."
+                    : drugName;
+            }
+
+            return null;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> RescheduleAppointment(int id)
+        {
+            var doctorId = await GetCurrentDoctorIdAsync();
+            var appointment = await _appointmentService.GetByIdWithDetailsAsync(id);
+
+            if (appointment == null || !doctorId.HasValue || appointment.DoctorId != doctorId.Value)
+            {
+                TempData["ErrorMessage"] = "You can only reschedule your own appointments.";
+                return RedirectToAction(nameof(ViewAppointments));
+            }
+
+            if (appointment.Status != AppointmentStatus.Scheduled)
+            {
+                TempData["ErrorMessage"] = "Only scheduled appointments can be rescheduled.";
+                return RedirectToAction(nameof(ViewAppointments));
+            }
+
+            var viewModel = new RescheduleAppointmentViewModel
+            {
+                AppointmentId = appointment.Id,
+                PatientName = appointment.Patient?.User?.FullName ?? string.Empty,
+                DoctorName = appointment.Doctor?.User?.FullName ?? string.Empty,
+                CurrentAppointmentDateTime = appointment.AppointmentDateTime,
+                NewAppointmentDateTime = appointment.AppointmentDateTime.AddDays(1)
+            };
+
+            return RescheduleView(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RescheduleAppointment(RescheduleAppointmentViewModel model)
+        {
+            var doctorId = await GetCurrentDoctorIdAsync();
+            var appointment = await _appointmentService.GetByIdWithDetailsAsync(model.AppointmentId);
+
+            if (appointment == null || !doctorId.HasValue || appointment.DoctorId != doctorId.Value)
+            {
+                TempData["ErrorMessage"] = "You can only reschedule your own appointments.";
+                return RedirectToAction(nameof(ViewAppointments));
+            }
+
+            var previousDateTime = appointment.AppointmentDateTime;
+            if (ModelState.IsValid)
+            {
+                var result = await _appointmentService.RescheduleAsync(model.AppointmentId, model.NewAppointmentDateTime);
+
+                if (result.Success)
+                {
+                    if (appointment.Patient != null)
+                    {
+                        await _notificationService.CreateForUserAsync(
+                            appointment.Patient.UserId,
+                            "Appointment rescheduled",
+                            $"Your appointment was rescheduled from {previousDateTime:yyyy-MM-dd HH:mm} to {model.NewAppointmentDateTime:yyyy-MM-dd HH:mm}.",
+                            NotificationType.AppointmentReminder,
+                            "/Patient/ViewAppointmentHistory",
+                            nameof(Appointment),
+                            appointment.Id);
+                    }
+
+                    var currentUser = await GetCurrentUserAsync();
+                    await _activityLogService.LogAsync(
+                        "AppointmentRescheduled",
+                        nameof(Appointment),
+                        $"Appointment #{appointment.Id} was rescheduled from {previousDateTime:yyyy-MM-dd HH:mm} to {model.NewAppointmentDateTime:yyyy-MM-dd HH:mm}.",
+                        appointment.Id.ToString(),
+                        currentUser?.Id,
+                        currentUser?.UserName);
+
+                    TempData["SuccessMessage"] = result.Message;
+                    return RedirectToAction(nameof(ViewAppointments));
+                }
+
+                ModelState.AddModelError("", result.Message);
+            }
+
+            return RescheduleView(model);
+        }
+
+        // The reschedule form is shared with the admin area; the back link points to the doctor's list.
+        private ViewResult RescheduleView(RescheduleAppointmentViewModel model)
+        {
+            ViewData["BackAction"] = nameof(ViewAppointments);
+            return View("~/Views/Admin/RescheduleAppointment.cshtml", model);
         }
     }
 }

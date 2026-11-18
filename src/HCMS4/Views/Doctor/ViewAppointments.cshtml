@@ -180,7 +180,7 @@
                                                 <div class="btn-group-uniform">
                                                     @if (appointment.Status == AppointmentStatus.Scheduled && riskScore > 0.7)
                                                     {
-                                                        <form method="post" asp-controller="Admin" asp-action="SendReminder" class="d-inline">
+                                                        <form method="post" asp-controller="Doctor" asp-action="SendReminder" class="d-inline">
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="id" value="@appointment.Id" />
                                                             <button type="submit" class="btn btn-gradient-warning btn-icon" title="Send Reminder">
@@ -188,7 +188,7 @@
                                                             </button>
                                                         </form>
                                                     }
-                                                    <a asp-controller="Admin" asp-action="RescheduleAppointment" asp-route-id="@appointment.Id"
+                                                    <a asp-controller="Doctor" asp-action="RescheduleAppointment" asp-route-id="@appointment.Id"
                                                        class="btn btn-gradient-secondary btn-icon" title="Reschedule">
                                                         <i class="bi bi-calendar-week"></i>
                                                     </a>
@@ -303,7 +303,7 @@
                                                 <div class="btn-group-uniform">
                                                     @if (riskScore > 0.7)
                                                     {
-                                                        <form method="post" asp-controller="Admin" asp-action="SendReminder" class="d-inline">
+                                                        <form method="post" asp-controller="Doctor" asp-action="SendReminder" class="d-inline">
                                                             @Html.AntiForgeryToken()
                                                             <input type="hidden" name="id" value="@appointment.Id" />
                                                             <button type="submit" class="btn btn-gradient-warning btn-icon" title="Send Reminder">
@@ -311,7 +311,7 @@
                                                             </button>
                                                         </form>
                                                     }
-                                                    <a asp-controller="Admin" asp-action="RescheduleAppointment" asp-route-id="@appointment.Id"
+                                                    <a asp-controller="Doctor" asp-action="RescheduleAppointment" asp-route-id="@appointment.Id"
                                                        class="btn btn-gradient-secondary btn-icon" title="Reschedule">
                                                         <i class="bi bi-calendar-week"></i>
                                                     </a>

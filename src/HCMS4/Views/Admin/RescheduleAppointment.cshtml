@@ -10,7 +10,7 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3">Reschedule Appointment</h1>
-                <a asp-action="ManageAppointments" class="btn btn-outline-secondary">
+                <a asp-action="@(ViewData["BackAction"] as string ?? "ManageAppointments")" class="btn btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Appointments
                 </a>
             </div>
@@ -68,7 +68,7 @@
                         </div>
             
                         <div class="d-flex justify-content-between mt-4 pt-3 border-top">
-                            <a asp-action="ManageAppointments" class="btn btn-outline-secondary">
+                            <a asp-action="@(ViewData["BackAction"] as string ?? "ManageAppointments")" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-1"></i>Cancel
                             </a>
                             <button type="submit" class="btn btn-primary">

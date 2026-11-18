@@ -12,7 +12,7 @@ using static HCMS4.ViewModels.GenerateInvoiceViewModel;
 
 namespace HCMS4.Controllers
 {
-    [Authorize(Roles = "Admin,Doctor")]
+    [Authorize(Roles = "Admin")]
     public class AdminController : BaseController
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -589,16 +589,6 @@ namespace HCMS4.Controllers
             if (appointment == null)
                 return NotFound();
 
-            if (User.IsInRole("Doctor"))
-            {
-                var doctorId = await GetCurrentDoctorIdAsync();
-                if (!doctorId.HasValue || appointment.DoctorId != doctorId.Value)
-                {
-                    TempData["ErrorMessage"] = "You can only reschedule your own appointments.";
-                    return RedirectToAction(nameof(ManageAppointments));
-                }
-            }
-
             if (appointment.Status != AppointmentStatus.Scheduled)
             {
                 TempData["ErrorMessage"] = "Only scheduled appointments can be rescheduled.";
@@ -629,16 +619,6 @@ namespace HCMS4.Controllers
             {
                 TempData["ErrorMessage"] = "Appointment not found.";
                 return RedirectToAction(nameof(ManageAppointments));
-            }
-
-            if (User.IsInRole("Doctor"))
-            {
-                var doctorId = await GetCurrentDoctorIdAsync();
-                if (!doctorId.HasValue || appointment.DoctorId != doctorId.Value)
-                {
-                    TempData["ErrorMessage"] = "You can only reschedule your own appointments.";
-                    return RedirectToAction(nameof(ManageAppointments));
-                }
             }
 
             var previousDateTime = appointment.AppointmentDateTime;
@@ -1781,98 +1761,6 @@ namespace HCMS4.Controllers
             }
 
             return RedirectToAction(nameof(PriceList));
-        }
-
-        [Authorize(Roles = "Doctor")]
-        public async Task<IActionResult> DailyVisitingPatientsReport(DateTime? date = null)
-        {
-            try
-            {
-                var reportDate = date ?? DateTime.Today;
-
-                if (reportDate > DateTime.Today)
-                {
-                    TempData["ErrorMessage"] = "Cannot display report for a future date.";
-                    return View(new DailyVisitingPatientsReportViewModel
-                    {
-                        ReportDate = reportDate,
-                        ErrorMessage = "Cannot display report for a future date."
-                    });
-                }
-
-                var appointments = await _context.Appointments
-                    .Include(a => a.Patient)
-                        .ThenInclude(p => p.User)
-                    .Include(a => a.Doctor)
-                    .Where(a => a.Status == AppointmentStatus.Completed &&
-                               a.AppointmentDateTime.Date == reportDate.Date)
-                    .OrderBy(a => a.AppointmentDateTime)
-                    .ToListAsync();
-
-                var prescriptions = await _context.Prescriptions
-                    .Where(p => p.AppointmentId.HasValue &&
-                               appointments.Select(a => a.Id).Contains(p.AppointmentId.Value))
-                    .Include(p => p.PrescriptionItems)
-                    .ToListAsync();
-
-                var viewModel = new DailyVisitingPatientsReportViewModel
-                {
-                    ReportDate = reportDate,
-                    TotalPatients = appointments.Count,
-                    Patients = appointments.Select(a =>
-                    {
-                        var prescription = prescriptions.FirstOrDefault(p => p.AppointmentId == a.Id);
-                        var hasPrescription = prescription != null;
-                        var diagnosis = GetDiagnosis(prescription);
-                        return new VisitingPatientItem
-                        {
-                            AppointmentId = a.Id,
-                            PatientName = a.Patient?.User?.FullName ?? "Unknown",
-                            PhoneNumber = a.Patient?.User?.PhoneNumber,
-                            AppointmentTime = a.AppointmentDateTime,
-                            VisitType = DetermineVisitType(a.PatientId, a.Id),
-                            Diagnosis = diagnosis,
-                            HasPrescription = hasPrescription
-                        };
-                    }).ToList()
-                };
-
-                if (!viewModel.Patients.Any())
-                {
-                    viewModel.ErrorMessage = "No visiting patients on the selected date.";
-                }
-
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading daily visiting patients report");
-                TempData["ErrorMessage"] = "Failed to load report data, please try again later.";
-                return View(new DailyVisitingPatientsReportViewModel { ErrorMessage = "Failed to load report data, please try again later." });
-            }
-        }
-
-        private string DetermineVisitType(int patientId, int currentAppointmentId)
-        {
-            var previousAppointments = _context.Appointments
-                .Count(a => a.PatientId == patientId &&
-                           a.Id != currentAppointmentId &&
-                           a.Status == AppointmentStatus.Completed);
-
-            return previousAppointments > 0 ? "Follow-up" : "Consultation";
-        }
-
-        private string? GetDiagnosis(Prescription? prescription)
-        {
-            if (prescription != null && prescription.PrescriptionItems.Any())
-            {
-                var drugName = prescription.PrescriptionItems.First().DrugName;
-                return drugName?.Length > 20
-                    ? drugName.Substring(0, 20) + "..."
-                    : drugName;
-            }
-
-            return null;
         }
 
         [HttpGet]
