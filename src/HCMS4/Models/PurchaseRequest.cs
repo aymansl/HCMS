@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 // Models/PurchaseRequest.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -26,7 +27,7 @@ namespace HCMS4.Models
         [DataType(DataType.DateTime)]
         [Display(Name = "Request Date")]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm}")]
-        public DateTime RequestDate { get; set; } = DateTime.UtcNow;
+        public DateTime RequestDate { get; set; } = ClinicTime.Now;
 
         [Required]
         [Display(Name = "Status")]
@@ -61,11 +62,11 @@ namespace HCMS4.Models
 
         [DataType(DataType.DateTime)]
         [Display(Name = "Created At")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = ClinicTime.Now;
 
         [DataType(DataType.DateTime)]
         [Display(Name = "Updated At")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = ClinicTime.Now;
 
         // Navigation properties
         public virtual Pharmacist Pharmacist { get; set; } = null!;

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HCMS4.Models.Common;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HCMS4.Models
@@ -22,7 +23,7 @@ namespace HCMS4.Models
         [DataType(DataType.DateTime)]
         [Display(Name = "Date")]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}")]
-        public DateTime Date { get; set; } = DateTime.UtcNow;
+        public DateTime Date { get; set; } = ClinicTime.Now;
 
         [Required(ErrorMessage = "Note type is required")]
         [StringLength(50, ErrorMessage = "Note type cannot exceed 50 characters")]

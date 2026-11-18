@@ -256,7 +256,7 @@
                                         <i class="bi bi-calendar text-muted me-2"></i>
                                         <span>DOB: @Model.Patient.DateOfBirth.Value.ToString("yyyy-MM-dd")</span>
                                         <span class="text-muted small ms-2">
-                                            (@(DateTime.Now.Year - Model.Patient.DateOfBirth.Value.Year) years)
+                                            (@(ClinicTime.Now.Year - Model.Patient.DateOfBirth.Value.Year) years)
                                         </span>
                                     </div>
                                 }

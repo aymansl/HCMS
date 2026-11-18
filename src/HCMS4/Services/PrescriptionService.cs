@@ -89,7 +89,7 @@ namespace HCMS4.Services
                 .ToDictionaryAsync(d => d.Id);
 
             var errors = new List<string>();
-            var now = DateTime.UtcNow;
+            var now = ClinicTime.Now;
 
             foreach (var item in items)
             {
@@ -185,7 +185,7 @@ namespace HCMS4.Services
                 }
 
                 prescription.Status = PrescriptionStatus.Completed;
-                prescription.UpdatedAt = DateTime.UtcNow;
+                prescription.UpdatedAt = ClinicTime.Now;
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Prescription {PrescriptionId} marked as completed for patient {PatientName}",
@@ -237,12 +237,12 @@ namespace HCMS4.Services
                     if (item.DrugId > 0 && drugs.TryGetValue(item.DrugId, out var drug))
                     {
                         drug.Quantity += item.Quantity;
-                        drug.UpdatedAt = DateTime.UtcNow;
+                        drug.UpdatedAt = ClinicTime.Now;
                     }
                 }
 
                 prescription.Status = PrescriptionStatus.Canceled;
-                prescription.UpdatedAt = DateTime.UtcNow;
+                prescription.UpdatedAt = ClinicTime.Now;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -260,7 +260,7 @@ namespace HCMS4.Services
         public async Task<bool> HasDrugStockAsync(int drugId, int quantity)
         {
             var drug = await _context.Drugs.AsNoTracking().FirstOrDefaultAsync(d => d.Id == drugId);
-            return drug != null && drug.Quantity >= quantity && drug.ExpiryDate > DateTime.UtcNow;
+            return drug != null && drug.Quantity >= quantity && drug.ExpiryDate > ClinicTime.Now;
         }
     }
 }

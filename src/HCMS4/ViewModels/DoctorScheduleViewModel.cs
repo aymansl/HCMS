@@ -1,4 +1,5 @@
-﻿using HCMS4.Models;
+﻿using HCMS4.Models.Common;
+using HCMS4.Models;
 
 namespace HCMS4.ViewModels
 {
@@ -28,6 +29,6 @@ namespace HCMS4.ViewModels
         public bool IsFilteredView => SelectedStatus != "all";
 
      
-        public DateTime Today => DateTime.Today;
+        public DateTime Today => ClinicTime.Today;
     }
 }

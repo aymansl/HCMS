@@ -98,7 +98,7 @@
                                 <div class="form-group">
                                     <label asp-for="ExpiryDate" class="form-label">Expiry Date <span class="text-danger">*</span></label>
                                     <input asp-for="ExpiryDate" type="date" class="form-control"
-                                           min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
+                                           min="@ClinicTime.Now.AddDays(1).ToString("yyyy-MM-dd")" />
                                     <span asp-validation-for="ExpiryDate" class="text-danger"></span>
                                 </div>
                             </div>
@@ -125,7 +125,7 @@
                                     <i class="bi bi-info-circle me-2"></i>
                                     <strong>Created:</strong> @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")<br />
                                     <i class="bi bi-arrow-repeat me-2"></i>
-                                    <strong>Last Updated:</strong> @DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+                                    <strong>Last Updated:</strong> @ClinicTime.Now.ToString("yyyy-MM-dd HH:mm")
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -133,7 +133,7 @@
                                     <i class="bi @GetExpiryIconClass(Model) me-2"></i>
                                     <strong>Expiry Status:</strong> @Model.ExpiryStatus<br />
                                     <i class="bi bi-calendar me-2"></i>
-                                    <strong>Days Until Expiry:</strong> @((Model.ExpiryDate - DateTime.Now).Days) days
+                                    <strong>Days Until Expiry:</strong> @((Model.ExpiryDate - ClinicTime.Now).Days) days
                                 </div>
                             </div>
                         </div>
@@ -147,7 +147,7 @@
                             </div>
                         }
 
-                        @if (Model.ExpiryDate <= DateTime.Now.AddDays(30))
+                        @if (Model.ExpiryDate <= ClinicTime.Now.AddDays(30))
                         {
                             <div class="alert alert-warning">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -155,7 +155,7 @@
                             </div>
                         }
 
-                        @if (Model.ExpiryDate <= DateTime.Now)
+                        @if (Model.ExpiryDate <= ClinicTime.Now)
                         {
                             <div class="alert alert-danger">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -373,7 +373,7 @@
 @functions {
     string GetExpiryAlertClass(HCMS4.Models.Drug drug)
     {
-        var daysUntilExpiry = (drug.ExpiryDate - DateTime.Now).Days;
+        var daysUntilExpiry = (drug.ExpiryDate - ClinicTime.Now).Days;
         if (daysUntilExpiry <= 0)
             return "alert-danger";
         if (daysUntilExpiry <= 30)
@@ -383,7 +383,7 @@
 
     string GetExpiryIconClass(HCMS4.Models.Drug drug)
     {
-        var daysUntilExpiry = (drug.ExpiryDate - DateTime.Now).Days;
+        var daysUntilExpiry = (drug.ExpiryDate - ClinicTime.Now).Days;
         if (daysUntilExpiry <= 0)
             return "bi-calendar-x";
         if (daysUntilExpiry <= 30)

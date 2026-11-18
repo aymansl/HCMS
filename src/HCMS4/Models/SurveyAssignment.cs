@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -19,7 +20,7 @@ namespace HCMS4.Models
         public SurveyAssignmentStatus Status { get; set; } = SurveyAssignmentStatus.Pending;
 
         [DataType(DataType.DateTime)]
-        public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
+        public DateTime AssignedAt { get; set; } = ClinicTime.Now;
 
         [DataType(DataType.DateTime)]
         public DateTime? CompletedAt { get; set; }

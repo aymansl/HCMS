@@ -68,7 +68,7 @@
                                  <label asp-for="DateOfBirth" class="form-label">Date of Birth *</label>
                                  <input asp-for="DateOfBirth" class="form-control" 
                                     type="date"
-                                    max="@DateTime.Now.ToString("yyyy-MM-dd")"
+                                    max="@ClinicTime.Now.ToString("yyyy-MM-dd")"
                                     placeholder="Select your date of birth" 
                                     autocomplete="bday" />
                                  <span asp-validation-for="DateOfBirth" class="text-danger"></span>

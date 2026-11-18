@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -39,7 +40,7 @@ namespace HCMS4.Models
         [Required(ErrorMessage = "Request date is required")]
         [DataType(DataType.DateTime)]
         [Display(Name = "Request Date")]
-        public DateTime RequestDate { get; set; } = DateTime.UtcNow;
+        public DateTime RequestDate { get; set; } = ClinicTime.Now;
 
         [Display(Name = "Status")]
         public ReviewRequestStatus Status { get; set; } = ReviewRequestStatus.Pending;

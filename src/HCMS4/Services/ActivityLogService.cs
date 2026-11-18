@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using HCMS4.Data;
 using HCMS4.Models;
 
@@ -29,7 +30,7 @@ namespace HCMS4.Services
                 Description = description,
                 UserId = userId,
                 UserName = userName,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = ClinicTime.Now
             });
 
             await _context.SaveChangesAsync();

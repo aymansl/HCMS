@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using HCMS4.Data;
@@ -128,7 +129,7 @@ namespace HCMS4.Services
                     PatientId = appointment.PatientId,
                     AppointmentID = appointment.Id,
                     Gender = "m",
-                    ScheduledDay = (appointment.CreatedAt ?? DateTime.UtcNow).ToString("yyyy-MM-dd HH:mm:ss"),
+                    ScheduledDay = (appointment.CreatedAt ?? ClinicTime.Now).ToString("yyyy-MM-dd HH:mm:ss"),
                     AppointmentDay = appointment.AppointmentDateTime.ToString("yyyy-MM-dd 00:00:00"),
                     Age = CalculateAge(appointment.Patient?.DateOfBirth),
                     Neighbourhood = "clinic",
@@ -177,8 +178,8 @@ namespace HCMS4.Services
             if (!dateOfBirth.HasValue)
                 return 30;
 
-            var age = DateTime.Today.Year - dateOfBirth.Value.Year;
-            if (dateOfBirth.Value.Date > DateTime.Today.AddYears(-age))
+            var age = ClinicTime.Today.Year - dateOfBirth.Value.Year;
+            if (dateOfBirth.Value.Date > ClinicTime.Today.AddYears(-age))
                 age--;
             return Math.Max(0, Math.Min(age, 120));
         }

@@ -17,7 +17,7 @@
             </nav>
         </div>
         <div class="text-muted">
-            <i class="bi bi-calendar3 me-1"></i> @DateTime.Now.ToString("dddd, MMMM d, yyyy")
+            <i class="bi bi-calendar3 me-1"></i> @ClinicTime.Now.ToString("dddd, MMMM d, yyyy")
         </div>
     </div>
 
@@ -249,7 +249,7 @@
                                 <tbody>
                                     @foreach (var drug in Model.ExpiringDrugs)
                                     {
-                                        var daysLeft = (drug.ExpiryDate - DateTime.Now).Days;
+                                        var daysLeft = (drug.ExpiryDate - ClinicTime.Now).Days;
                                         <tr class="@(daysLeft <= 7 ? "table-danger" : "table-warning")">
                                             <td><strong>@drug.Name</strong></td>
                                             <td>@drug.Supplier</td>

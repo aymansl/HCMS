@@ -9,11 +9,13 @@ namespace HCMS4.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AppointmentService> _logger;
+        private readonly IClinicClock _clock;
 
-        public AppointmentService(ApplicationDbContext context, ILogger<AppointmentService> logger)
+        public AppointmentService(ApplicationDbContext context, ILogger<AppointmentService> logger, IClinicClock? clock = null)
         {
             _context = context;
             _logger = logger;
+            _clock = clock ?? ClinicTime.Default;
         }
 
         public async Task<Appointment> GetByIdAsync(int id)
@@ -100,7 +102,7 @@ namespace HCMS4.Services
 
         public async Task<List<Appointment>> GetTodayAppointmentsAsync(int? doctorId = null, int? patientId = null)
         {
-            var today = DateTime.Today;
+            var today = _clock.Today;
             var query = _context.Appointments
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.User)
@@ -119,7 +121,7 @@ namespace HCMS4.Services
 
         public async Task<List<Appointment>> GetUpcomingAppointmentsAsync(int? doctorId = null, int days = BusinessRules.UpcomingAppointmentsWindowDays)
         {
-            var today = DateTime.Today;
+            var today = _clock.Today;
             var query = _context.Appointments
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.User)
@@ -139,7 +141,7 @@ namespace HCMS4.Services
 
         public async Task<List<Appointment>> GetCanceledAppointmentsAsync(int? doctorId = null)
         {
-            var today = DateTime.Today;
+            var today = _clock.Today;
             var query = _context.Appointments
                 .Include(a => a.Patient)
                     .ThenInclude(p => p.User)
@@ -161,10 +163,16 @@ namespace HCMS4.Services
         {
             try
             {
+                // The model attribute only runs during MVC model binding; the service must check too (issue #18).
+                if (appointment.AppointmentDateTime <= _clock.Now)
+                {
+                    return ServiceResult.Fail("Appointment must be in the future.");
+                }
+
                 if (await IsTimeSlotAvailableAsync(appointment.DoctorId, appointment.AppointmentDateTime))
                 {
-                    appointment.CreatedAt = DateTime.UtcNow;
-                    appointment.UpdatedAt = DateTime.UtcNow;
+                    appointment.CreatedAt = _clock.Now;
+                    appointment.UpdatedAt = _clock.Now;
                     appointment.Status = AppointmentStatus.Scheduled;
 
                     _context.Appointments.Add(appointment);
@@ -208,7 +216,7 @@ namespace HCMS4.Services
                 // Preserve the original ConsultationFee when rescheduling
                 var originalFee = appointment.ConsultationFee;
                 appointment.AppointmentDateTime = newDateTime;
-                appointment.UpdatedAt = DateTime.UtcNow;
+                appointment.UpdatedAt = _clock.Now;
                 appointment.ConsultationFee = originalFee;
 
                 _context.Update(appointment);
@@ -243,7 +251,7 @@ namespace HCMS4.Services
                     return ServiceResult.Fail($"Only scheduled appointments can be canceled. Current status: {appointment.Status}");
                 }
 
-                if (appointment.AppointmentDateTime <= DateTime.UtcNow.AddHours(BusinessRules.AppointmentCancellationWindowHours))
+                if (appointment.AppointmentDateTime <= _clock.Now.AddHours(BusinessRules.AppointmentCancellationWindowHours))
                 {
                     return ServiceResult.Fail($"Appointments cannot be canceled less than {BusinessRules.AppointmentCancellationWindowHours} hours before the scheduled time.");
                 }
@@ -255,7 +263,7 @@ namespace HCMS4.Services
 
                 appointment.Status = AppointmentStatus.Canceled;
                 appointment.CancellationReason = reason.Trim();
-                appointment.UpdatedAt = DateTime.UtcNow;
+                appointment.UpdatedAt = _clock.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -273,7 +281,7 @@ namespace HCMS4.Services
 
         public async Task UpdatePastScheduledToCompletedAsync()
         {
-            var now = DateTime.UtcNow;
+            var now = _clock.Now;
             var pastScheduledAppointments = await _context.Appointments
                 .Where(a => a.AppointmentDateTime < now && a.Status == AppointmentStatus.Scheduled)
                 .ToListAsync();

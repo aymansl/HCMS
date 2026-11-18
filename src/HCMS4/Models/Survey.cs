@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.Models
@@ -15,7 +16,7 @@ namespace HCMS4.Models
         public string? Description { get; set; }
 
         [DataType(DataType.Date)]
-        public DateTime StartDate { get; set; } = DateTime.UtcNow.Date;
+        public DateTime StartDate { get; set; } = ClinicTime.Now.Date;
 
         [DataType(DataType.Date)]
         public DateTime? EndDate { get; set; }
@@ -31,10 +32,10 @@ namespace HCMS4.Models
         public string CreatedByUserId { get; set; } = string.Empty;
 
         [DataType(DataType.DateTime)]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = ClinicTime.Now;
 
         [DataType(DataType.DateTime)]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = ClinicTime.Now;
 
         [DataType(DataType.DateTime)]
         public DateTime? SentAt { get; set; }

@@ -46,7 +46,7 @@
                                         <label asp-for="NewAppointmentDateTime" class="form-label">New Appointment Date</label>
                                         <input asp-for="NewAppointmentDateTime" type="date" 
                                                class="form-control" id="newAppointmentDate" 
-                                               min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                                               min="@ClinicTime.Now.ToString("yyyy-MM-dd")" required />
                                         <span asp-validation-for="NewAppointmentDateTime" class="text-danger"></span>
                                     </div>
                                 </div>

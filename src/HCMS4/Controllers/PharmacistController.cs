@@ -50,7 +50,7 @@ namespace HCMS4.Controllers
                     .FirstOrDefaultAsync(p => p.UserId == currentUser.Id);
 
                 var drugs = await _context.Drugs.AsNoTracking().ToListAsync();
-                var today = DateTime.UtcNow;
+                var today = ClinicTime.Now;
 
                 var viewModel = new PharmacistDashboardViewModel
                 {
@@ -107,7 +107,7 @@ namespace HCMS4.Controllers
             {
                 var drugs = await _drugService.GetAllAsync(searchTerm, expiryFilter);
 
-                var today = DateTime.UtcNow;
+                var today = ClinicTime.Now;
                 ViewBag.SearchTerm = searchTerm;
                 ViewBag.ExpiryFilter = expiryFilter;
                 ViewBag.TotalValue = drugs.Sum(d => d.Price * d.Quantity);
@@ -295,7 +295,7 @@ namespace HCMS4.Controllers
                     Qualifications = pharmacist?.Qualifications,
                     ContactInfo = pharmacist?.ContactInfo,
                     Shift = pharmacist?.Shift,
-                    CreatedAt = pharmacist?.CreatedAt ?? DateTime.UtcNow,
+                    CreatedAt = pharmacist?.CreatedAt ?? ClinicTime.Now,
                     LastLoginAt = pharmacist?.LastLoginAt
                 };
 
@@ -539,7 +539,7 @@ namespace HCMS4.Controllers
                     if (item.Drug != null)
                     {
                         item.Drug.Quantity -= item.Quantity;
-                        item.Drug.UpdatedAt = DateTime.UtcNow;
+                        item.Drug.UpdatedAt = ClinicTime.Now;
                         totalAmount += item.Drug.Price * item.Quantity;
 
                         _logger.LogInformation("Dispensed {Quantity} units of {DrugName} for prescription {PrescriptionId}. New stock: {NewStock}",
@@ -551,9 +551,9 @@ namespace HCMS4.Controllers
                 decimal grandTotal = totalAmount + taxAmount;
 
                 prescription.MedicationTotal = totalAmount;
-                prescription.DispensedDate = DateTime.UtcNow;
+                prescription.DispensedDate = ClinicTime.Now;
                 prescription.DispensedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                prescription.UpdatedAt = DateTime.UtcNow;
+                prescription.UpdatedAt = ClinicTime.Now;
                 prescription.DispensingNotes = dispensingNotes;
 
                 var allItemsDispensed = prescription.PrescriptionItems.All(pi => selectedItemIds.Contains(pi.Id));
@@ -571,7 +571,7 @@ namespace HCMS4.Controllers
                         .Where(pi => !selectedItemIds.Contains(pi.Id))
                         .Select(i => i.Drug.Name));
 
-                    prescription.Notes = $"Partially dispensed on {DateTime.UtcNow:yyyy-MM-dd HH:mm}. Dispensed: {dispensedNames}. Remaining: {remainingNames}";
+                    prescription.Notes = $"Partially dispensed on {ClinicTime.Now:yyyy-MM-dd HH:mm}. Dispensed: {dispensedNames}. Remaining: {remainingNames}";
 
                     _logger.LogInformation("Prescription {PrescriptionId} partially dispensed. Items dispensed: {DispensedCount}, Remaining: {RemainingCount}",
                         prescription.Id, itemsToDispense.Count, prescription.PrescriptionItems.Count - itemsToDispense.Count);
@@ -592,14 +592,14 @@ namespace HCMS4.Controllers
                     PatientId = prescription.PatientId,
                     PrescriptionId = prescription.Id,
                     AppointmentId = prescription.AppointmentId,
-                    InvoiceDate = DateTime.UtcNow,
+                    InvoiceDate = ClinicTime.Now,
                     MedicationTotal = totalAmount,
                     TotalAmount = grandTotal,
                     PaymentStatus = PaymentStatus.Pending,
-                    Notes = $"Generated from prescription #{prescription.Id} on {DateTime.UtcNow:yyyy-MM-dd HH:mm}",
-                    UpdatedAt = DateTime.UtcNow,
+                    Notes = $"Generated from prescription #{prescription.Id} on {ClinicTime.Now:yyyy-MM-dd HH:mm}",
+                    UpdatedAt = ClinicTime.Now,
                     PharmacistId = pharmacist?.Id,
-                    DispensedAt = DateTime.UtcNow,
+                    DispensedAt = ClinicTime.Now,
 
                 };
 
@@ -749,7 +749,7 @@ namespace HCMS4.Controllers
                 ReasonForReview = model.ReasonForReview,
                 AdditionalComments = model.AdditionalComments,
                 SuggestedAlternative = model.SuggestedAlternative,
-                RequestDate = DateTime.UtcNow,
+                RequestDate = ClinicTime.Now,
                 Status = ReviewRequestStatus.Pending
             };
 
@@ -843,7 +843,7 @@ namespace HCMS4.Controllers
                 PharmacistId = pharmacist.Id,
                 NoteText = model.NoteText.Trim(),
                 NotifyDoctor = model.NotifyDoctor,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = ClinicTime.Now
             };
 
             _context.PharmacistPrescriptionNotes.Add(note);
@@ -951,7 +951,7 @@ namespace HCMS4.Controllers
                 }
 
                 var drugs = await _context.Drugs
-                    .Where(d => d.ExpiryDate > DateTime.UtcNow)
+                    .Where(d => d.ExpiryDate > ClinicTime.Now)
                     .Select(d => new DrugSelectDto
                     {
                         Id = d.Id,
@@ -1003,19 +1003,19 @@ namespace HCMS4.Controllers
 
                 if (ModelState.IsValid)
                 {
-                    var requestNumber = $"PO-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+                    var requestNumber = $"PO-{ClinicTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
 
                     var purchaseRequest = new PurchaseRequest
                     {
                         RequestNumber = requestNumber,
                         PharmacistId = pharmacist.Id,
                         SupplierId = model.SupplierId,
-                        RequestDate = DateTime.UtcNow,
+                        RequestDate = ClinicTime.Now,
                         Status = PurchaseRequestStatus.Pending,
                         Notes = model.Notes,
                         TotalAmount = model.Items.Sum(i => i.Quantity * i.UnitPrice),
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        CreatedAt = ClinicTime.Now,
+                        UpdatedAt = ClinicTime.Now
                     };
 
                     _context.PurchaseRequests.Add(purchaseRequest);
@@ -1057,7 +1057,7 @@ namespace HCMS4.Controllers
                     .ToListAsync();
 
                 model.AvailableDrugs = await _context.Drugs
-                    .Where(d => d.ExpiryDate > DateTime.UtcNow)
+                    .Where(d => d.ExpiryDate > ClinicTime.Now)
                     .Select(d => new DrugSelectDto
                     {
                         Id = d.Id,

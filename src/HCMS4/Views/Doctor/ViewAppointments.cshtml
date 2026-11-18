@@ -125,7 +125,7 @@
                             <i class="bi bi-calendar-day me-2"></i>Today's Appointments
                             <span class="badge bg-info ms-2">@Model.TodayAppointments.Count</span>
                         </h5>
-                        <span class="text-muted">@DateTime.Today.ToString("dddd, MMMM dd, yyyy")</span>
+                        <span class="text-muted">@ClinicTime.Today.ToString("dddd, MMMM dd, yyyy")</span>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -261,7 +261,7 @@
                                 <tbody>
                                     @foreach (var appointment in Model.UpcomingAppointments.OrderBy(a => a.AppointmentDateTime))
                                     {
-                                        var daysUntil = (appointment.AppointmentDateTime.Date - DateTime.Today).Days;
+                                        var daysUntil = (appointment.AppointmentDateTime.Date - ClinicTime.Today).Days;
                                         var riskScore = Model.AppointmentRiskScores.GetValueOrDefault(appointment.Id);
                                         var riskClass = riskScore >= 0.7 ? "bg-danger" : (riskScore >= 0.4 ? "bg-warning text-dark" : "bg-success");
                                         <tr>

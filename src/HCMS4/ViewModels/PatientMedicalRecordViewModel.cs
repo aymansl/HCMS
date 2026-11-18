@@ -1,4 +1,5 @@
-﻿using HCMS4.Models;
+﻿using HCMS4.Models.Common;
+using HCMS4.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.ViewModels
@@ -19,8 +20,8 @@ namespace HCMS4.ViewModels
         public DateTime? DateOfBirth { get; set; }
 
         public int? Age => DateOfBirth.HasValue ?
-            DateTime.Now.Year - DateOfBirth.Value.Year -
-            (DateTime.Now.DayOfYear < DateOfBirth.Value.DayOfYear ? 1 : 0) : null;
+            ClinicTime.Now.Year - DateOfBirth.Value.Year -
+            (ClinicTime.Now.DayOfYear < DateOfBirth.Value.DayOfYear ? 1 : 0) : null;
 
         public string? Address { get; set; }
 

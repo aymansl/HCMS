@@ -32,7 +32,7 @@ namespace HCMS4.Services
 
         public async Task<LeaveRequest> CreateLeaveRequestAsync(LeaveRequest request)
         {
-            request.CreatedAt = DateTime.UtcNow;
+            request.CreatedAt = ClinicTime.Now;
             request.Status = LeaveStatus.Pending;
 
             _context.LeaveRequests.Add(request);
@@ -89,7 +89,7 @@ namespace HCMS4.Services
                     LeaveType = request.LeaveType,
                     Notes = notes,
                     Status = LeaveStatus.Approved,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = ClinicTime.Now
                 };
 
                 _context.DoctorLeaves.Add(doctorLeave);
@@ -168,7 +168,7 @@ namespace HCMS4.Services
                 }
 
                 leave.Status = LeaveStatus.Approved;
-                leave.CreatedAt = DateTime.UtcNow;
+                leave.CreatedAt = ClinicTime.Now;
 
                 _context.DoctorLeaves.Add(leave);
                 await _context.SaveChangesAsync();

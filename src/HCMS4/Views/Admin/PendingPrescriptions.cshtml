@@ -61,7 +61,7 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="text-muted mb-2">Today's</h6>
-                                        <h3 class="mb-0">@Model.Count(p => p.PrescriptionDate.Date == DateTime.Today)</h3>
+                                        <h3 class="mb-0">@Model.Count(p => p.PrescriptionDate.Date == ClinicTime.Today)</h3>
                                     </div>
                                     <div class="header-icon bg-gradient-info">
                                         <i class="bi bi-calendar-day"></i>
@@ -77,7 +77,7 @@
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                         <h6 class="text-muted mb-2">Over 7 Days</h6>
-                                        <h3 class="mb-0">@Model.Count(p => (DateTime.Now - p.PrescriptionDate).Days > 7)</h3>
+                                        <h3 class="mb-0">@Model.Count(p => (ClinicTime.Now - p.PrescriptionDate).Days > 7)</h3>
                                     </div>
                                     <div class="header-icon bg-gradient-danger">
                                         <i class="bi bi-exclamation-triangle"></i>
@@ -96,7 +96,7 @@
                                         <h3 class="mb-0">
                                             @{
                                                 var avgDays = Model.Any() ? 
-                                                    Model.Average(p => (DateTime.Now - p.PrescriptionDate).Days) : 0;
+                                                    Model.Average(p => (ClinicTime.Now - p.PrescriptionDate).Days) : 0;
                                                 <text>@avgDays.ToString("F1")</text>
                                             }
                                         </h3>
@@ -122,7 +122,7 @@
                         <div class="accordion" id="prescriptionsAccordion">
                             @foreach (var prescription in Model.OrderBy(p => p.PrescriptionDate))
                             {
-                                var pendingDays = (DateTime.Now - prescription.PrescriptionDate).Days;
+                                var pendingDays = (ClinicTime.Now - prescription.PrescriptionDate).Days;
                                 var accordionId = $"prescription-{prescription.Id}";
                                 
                                 <div class="accordion-item mb-3 border @GetBorderClass(pendingDays)">

@@ -1,4 +1,5 @@
-﻿using HCMS4.Models;
+﻿using HCMS4.Models.Common;
+using HCMS4.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -53,7 +54,7 @@ namespace HCMS4.Services
             {
                 var reportService = scope.ServiceProvider.GetRequiredService<IDailyReportService>();
 
-                var yesterday = DateTime.Today.AddDays(-1);
+                var yesterday = ClinicTime.Today.AddDays(-1);
                 var result = await reportService.GenerateDailyReportAsync(yesterday);
 
                 if (result)
@@ -73,7 +74,7 @@ namespace HCMS4.Services
 
         private async Task WaitForMidnight(CancellationToken stoppingToken)
         {
-            var now = DateTime.Now;
+            var now = ClinicTime.Now;
             var nextMidnight = now.Date.AddDays(1); // Next midnight
             var delay = nextMidnight - now;
 

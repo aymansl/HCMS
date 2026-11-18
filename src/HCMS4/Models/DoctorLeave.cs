@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -41,7 +42,7 @@ namespace HCMS4.Models
 
         [DataType(DataType.DateTime)]
         [Display(Name = "Created At")]
-        public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? CreatedAt { get; set; } = ClinicTime.Now;
 
         [Display(Name = "Created By")]
         public string? CreatedBy { get; set; }

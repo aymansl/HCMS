@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -28,10 +29,10 @@ namespace HCMS4.Models
         public ArticleStatus Status { get; set; } = ArticleStatus.Draft;
 
         [DataType(DataType.DateTime)]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = ClinicTime.Now;
 
         [DataType(DataType.DateTime)]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = ClinicTime.Now;
 
         [DataType(DataType.DateTime)]
         public DateTime? PublishedAt { get; set; }

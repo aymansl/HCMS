@@ -1,5 +1,6 @@
 using HCMS4.Data;
 using HCMS4.Models;
+using HCMS4.Models.Common;
 using HCMS4.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -65,6 +66,11 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOrDoctor", policy =>
         policy.RequireRole("Admin", "Doctor"));
 });
+
+// All dates and times are Damascus time (see ClinicTime).
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IClinicClock>(sp =>
+    new ClinicClock(sp.GetRequiredService<TimeProvider>(), ClinicTime.TimeZone));
 
 builder.Services.AddScoped<IDailyReportService, DailyReportService>();
 builder.Services.AddScoped<IPatientService, PatientService>();

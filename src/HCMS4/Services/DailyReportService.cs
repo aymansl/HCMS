@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using HCMS4.Data;
 using HCMS4.Models;
 using HCMS4.ViewModels;
@@ -124,7 +125,7 @@ namespace HCMS4.Services
                 return new DailyPharmacyReportViewModel
                 {
                     // Report the requested range, not the moment the report was generated.
-                    ReportDate = (startDate ?? endDate ?? DateTime.Today).Date,
+                    ReportDate = (startDate ?? endDate ?? ClinicTime.Today).Date,
                     StartDate = startDate?.Date,
                     EndDate = endDate?.Date,
                     Invoices = invoiceItems,
@@ -176,7 +177,7 @@ namespace HCMS4.Services
                     ReportDate = startOfDay,
                     TotalInvoices = pharmacyInvoices.Count,
                     TotalAmount = totalAmount,
-                    GeneratedAt = DateTime.UtcNow,
+                    GeneratedAt = ClinicTime.Now,
                     ReportData = System.Text.Json.JsonSerializer.Serialize(pharmacyInvoices.Select(i => new
                     {
                         i.Id,

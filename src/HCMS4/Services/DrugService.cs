@@ -35,7 +35,7 @@ namespace HCMS4.Services
                     (d.Description != null && d.Description.Contains(searchTerm)));
             }
 
-            var today = DateTime.UtcNow;
+            var today = ClinicTime.Now;
             if (!string.IsNullOrWhiteSpace(expiryFilter))
             {
                 switch (expiryFilter)
@@ -61,8 +61,8 @@ namespace HCMS4.Services
         {
             try
             {
-                drug.CreatedAt = DateTime.UtcNow;
-                drug.UpdatedAt = DateTime.UtcNow;
+                drug.CreatedAt = ClinicTime.Now;
+                drug.UpdatedAt = ClinicTime.Now;
 
                 _context.Drugs.Add(drug);
                 await _context.SaveChangesAsync();
@@ -93,7 +93,7 @@ namespace HCMS4.Services
                 existingDrug.Quantity = drug.Quantity;
                 existingDrug.ExpiryDate = drug.ExpiryDate;
                 existingDrug.Description = drug.Description;
-                existingDrug.UpdatedAt = DateTime.UtcNow;
+                existingDrug.UpdatedAt = ClinicTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -155,7 +155,7 @@ namespace HCMS4.Services
 
                 var oldQuantity = drug.Quantity;
                 drug.Quantity = newQuantity;
-                drug.UpdatedAt = DateTime.UtcNow;
+                drug.UpdatedAt = ClinicTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -183,7 +183,7 @@ namespace HCMS4.Services
 
         public async Task<List<Drug>> GetExpiringDrugsAsync(int daysThreshold = BusinessRules.DrugExpiryWarningDays)
         {
-            var today = DateTime.UtcNow;
+            var today = ClinicTime.Now;
             return await _context.Drugs
                 .AsNoTracking()
                 .Where(d => d.ExpiryDate <= today.AddDays(daysThreshold) && d.ExpiryDate > today)

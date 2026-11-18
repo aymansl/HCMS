@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using HCMS4.Data;
 using HCMS4.Models;
 using Microsoft.EntityFrameworkCore;
@@ -38,7 +39,7 @@ namespace HCMS4.Services
                 LinkUrl = linkUrl,
                 RelatedEntityType = relatedEntityType,
                 RelatedEntityId = relatedEntityId?.ToString(),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = ClinicTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -70,7 +71,7 @@ namespace HCMS4.Services
                     LinkUrl = linkUrl,
                     RelatedEntityType = relatedEntityType,
                     RelatedEntityId = relatedEntityId?.ToString(),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = ClinicTime.Now
                 });
             }
 

@@ -1,4 +1,5 @@
-﻿// Models/Supplier.cs
+﻿using HCMS4.Models.Common;
+// Models/Supplier.cs
 using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.Models
@@ -33,7 +34,7 @@ namespace HCMS4.Models
 
         [DataType(DataType.DateTime)]
         [Display(Name = "Created At")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = ClinicTime.Now;
 
         [Display(Name = "Is Active")]
         public bool IsActive { get; set; } = true;

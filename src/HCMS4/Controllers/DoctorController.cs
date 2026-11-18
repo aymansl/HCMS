@@ -46,7 +46,7 @@ namespace HCMS4.Controllers
                 if (!doctorId.HasValue)
                     return RedirectToAction("Login", "Account");
 
-                var today = DateTime.Today;
+                var today = ClinicTime.Today;
 
                 var todayAppointments = await _context.Appointments
                     .Include(a => a.Patient)
@@ -127,8 +127,8 @@ namespace HCMS4.Controllers
                     SelectedRiskLevel = riskLevel
                 };
 
-                var today = DateTime.Today;
-                var now = DateTime.UtcNow;
+                var today = ClinicTime.Today;
+                var now = ClinicTime.Now;
 
                 if (viewMode == "today")
                 {
@@ -319,7 +319,7 @@ namespace HCMS4.Controllers
 
             request.Status = approve ? ReissueRequestStatus.Approved : ReissueRequestStatus.Rejected;
             request.DoctorResponse = doctorResponse;
-            request.ReviewedAt = DateTime.UtcNow;
+            request.ReviewedAt = ClinicTime.Now;
             await _context.SaveChangesAsync();
 
             await _notificationService.CreateForUserAsync(
@@ -394,7 +394,7 @@ namespace HCMS4.Controllers
 
             request.DoctorResponse = doctorResponse.Trim();
             request.Status = ReviewRequestStatus.Responded;
-            request.ReviewedAt = DateTime.UtcNow;
+            request.ReviewedAt = ClinicTime.Now;
             await _context.SaveChangesAsync();
 
             await _notificationService.CreateForUserAsync(
@@ -472,8 +472,8 @@ namespace HCMS4.Controllers
             }
 
             article.Status = ArticleStatus.Published;
-            article.PublishedAt = DateTime.UtcNow;
-            article.UpdatedAt = DateTime.UtcNow;
+            article.PublishedAt = ClinicTime.Now;
+            article.UpdatedAt = ClinicTime.Now;
 
             await _context.SaveChangesAsync();
 
@@ -540,9 +540,9 @@ namespace HCMS4.Controllers
                 Content = model.Content.Trim(),
                 Category = model.Category?.Trim(),
                 Status = publishNow ? ArticleStatus.Published : ArticleStatus.Draft,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                PublishedAt = publishNow ? DateTime.UtcNow : null
+                CreatedAt = ClinicTime.Now,
+                UpdatedAt = ClinicTime.Now,
+                PublishedAt = publishNow ? ClinicTime.Now : null
             };
 
             _context.MedicalArticles.Add(article);
@@ -753,7 +753,7 @@ namespace HCMS4.Controllers
                         NoteType = viewModel.NoteType,
                         Content = viewModel.Content,
                         Diagnosis = viewModel.Diagnosis,
-                        Date = DateTime.UtcNow
+                        Date = ClinicTime.Now
                     };
 
                     _context.ClinicalNotes.Add(clinicalNote);
@@ -794,7 +794,7 @@ namespace HCMS4.Controllers
                 }
 
                 var drugs = await _context.Drugs
-                    .Where(d => d.Quantity > 0 && d.ExpiryDate > DateTime.UtcNow)
+                    .Where(d => d.Quantity > 0 && d.ExpiryDate > ClinicTime.Now)
                     .OrderBy(d => d.Name)
                     .ToListAsync();
 
@@ -861,7 +861,7 @@ namespace HCMS4.Controllers
                             validationErrors.Add($"Insufficient stock for '{item.DrugName}'. Available: {drug.Quantity}, Requested: {item.Quantity}");
                         }
 
-                        if (drug.ExpiryDate <= DateTime.UtcNow)
+                        if (drug.ExpiryDate <= ClinicTime.Now)
                         {
                             validationErrors.Add($"Drug '{item.DrugName}' has expired on {drug.ExpiryDate:yyyy-MM-dd}");
                         }
@@ -875,7 +875,7 @@ namespace HCMS4.Controllers
                         }
 
                         var drugs = await _context.Drugs
-                            .Where(d => d.Quantity > 0 && d.ExpiryDate > DateTime.UtcNow)
+                            .Where(d => d.Quantity > 0 && d.ExpiryDate > ClinicTime.Now)
                             .OrderBy(d => d.Name)
                             .ToListAsync();
 
@@ -904,11 +904,11 @@ namespace HCMS4.Controllers
                         PatientId = viewModel.PatientId,
                         DoctorId = doctorId.Value,
                         AppointmentId = viewModel.AppointmentId,
-                        PrescriptionDate = DateTime.UtcNow,
+                        PrescriptionDate = ClinicTime.Now,
                         Notes = viewModel.Notes,
                         Status = PrescriptionStatus.Pending,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        CreatedAt = ClinicTime.Now,
+                        UpdatedAt = ClinicTime.Now
                     };
 
                     var items = viewModel.Items.Select(item =>
@@ -940,7 +940,7 @@ namespace HCMS4.Controllers
                 }
 
                 var drugsForReload = await _context.Drugs
-                    .Where(d => d.Quantity > 0 && d.ExpiryDate > DateTime.UtcNow)
+                    .Where(d => d.Quantity > 0 && d.ExpiryDate > ClinicTime.Now)
                     .OrderBy(d => d.Name)
                     .ToListAsync();
 
@@ -1040,8 +1040,8 @@ namespace HCMS4.Controllers
         {
             var viewModel = new LeaveRequestViewModel
             {
-                StartDate = DateTime.Today.AddDays(1),
-                EndDate = DateTime.Today.AddDays(2)
+                StartDate = ClinicTime.Today.AddDays(1),
+                EndDate = ClinicTime.Today.AddDays(2)
             };
             return View(viewModel);
         }
@@ -1056,7 +1056,7 @@ namespace HCMS4.Controllers
                 if (!doctorId.HasValue)
                     return RedirectToAction("Login", "Account");
 
-                if (model.StartDate < DateTime.Today)
+                if (model.StartDate < ClinicTime.Today)
                 {
                     ModelState.AddModelError("StartDate", "Cannot request leave for a past date.");
                     return View(model);
@@ -1075,7 +1075,7 @@ namespace HCMS4.Controllers
                     EndDate = model.EndDate,
                     LeaveType = model.LeaveType,
                     Reason = model.Reason,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = ClinicTime.Now,
                     Status = LeaveStatus.Pending
                 };
 
@@ -1114,9 +1114,9 @@ namespace HCMS4.Controllers
         {
             try
             {
-                var reportDate = date ?? DateTime.Today;
+                var reportDate = date ?? ClinicTime.Today;
 
-                if (reportDate > DateTime.Today)
+                if (reportDate > ClinicTime.Today)
                 {
                     TempData["ErrorMessage"] = "Cannot display report for a future date.";
                     return View(new DailyVisitingPatientsReportViewModel

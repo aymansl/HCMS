@@ -168,7 +168,7 @@ namespace HCMS4.Services
 
                 patient.Status = PatientStatus.Disabled;
                 patient.DisableReason = reason;
-                patient.DisabledAt = DateTime.UtcNow;
+                patient.DisabledAt = ClinicTime.Now;
 
                 await _context.SaveChangesAsync();
 

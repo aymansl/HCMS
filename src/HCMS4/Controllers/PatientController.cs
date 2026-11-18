@@ -54,7 +54,7 @@ namespace HCMS4.Controllers
                     .ThenInclude(d => d.Specialization)
                 .Where(a => a.PatientId == patientId.Value &&
                             a.Status == AppointmentStatus.Scheduled &&
-                            a.AppointmentDateTime >= DateTime.UtcNow)
+                            a.AppointmentDateTime >= ClinicTime.Now)
                 .OrderBy(a => a.AppointmentDateTime)
                 .Take(5)
                 .ToListAsync();
@@ -64,8 +64,8 @@ namespace HCMS4.Controllers
                 .CountAsync(sa => sa.PatientId == patientId.Value &&
                                   sa.Status == SurveyAssignmentStatus.Pending &&
                                   sa.Survey.Status == SurveyStatus.Active &&
-                                  sa.Survey.StartDate <= DateTime.UtcNow.Date &&
-                                  (!sa.Survey.EndDate.HasValue || sa.Survey.EndDate.Value >= DateTime.UtcNow.Date));
+                                  sa.Survey.StartDate <= ClinicTime.Now.Date &&
+                                  (!sa.Survey.EndDate.HasValue || sa.Survey.EndDate.Value >= ClinicTime.Now.Date));
 
             var openComplaintCount = await _context.Complaints
                 .CountAsync(c => c.PatientId == patientId.Value &&
@@ -139,7 +139,7 @@ namespace HCMS4.Controllers
                     return RedirectToAction(nameof(Dashboard));
                 }
 
-                var today = DateTime.Today;
+                var today = ClinicTime.Today;
                 var doctorsOnLeave = await _context.DoctorLeaves
                     .Where(dl => dl.Status == LeaveStatus.Approved && dl.StartDate <= today && dl.EndDate >= today)
                     .Select(dl => dl.DoctorId)
@@ -170,7 +170,7 @@ namespace HCMS4.Controllers
                             Email = patient.User != null ? patient.User.Email : "N/A"
                         }
                     },
-                    AppointmentDateTime = DateTime.Now.AddDays(1).Date.AddHours(9),
+                    AppointmentDateTime = ClinicTime.Now.AddDays(1).Date.AddHours(9),
                 };
 
                 return View(viewModel);
@@ -209,7 +209,7 @@ namespace HCMS4.Controllers
                         return RedirectToAction(nameof(Dashboard));
                     }
 
-                    if (model.AppointmentDateTime <= DateTime.UtcNow)
+                    if (model.AppointmentDateTime <= ClinicTime.Now)
                     {
                         ModelState.AddModelError("AppointmentDateTime", "Appointment must be in the future.");
                         return await ReloadViewModel(model, patient.Id);
@@ -234,8 +234,8 @@ namespace HCMS4.Controllers
                         AppointmentDateTime = model.AppointmentDateTime,
                         Status = AppointmentStatus.Scheduled,
                         ConsultationFee = doctor?.Specialization?.ConsultationFee ?? 0,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        CreatedAt = ClinicTime.Now,
+                        UpdatedAt = ClinicTime.Now
                     };
 
                     var result = await _appointmentService.CreateAsync(appointment);
@@ -272,7 +272,7 @@ namespace HCMS4.Controllers
 
         private async Task<IActionResult> ReloadViewModel(BookAppointmentViewModel model, int patientId)
         {
-            var today = DateTime.Today;
+            var today = ClinicTime.Today;
             var doctorsOnLeave = await _context.DoctorLeaves
                 .Where(dl => dl.Status == LeaveStatus.Approved && dl.StartDate <= today && dl.EndDate >= today)
                 .Select(dl => dl.DoctorId)
@@ -749,7 +749,7 @@ namespace HCMS4.Controllers
                     Comment = model.Comment,
                     DoctorCooperative = model.DoctorCooperative,
                     WaitingTimeReasonable = model.WaitingTimeReasonable,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = ClinicTime.Now
                 };
 
                 _context.VisitRatings.Add(rating);
@@ -830,7 +830,7 @@ namespace HCMS4.Controllers
                 PatientId = patientId.Value,
                 PrescriptionId = prescription.Id,
                 DoctorId = prescription.DoctorId,
-                RequestDate = DateTime.UtcNow,
+                RequestDate = ClinicTime.Now,
                 Status = ReissueRequestStatus.Pending
             };
 
@@ -923,8 +923,8 @@ namespace HCMS4.Controllers
                 Description = model.Description.Trim(),
                 AssociatedVisitDate = model.AssociatedVisitDate,
                 AttachmentPath = attachmentPath,
-                TrackingNumber = $"CMP-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}",
-                SubmissionDate = DateTime.UtcNow,
+                TrackingNumber = $"CMP-{ClinicTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}",
+                SubmissionDate = ClinicTime.Now,
                 Status = ComplaintStatus.Submitted
             };
 
@@ -1052,7 +1052,7 @@ namespace HCMS4.Controllers
             }
 
             assignment.Status = SurveyAssignmentStatus.Completed;
-            assignment.CompletedAt = DateTime.UtcNow;
+            assignment.CompletedAt = ClinicTime.Now;
             await _context.SaveChangesAsync();
 
             var currentUser = await GetCurrentUserAsync();
@@ -1071,7 +1071,7 @@ namespace HCMS4.Controllers
         private bool IsPrescriptionEligibleForReissue(Prescription prescription)
         {
             return prescription.Status == PrescriptionStatus.Completed &&
-                   prescription.PrescriptionDate.AddDays(BusinessRules.PrescriptionReissueValidityDays) >= DateTime.UtcNow;
+                   prescription.PrescriptionDate.AddDays(BusinessRules.PrescriptionReissueValidityDays) >= ClinicTime.Now;
         }
 
         private async Task<SurveyResponseViewModel?> BuildSurveyResponseViewModelAsync(int assignmentId, int patientId,
@@ -1085,8 +1085,8 @@ namespace HCMS4.Controllers
 
             if (assignment == null ||
                 assignment.Survey.Status != SurveyStatus.Active ||
-                assignment.Survey.StartDate > DateTime.UtcNow.Date ||
-                (assignment.Survey.EndDate.HasValue && assignment.Survey.EndDate.Value < DateTime.UtcNow.Date))
+                assignment.Survey.StartDate > ClinicTime.Now.Date ||
+                (assignment.Survey.EndDate.HasValue && assignment.Survey.EndDate.Value < ClinicTime.Now.Date))
             {
                 return null;
             }

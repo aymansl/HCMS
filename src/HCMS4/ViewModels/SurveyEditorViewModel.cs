@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using HCMS4.Models;
 using System.ComponentModel.DataAnnotations;
 
@@ -13,7 +14,7 @@ namespace HCMS4.ViewModels
         public string? Description { get; set; }
 
         [DataType(DataType.Date)]
-        public DateTime StartDate { get; set; } = DateTime.UtcNow.Date;
+        public DateTime StartDate { get; set; } = ClinicTime.Now.Date;
 
         [DataType(DataType.Date)]
         public DateTime? EndDate { get; set; }

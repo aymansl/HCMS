@@ -308,7 +308,7 @@
 @section Scripts {
     <script>
         // Auto-refresh the report every 5 minutes (optional)
-        @if (Model.ReportDate.Date == DateTime.Today)
+        @if (Model.ReportDate.Date == ClinicTime.Today)
         {
                 <text>
                 setTimeout(function() {

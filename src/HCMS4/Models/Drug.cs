@@ -44,12 +44,12 @@ namespace HCMS4.Models
         [DataType(DataType.DateTime)]
         [Display(Name = "Created At")]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = ClinicTime.Now;
 
         [DataType(DataType.DateTime)]
         [Display(Name = "Updated At")]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = ClinicTime.Now;
 
 
         [Display(Name = "Prescription Items")]
@@ -61,7 +61,7 @@ namespace HCMS4.Models
             {
                 if (value is DateTime dateTime)
                 {
-                    if (dateTime <= DateTime.Now)
+                    if (dateTime <= ClinicTime.Now)
                     {
                         return new ValidationResult("Expiry date must be in the future");
                     }
@@ -75,7 +75,7 @@ namespace HCMS4.Models
         {
             get
             {
-                var daysUntilExpiry = (ExpiryDate - DateTime.Now).Days;
+                var daysUntilExpiry = (ExpiryDate - ClinicTime.Now).Days;
                 if (daysUntilExpiry <= 0) return "Expired";
                 if (daysUntilExpiry <= BusinessRules.DrugExpiryWarningDays) return "Expiring Soon";
                 if (daysUntilExpiry <= BusinessRules.DrugExpiryShortWarningDays) return "Expiring Shortly";

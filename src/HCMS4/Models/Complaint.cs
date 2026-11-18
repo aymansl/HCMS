@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -42,7 +43,7 @@ namespace HCMS4.Models
         [Required(ErrorMessage = "Submission date is required")]
         [DataType(DataType.DateTime)]
         [Display(Name = "Submission Date")]
-        public DateTime SubmissionDate { get; set; } = DateTime.UtcNow;
+        public DateTime SubmissionDate { get; set; } = ClinicTime.Now;
 
         [Display(Name = "Status")]
         public ComplaintStatus Status { get; set; } = ComplaintStatus.Submitted;

@@ -46,7 +46,7 @@ namespace HCMS4.Services
                 return ServiceResult.Fail($"Invalid payment amount. The remaining balance is ${remaining:F2}.");
             }
 
-            var now = DateTime.Now;
+            var now = ClinicTime.Now;
             invoice.AmountPaid = paid + amount;
             invoice.PaymentDate = now;
             invoice.PaymentMethod = paymentMethod; // persisted in its own column (issue #31)

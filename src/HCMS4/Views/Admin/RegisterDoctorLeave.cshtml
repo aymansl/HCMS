@@ -63,13 +63,13 @@
 
                         <div class="mb-3">
                             <label asp-for="StartDate" class="form-label"></label>
-                            <input type="date" asp-for="StartDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            <input type="date" asp-for="StartDate" class="form-control" min="@ClinicTime.Today.ToString("yyyy-MM-dd")" required />
                             <span asp-validation-for="StartDate" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="EndDate" class="form-label"></label>
-                            <input type="date" asp-for="EndDate" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            <input type="date" asp-for="EndDate" class="form-control" min="@ClinicTime.Today.ToString("yyyy-MM-dd")" required />
                             <span asp-validation-for="EndDate" class="text-danger"></span>
                         </div>
 

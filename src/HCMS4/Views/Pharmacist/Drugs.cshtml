@@ -169,7 +169,7 @@
                                 <tbody>
                                     @foreach (var drug in Model)
                                     {
-                                        var daysUntilExpiry = (drug.ExpiryDate - DateTime.Now).Days;
+                                        var daysUntilExpiry = (drug.ExpiryDate - ClinicTime.Now).Days;
                                         <tr class="@GetRowClass(drug, daysUntilExpiry)">
                                             <td>@drug.Id</td>
                                             <td>

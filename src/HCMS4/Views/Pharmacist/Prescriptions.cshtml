@@ -230,7 +230,7 @@
                         <div class="card dashboard-card bg-light">
                             <div class="card-body">
                                 <h6 class="text-muted">Completed Today</h6>
-                                <h3 class="text-success">@Model.Count(p => p.Status == PrescriptionStatus.Completed && p.PrescriptionDate.Date == DateTime.Today)</h3>
+                                <h3 class="text-success">@Model.Count(p => p.Status == PrescriptionStatus.Completed && p.PrescriptionDate.Date == ClinicTime.Today)</h3>
                             </div>
                         </div>
                     </div>

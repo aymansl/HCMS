@@ -99,7 +99,7 @@
                                         <label asp-for="AppointmentDateTime" class="form-label">Appointment Date & Time</label>
                                         <input asp-for="AppointmentDateTime" type="datetime-local" 
                                                class="form-control" id="appointmentDate" 
-                                               min="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                                               min="@ClinicTime.Now.ToString("yyyy-MM-dd")" required />
                                         <span asp-validation-for="AppointmentDateTime" class="text-danger"></span>
                                         <small class="form-text text-muted">Please select a date and time for your appointment</small>
                                     </div>

@@ -1,4 +1,5 @@
-﻿using HCMS4.Models;
+﻿using HCMS4.Models.Common;
+using HCMS4.Models;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -21,7 +22,7 @@ namespace HCMS4.Models
 
         [Required]
         [DataType(DataType.Date)]
-        public DateTime InvoiceDate { get; set; } = DateTime.UtcNow;
+        public DateTime InvoiceDate { get; set; } = ClinicTime.Now;
 
         [Required]
         [Range(0, 10000)]
@@ -54,7 +55,7 @@ namespace HCMS4.Models
         [StringLength(500)]
         public string? Notes { get; set; }
 
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = ClinicTime.Now;
 
 
         public virtual Patient Patient { get; set; }

@@ -141,7 +141,7 @@ namespace HCMS4.Services
                     if (item.DrugId > 0 && drugs.TryGetValue(item.DrugId, out var drug))
                     {
                         drug.Quantity -= item.Quantity;
-                        drug.UpdatedAt = DateTime.UtcNow;
+                        drug.UpdatedAt = ClinicTime.Now;
                     }
                 }
 
@@ -151,9 +151,9 @@ namespace HCMS4.Services
                     .FirstOrDefaultAsync(p => p.UserId == pharmacistUserId);
 
                 prescription.Status = PrescriptionStatus.Completed;
-                prescription.DispensedDate = DateTime.UtcNow;
+                prescription.DispensedDate = ClinicTime.Now;
                 prescription.DispensedBy = pharmacist?.User?.FullName ?? "Unknown";
-                prescription.UpdatedAt = DateTime.UtcNow;
+                prescription.UpdatedAt = ClinicTime.Now;
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

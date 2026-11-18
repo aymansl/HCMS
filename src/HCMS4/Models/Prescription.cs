@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using HCMS4.Models.Common;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HCMS4.Models
@@ -26,7 +27,7 @@ namespace HCMS4.Models
         [DataType(DataType.Date)]
         [Display(Name = "Prescription Date")]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
-        public DateTime PrescriptionDate { get; set; } = DateTime.UtcNow;
+        public DateTime PrescriptionDate { get; set; } = ClinicTime.Now;
 
         [Required(ErrorMessage = "Notes is required")]
         [StringLength(1000, ErrorMessage = "Notes cannot exceed 1000 characters")]
@@ -71,12 +72,12 @@ namespace HCMS4.Models
 
         [DataType(DataType.DateTime)]
         [Display(Name = "Created At")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = ClinicTime.Now;
 
         [DataType(DataType.DateTime)]
         [Display(Name = "Updated At")]
 
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = ClinicTime.Now;
         [StringLength(500)]
         [Display(Name = "Dispensing Notes")]
         public string? DispensingNotes { get; set; }

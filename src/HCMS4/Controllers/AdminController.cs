@@ -62,7 +62,7 @@ namespace HCMS4.Controllers
             ViewBag.AppointmentCount = await _context.Appointments.CountAsync();
             ViewBag.PendingComplaintsCount = await _context.Complaints.CountAsync(c => c.Status == ComplaintStatus.Submitted || c.Status == ComplaintStatus.UnderReview);
             ViewBag.ActiveSurveysCount = await _context.Surveys.CountAsync(s => s.Status == SurveyStatus.Active);
-            var todayReport = await _reportService.GetDailyReportAsync(DateTime.Today);
+            var todayReport = await _reportService.GetDailyReportAsync(ClinicTime.Today);
             ViewBag.TodayReport = todayReport;
 
             return View();
@@ -357,7 +357,7 @@ namespace HCMS4.Controllers
         {
             await _appointmentService.UpdatePastScheduledToCompletedAsync();
 
-            var today = DateTime.Today;
+            var today = ClinicTime.Today;
 
             var todayAppointments = await _appointmentService.GetTodayAppointmentsAsync();
             var upcomingAppointments = await _appointmentService.GetUpcomingAppointmentsAsync();
@@ -451,7 +451,7 @@ namespace HCMS4.Controllers
 
         public async Task<IActionResult> BookAppointment(int? patientId = null)
         {
-            var today = DateTime.Today;
+            var today = ClinicTime.Today;
             var doctorsOnLeave = await _context.DoctorLeaves
                 .Where(dl => dl.Status == LeaveStatus.Approved && dl.StartDate <= today && dl.EndDate >= today)
                 .Select(dl => dl.DoctorId)
@@ -482,7 +482,7 @@ namespace HCMS4.Controllers
                     FullName = p.User != null ? p.User.FullName : "Unknown",
                     Email = p.User != null ? p.User.Email : "N/A"
                 }).ToList(),
-                AppointmentDateTime = DateTime.UtcNow.AddDays(1).Date.AddHours(9),
+                AppointmentDateTime = ClinicTime.Now.AddDays(1).Date.AddHours(9),
             };
 
             if (patientId.HasValue)
@@ -510,8 +510,8 @@ namespace HCMS4.Controllers
                         AppointmentDateTime = model.AppointmentDateTime,
                         Status = AppointmentStatus.Scheduled,
                         ConsultationFee = doctor?.Specialization?.ConsultationFee ?? 0,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        CreatedAt = ClinicTime.Now,
+                        UpdatedAt = ClinicTime.Now
                     };
 
                     if (!string.IsNullOrEmpty(model.Symptoms))
@@ -771,7 +771,7 @@ namespace HCMS4.Controllers
             if (doctor == null)
                 return NotFound();
             var allAppointments = await _appointmentService.GetByDoctorIdAsync(id);
-            var today = DateTime.Today;
+            var today = ClinicTime.Today;
 
             var todayAppointments = allAppointments
                 .Where(a => a.AppointmentDateTime.Date == today)
@@ -874,7 +874,7 @@ namespace HCMS4.Controllers
                 var recentAppointments = await _context.Appointments
                     .Where(a => a.PatientId == patientId &&
                                a.Status == AppointmentStatus.Completed &&
-                               a.AppointmentDateTime >= DateTime.UtcNow.AddDays(-30))
+                               a.AppointmentDateTime >= ClinicTime.Now.AddDays(-30))
                     .Include(a => a.Doctor)
                         .ThenInclude(d => d.User)
                     .OrderByDescending(a => a.AppointmentDateTime)
@@ -883,7 +883,7 @@ namespace HCMS4.Controllers
                 var recentPrescriptions = await _context.Prescriptions
                     .Where(p => p.PatientId == patientId &&
                                p.Status == PrescriptionStatus.Completed &&
-                               p.PrescriptionDate >= DateTime.UtcNow.AddDays(-30))
+                               p.PrescriptionDate >= ClinicTime.Now.AddDays(-30))
                     .Include(p => p.Doctor)
                         .ThenInclude(d => d.User)
                     .OrderByDescending(p => p.PrescriptionDate)
@@ -991,7 +991,7 @@ namespace HCMS4.Controllers
                         PatientId = model.PatientId,
                         AppointmentId = model.AppointmentId,
                         PrescriptionId = model.PrescriptionId,
-                        InvoiceDate = DateTime.UtcNow,
+                        InvoiceDate = ClinicTime.Now,
                         ConsultationFee = model.ConsultationFee,
                         MedicationTotal = model.MedicationTotal,
                         TotalAmount = model.TotalAmount,
@@ -999,7 +999,7 @@ namespace HCMS4.Controllers
                         PaymentDate = null,
                         AmountPaid = null,
                         Notes = model.Notes,
-                        UpdatedAt = DateTime.UtcNow
+                        UpdatedAt = ClinicTime.Now
                     };
 
                     _context.Invoices.Add(invoice);
@@ -1225,7 +1225,7 @@ namespace HCMS4.Controllers
 
                     DateTime paymentDate;
                     if (string.IsNullOrEmpty(paymentDateStr))
-                        paymentDate = DateTime.UtcNow;
+                        paymentDate = ClinicTime.Now;
                     else if (!DateTime.TryParse(paymentDateStr, out paymentDate))
                     {
                         TempData["ErrorMessage"] = "Invalid payment date format.";
@@ -1245,13 +1245,13 @@ namespace HCMS4.Controllers
 
                 if (!string.IsNullOrWhiteSpace(notes))
                 {
-                    var prefix = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm}] Payment Update: ";
+                    var prefix = $"[{ClinicTime.Now:yyyy-MM-dd HH:mm}] Payment Update: ";
                     invoice.Notes = string.IsNullOrWhiteSpace(invoice.Notes)
                         ? $"{prefix}{notes}"
                         : $"{invoice.Notes}\n{prefix}{notes}";
                 }
 
-                invoice.UpdatedAt = DateTime.UtcNow;
+                invoice.UpdatedAt = ClinicTime.Now;
                 _context.Update(invoice);
                 await _context.SaveChangesAsync();
 
@@ -1303,7 +1303,7 @@ namespace HCMS4.Controllers
                             Qualifications = model.Qualifications,
                             ContactInfo = model.ContactInfo,
                             Shift = model.Shift,
-                            CreatedAt = DateTime.UtcNow,
+                            CreatedAt = ClinicTime.Now,
                             IsActive = true
                         };
 
@@ -1458,7 +1458,7 @@ namespace HCMS4.Controllers
         {
             try
             {
-                var targetDate = date ?? DateTime.Today;
+                var targetDate = date ?? ClinicTime.Today;
                 var report = await _reportService.GetDailyReportAsync(targetDate);
                 var availableDates = await _reportService.GetAvailableReportDatesAsync();
 
@@ -1500,7 +1500,7 @@ namespace HCMS4.Controllers
         {
             try
             {
-                var targetDate = date ?? DateTime.Today;
+                var targetDate = date ?? ClinicTime.Today;
                 var report = await _reportService.GetDailyReportAsync(targetDate);
 
                 var csv = new System.Text.StringBuilder();
@@ -1573,7 +1573,7 @@ namespace HCMS4.Controllers
                         return View(supplier);
                     }
 
-                    supplier.CreatedAt = DateTime.UtcNow;
+                    supplier.CreatedAt = ClinicTime.Now;
                     supplier.IsActive = true;
 
                     _context.Suppliers.Add(supplier);
@@ -1871,7 +1871,7 @@ namespace HCMS4.Controllers
                     LeaveType = model.LeaveType,
                     Notes = model.Notes,
                     Status = LeaveStatus.Approved,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = ClinicTime.Now,
                     CreatedBy = User.Identity?.Name
                 };
 
@@ -2069,9 +2069,9 @@ namespace HCMS4.Controllers
 
                 var currentUser = await _userManager.GetUserAsync(User);
                 purchaseRequest.Status = PurchaseRequestStatus.Approved;
-                purchaseRequest.ApprovedDate = DateTime.UtcNow;
+                purchaseRequest.ApprovedDate = ClinicTime.Now;
                 purchaseRequest.ApprovedBy = currentUser?.UserName;
-                purchaseRequest.UpdatedAt = DateTime.UtcNow;
+                purchaseRequest.UpdatedAt = ClinicTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -2117,7 +2117,7 @@ namespace HCMS4.Controllers
                 var currentUser = await _userManager.GetUserAsync(User);
                 purchaseRequest.Status = PurchaseRequestStatus.Rejected;
                 purchaseRequest.RejectionReason = rejectionReason;
-                purchaseRequest.UpdatedAt = DateTime.UtcNow;
+                purchaseRequest.UpdatedAt = ClinicTime.Now;
 
                 await _context.SaveChangesAsync();
 
@@ -2190,7 +2190,7 @@ namespace HCMS4.Controllers
             complaint.Status = status;
             complaint.ResolutionNotes = resolutionNotes;
             complaint.ResolvedAt = status == ComplaintStatus.Resolved || status == ComplaintStatus.Closed
-                ? DateTime.UtcNow
+                ? ClinicTime.Now
                 : null;
 
             await _context.SaveChangesAsync();
@@ -2301,9 +2301,9 @@ namespace HCMS4.Controllers
                 TargetCriteria = model.TargetCriteria?.Trim(),
                 Status = model.SendImmediately ? SurveyStatus.Active : SurveyStatus.Draft,
                 CreatedByUserId = currentUser?.Id ?? string.Empty,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                SentAt = model.SendImmediately ? DateTime.UtcNow : null
+                CreatedAt = ClinicTime.Now,
+                UpdatedAt = ClinicTime.Now,
+                SentAt = model.SendImmediately ? ClinicTime.Now : null
             };
 
             _context.Surveys.Add(survey);
@@ -2358,7 +2358,7 @@ namespace HCMS4.Controllers
                         SurveyId = survey.Id,
                         PatientId = patient.Id,
                         Status = SurveyAssignmentStatus.Pending,
-                        AssignedAt = DateTime.UtcNow
+                        AssignedAt = ClinicTime.Now
                     });
 
                     await _notificationService.CreateForUserAsync(

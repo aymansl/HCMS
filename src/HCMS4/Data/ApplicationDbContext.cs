@@ -1,3 +1,4 @@
+using HCMS4.Models.Common;
 using HCMS4.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -132,23 +133,23 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<Appointment>()
                 .Property(a => a.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<Drug>()
                 .Property(d => d.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<Prescription>()
                 .Property(p => p.PrescriptionDate)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<ClinicalNote>()
                 .Property(cn => cn.Date)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<Invoice>()
                 .Property(i => i.InvoiceDate)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<Doctor>()
            .HasOne(d => d.Specialization)
@@ -203,7 +204,7 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<VisitRating>()
                 .Property(vr => vr.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             // PrescriptionReissueRequest relationships
             modelBuilder.Entity<PrescriptionReissueRequest>()
@@ -226,7 +227,7 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<PrescriptionReissueRequest>()
                 .Property(prr => prr.RequestDate)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             // Complaint relationships
             modelBuilder.Entity<Complaint>()
@@ -237,7 +238,7 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<Complaint>()
                 .Property(c => c.SubmissionDate)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             // DoctorReviewRequest relationships
             modelBuilder.Entity<DoctorReviewRequest>()
@@ -260,7 +261,7 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<DoctorReviewRequest>()
                 .Property(drr => drr.RequestDate)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             // PharmacistPrescriptionNote relationships
             modelBuilder.Entity<PharmacistPrescriptionNote>()
@@ -277,7 +278,7 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<PharmacistPrescriptionNote>()
                 .Property(ppn => ppn.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<MedicalArticle>()
                 .HasOne(ma => ma.Doctor)
@@ -287,7 +288,7 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<MedicalArticle>()
                 .Property(ma => ma.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<Survey>()
                 .HasOne(s => s.CreatedByUser)
@@ -297,7 +298,7 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<Survey>()
                 .Property(s => s.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<SurveyQuestion>()
                 .HasOne(q => q.Survey)
@@ -350,11 +351,11 @@ namespace HCMS4.Data
 
             modelBuilder.Entity<UserNotification>()
                 .Property(un => un.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
 
             modelBuilder.Entity<SystemActivityLog>()
                 .Property(al => al.CreatedAt)
-                .HasDefaultValueSql("GETUTCDATE()");
+                .HasDefaultValueSql(ClinicTime.SqlNow);
         }
     }
 }
