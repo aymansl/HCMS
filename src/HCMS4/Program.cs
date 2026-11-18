@@ -1,11 +1,17 @@
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Staff.Models;
-using HCMS4.Shared.Identity.Models;
-using HCMS4.Shared.Common;
 using HCMS4.Data;
-using HCMS4.Services;
+using HCMS4.Modules.Appointments;
+using HCMS4.Modules.Billing;
+using HCMS4.Modules.Feedback;
+using HCMS4.Modules.Pharmacy;
+using HCMS4.Modules.Records;
+using HCMS4.Modules.Staff;
+using HCMS4.Shared.Audit;
+using HCMS4.Shared.Common;
+using HCMS4.Shared.Identity;
+using HCMS4.Shared.Identity.Services;
+using HCMS4.Shared.Notifications;
+using HCMS4.Shared.Reporting;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -32,27 +38,7 @@ builder.Services.AddSession(options =>
     options.Cookie.SameSite = SameSiteMode.Strict; 
 });
 
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-{
-    options.Password.RequireDigit = true;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireLowercase = true;
-    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-    options.Lockout.MaxFailedAccessAttempts = 5;
-    options.User.RequireUniqueEmail = true;
-})
-.AddEntityFrameworkStores<ApplicationDbContext>()
-.AddDefaultTokenProviders();
-
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.LoginPath = "/Account/Login";
-    options.AccessDeniedPath = "/Account/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromMinutes(60); 
-    options.SlidingExpiration = true;
-});
+builder.Services.AddHcmsIdentity();
 
 
 builder.Services.AddAuthorization(options =>
@@ -69,29 +55,18 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin", "Doctor"));
 });
 
-// All dates and times are Damascus time (see ClinicTime).
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<IClinicClock>(sp =>
-    new ClinicClock(sp.GetRequiredService<TimeProvider>(), ClinicTime.TimeZone));
-
-builder.Services.AddScoped<IDailyReportService, DailyReportService>();
-builder.Services.AddScoped<IPatientService, PatientService>();
-builder.Services.AddScoped<IAppointmentService, AppointmentService>();
-builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
-builder.Services.AddScoped<IDrugService, DrugService>();
-builder.Services.AddScoped<IPharmacistService, PharmacistService>();
-builder.Services.AddScoped<ILeaveService, LeaveService>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
-builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
-builder.Services.AddScoped<IComplaintAttachmentService, ComplaintAttachmentService>();
-builder.Services.AddScoped<IInvoicePaymentService, InvoicePaymentService>();
-builder.Services.AddHostedService<DailyReportBackgroundService>();
-
-builder.Services.AddHttpClient("NoShowAPI", client =>
-{
-    client.Timeout = TimeSpan.FromSeconds(30);
-});
-builder.Services.AddScoped<INoShowRiskService, NoShowRiskService>();
+// Shared services, then one registration call per module.
+builder.Services
+    .AddSharedCommon()
+    .AddNotifications()
+    .AddAudit()
+    .AddReporting()
+    .AddAppointmentsModule()
+    .AddRecordsModule()
+    .AddPharmacyModule()
+    .AddBillingModule()
+    .AddFeedbackModule()
+    .AddStaffModule();
 
 var cultureInfo = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = cultureInfo;

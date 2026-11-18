@@ -1,7 +1,7 @@
 using HCMS4.Shared.Audit.Models;
 using HCMS4.Shared.Common;
 using HCMS4.Data;
-namespace HCMS4.Services
+namespace HCMS4.Shared.Audit.Services
 {
     public interface IActivityLogService
     {

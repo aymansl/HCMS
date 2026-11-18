@@ -5,7 +5,7 @@ using HCMS4.Data;
 using HCMS4.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
-namespace HCMS4.Services
+namespace HCMS4.Shared.Reporting.Services
 {
     public class DailyReportService : IDailyReportService
     {

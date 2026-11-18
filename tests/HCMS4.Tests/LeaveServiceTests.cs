@@ -1,7 +1,8 @@
+using HCMS4.Modules.Staff.Services;
+using HCMS4.Shared.Notifications.Services;
 using HCMS4.Modules.Staff.Models;
 using HCMS4.Shared.Identity.Models;
 using HCMS4.Data;
-using HCMS4.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging.Abstractions;
 

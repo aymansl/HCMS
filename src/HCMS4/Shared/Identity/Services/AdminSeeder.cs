@@ -4,7 +4,7 @@ using HCMS4.Shared.Identity.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
-namespace HCMS4.Services
+namespace HCMS4.Shared.Identity.Services
 {
     public class AdminSeeder
     {

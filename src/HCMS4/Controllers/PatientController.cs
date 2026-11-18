@@ -1,3 +1,9 @@
+using HCMS4.Modules.Appointments.Services;
+using HCMS4.Modules.Billing.Services;
+using HCMS4.Modules.Feedback.Services;
+using HCMS4.Modules.Staff.Services;
+using HCMS4.Shared.Audit.Services;
+using HCMS4.Shared.Notifications.Services;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Feedback.Models;
@@ -7,7 +13,6 @@ using HCMS4.Modules.Staff.Models;
 using HCMS4.Shared.Notifications.Models;
 using HCMS4.Shared.Common;
 using HCMS4.Data;
-using HCMS4.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

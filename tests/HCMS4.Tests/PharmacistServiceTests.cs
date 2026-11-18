@@ -1,7 +1,7 @@
+using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
-using HCMS4.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace HCMS4.Tests

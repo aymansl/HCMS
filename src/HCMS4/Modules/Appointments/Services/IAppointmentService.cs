@@ -1,7 +1,7 @@
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Staff.Models;
 using HCMS4.Shared.Common;
-namespace HCMS4.Services
+namespace HCMS4.Modules.Appointments.Services
 {
     public interface IAppointmentService
     {

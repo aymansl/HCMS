@@ -3,7 +3,7 @@
 using HCMS4.ViewModels;
 using Microsoft.Extensions.Logging;
 
-namespace HCMS4.Services
+namespace HCMS4.Shared.Reporting.Services
 {
     public interface IDailyReportService
     {

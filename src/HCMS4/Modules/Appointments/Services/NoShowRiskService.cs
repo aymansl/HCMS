@@ -7,7 +7,7 @@ using HCMS4.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
-namespace HCMS4.Services
+namespace HCMS4.Modules.Appointments.Services
 {
     public interface INoShowRiskService
     {

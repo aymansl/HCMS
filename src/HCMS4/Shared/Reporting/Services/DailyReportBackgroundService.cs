@@ -1,9 +1,10 @@
-﻿using HCMS4.Shared.Common;
+﻿using HCMS4.Modules.Appointments.Services;
+using HCMS4.Shared.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace HCMS4.Services
+namespace HCMS4.Shared.Reporting.Services
 {
     public class DailyReportBackgroundService : BackgroundService
     {

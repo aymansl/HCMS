@@ -1,8 +1,9 @@
+using HCMS4.Modules.Appointments.Services;
+using HCMS4.Shared.Reporting.Services;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
 using HCMS4.Data;
-using HCMS4.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;

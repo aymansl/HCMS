@@ -1,4 +1,4 @@
-using HCMS4.Services;
+using HCMS4.Modules.Appointments.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace HCMS4.Tests

@@ -1,6 +1,6 @@
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Shared.Common;
-namespace HCMS4.Services
+namespace HCMS4.Modules.Pharmacy.Services
 {
     public interface IDrugService
     {

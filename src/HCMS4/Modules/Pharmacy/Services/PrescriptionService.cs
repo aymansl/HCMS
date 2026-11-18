@@ -4,7 +4,7 @@ using HCMS4.Shared.Common;
 using HCMS4.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace HCMS4.Services
+namespace HCMS4.Modules.Pharmacy.Services
 {
     public class PrescriptionService : IPrescriptionService
     {

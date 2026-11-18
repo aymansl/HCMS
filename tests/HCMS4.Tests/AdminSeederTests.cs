@@ -1,6 +1,6 @@
+using HCMS4.Shared.Identity.Services;
 using HCMS4.Shared.Identity.Models;
 using HCMS4.Data;
-using HCMS4.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

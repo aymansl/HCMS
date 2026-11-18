@@ -1,5 +1,5 @@
 using HCMS4.Shared.Common;
-namespace HCMS4.Services
+namespace HCMS4.Modules.Feedback.Services
 {
     public interface IComplaintAttachmentService
     {
