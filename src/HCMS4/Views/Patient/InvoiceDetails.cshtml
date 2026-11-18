@@ -1,0 +1,123 @@
+@model HCMS4.ViewModels.InvoiceViewModel
+
+@{
+    ViewData["Title"] = "تفاصيل الفاتورة";
+    Layout = "_LayoutAuth";
+    var invoice = ViewBag.Invoice as HCMS4.Models.Invoice;
+    var items = invoice?.Prescription?.PrescriptionItems ?? new List<HCMS4.Models.PrescriptionItem>();
+}
+
+<div class="container py-4" dir="rtl" lang="ar">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-receipt ms-2"></i>الفاتورة @Model.InvoiceNumber</h1>
+        <a asp-action="InvoiceHistory" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-right ms-1"></i> العودة إلى الفواتير
+        </a>
+    </div>
+
+    <div class="card dashboard-card mb-4 text-end">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="text-muted small">تاريخ الفاتورة</div>
+                    <div class="fw-semibold">@Model.InvoiceDate.ToString("yyyy-MM-dd")</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">الطبيب</div>
+                    <div class="fw-semibold">@Model.DoctorName</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-muted small">حالة الدفع</div>
+                    <span class="badge @Model.StatusBadgeClass">@(Model.PaymentStatus == "Paid" ? "مدفوعة" : "غير مدفوعة بالكامل")</span>
+                </div>
+                @if (Model.AppointmentDate.HasValue)
+                {
+                    <div class="col-md-4">
+                        <div class="text-muted small">موعد الزيارة</div>
+                        <div class="fw-semibold">@Model.AppointmentDate.Value.ToString("yyyy-MM-dd HH:mm")</div>
+                    </div>
+                }
+                @if (Model.PaymentDate.HasValue)
+                {
+                    <div class="col-md-4">
+                        <div class="text-muted small">تاريخ آخر دفعة</div>
+                        <div class="fw-semibold">@Model.PaymentDate.Value.ToString("yyyy-MM-dd HH:mm")</div>
+                    </div>
+                }
+                @if (invoice?.PaymentMethod != null)
+                {
+                    <div class="col-md-4">
+                        <div class="text-muted small">طريقة الدفع</div>
+                        <div class="fw-semibold">نقداً</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (items.Any())
+    {
+        <div class="card dashboard-card mb-4 text-end">
+            <div class="card-header"><h5 class="mb-0">الأدوية</h5></div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>الدواء</th>
+                            <th>الجرعة</th>
+                            <th>الكمية</th>
+                            <th>سعر الوحدة</th>
+                            <th>المجموع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in items)
+                        {
+                            var price = item.Drug?.Price ?? 0;
+                            <tr>
+                                <td>@item.DrugName</td>
+                                <td>@item.Dosage</td>
+                                <td>@item.Quantity</td>
+                                <td>@price.ToString("C2")</td>
+                                <td>@((price * item.Quantity).ToString("C2"))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <div class="card dashboard-card text-end">
+        <div class="card-body">
+            <table class="table table-borderless mb-0">
+                <tr>
+                    <td>رسوم الكشف</td>
+                    <td class="text-start">@Model.ConsultationFee.ToString("C2")</td>
+                </tr>
+                <tr>
+                    <td>مجموع الأدوية</td>
+                    <td class="text-start">@Model.MedicationTotal.ToString("C2")</td>
+                </tr>
+                <tr class="border-top">
+                    <th>المبلغ الإجمالي</th>
+                    <th class="text-start">@Model.TotalAmount.ToString("C2")</th>
+                </tr>
+                <tr>
+                    <td>المدفوع</td>
+                    <td class="text-start text-success">@((Model.AmountPaid ?? 0).ToString("C2"))</td>
+                </tr>
+                <tr>
+                    <th>المتبقي</th>
+                    <th class="text-start @(Model.Balance > 0 ? "text-danger" : "text-success")">@Model.Balance.ToString("C2")</th>
+                </tr>
+            </table>
+            @if (!string.IsNullOrWhiteSpace(Model.Notes))
+            {
+                <hr />
+                <div class="text-muted small">ملاحظات</div>
+                <div style="white-space: pre-line">@Model.Notes</div>
+            }
+        </div>
+    </div>
+</div>
