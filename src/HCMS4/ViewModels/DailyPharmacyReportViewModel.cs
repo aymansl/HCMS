@@ -4,6 +4,8 @@ namespace HCMS4.ViewModels
     public class DailyPharmacyReportViewModel
     {
         public DateTime ReportDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
 
         public List<DailyInvoiceItem> Invoices { get; set; } = new List<DailyInvoiceItem>();
 

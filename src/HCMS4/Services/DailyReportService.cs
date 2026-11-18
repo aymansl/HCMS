@@ -123,7 +123,10 @@ namespace HCMS4.Services
 
                 return new DailyPharmacyReportViewModel
                 {
-                    ReportDate = DateTime.UtcNow,
+                    // Report the requested range, not the moment the report was generated.
+                    ReportDate = (startDate ?? endDate ?? DateTime.Today).Date,
+                    StartDate = startDate?.Date,
+                    EndDate = endDate?.Date,
                     Invoices = invoiceItems,
                     TotalAmount = invoiceItems.Sum(i => i.TotalAmount),
                     TotalInvoices = invoiceItems.Count,
