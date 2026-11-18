@@ -24,6 +24,12 @@ namespace HCMS4.Services
 
         public async Task<ServiceResult> PayAsync(int invoiceId, int patientId, decimal amount, PaymentMethod paymentMethod, string? notes)
         {
+            // Business rule: the center accepts cash payments only.
+            if (paymentMethod != PaymentMethod.Cash)
+            {
+                return ServiceResult.Fail("Only cash payments are accepted.");
+            }
+
             var invoice = await _context.Invoices
                 .FirstOrDefaultAsync(i => i.Id == invoiceId && i.PatientId == patientId);
 

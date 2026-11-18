@@ -168,13 +168,9 @@
                     
                     <div class="mb-3">
                         <label for="paymentMethod" class="form-label">Payment Method</label>
-                        <select class="form-select" id="paymentMethod" name="paymentMethod" required>
-                            <option value="">Select Payment Method</option>
-                            <option value="CreditCard">Credit Card</option>
-                            <option value="DebitCard">Debit Card</option>
-                            <option value="BankTransfer">Bank Transfer</option>
-                            <option value="Cash">Cash</option>
-                        </select>
+                        @* The center accepts cash only. *@
+                        <input type="text" class="form-control" id="paymentMethod" value="Cash" readonly />
+                        <input type="hidden" name="paymentMethod" value="Cash" />
                     </div>
                     
                     <div class="mb-3">

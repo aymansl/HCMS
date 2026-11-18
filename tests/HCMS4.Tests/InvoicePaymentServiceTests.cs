@@ -105,9 +105,26 @@ namespace HCMS4.Tests
             using var context = TestDbContextFactory.CreateInMemoryContext();
             var (service, invoice, patientId) = await SetupAsync(context);
 
-            await service.PayAsync(invoice.Id, patientId, 30m, PaymentMethod.BankTransfer, notes: null);
+            await service.PayAsync(invoice.Id, patientId, 30m, PaymentMethod.Cash, notes: null);
 
-            Assert.Equal(PaymentMethod.BankTransfer, invoice.PaymentMethod);
+            Assert.Equal(PaymentMethod.Cash, invoice.PaymentMethod);
+        }
+
+        // Business rule: cash only.
+        [Theory]
+        [InlineData(PaymentMethod.CreditCard)]
+        [InlineData(PaymentMethod.DebitCard)]
+        [InlineData(PaymentMethod.BankTransfer)]
+        [InlineData(PaymentMethod.Other)]
+        public async Task PayAsync_NonCashMethod_IsRejected(PaymentMethod method)
+        {
+            using var context = TestDbContextFactory.CreateInMemoryContext();
+            var (service, invoice, patientId) = await SetupAsync(context);
+
+            var result = await service.PayAsync(invoice.Id, patientId, 30m, method, notes: null);
+
+            Assert.False(result.Success);
+            Assert.Null(invoice.AmountPaid);
         }
     }
 }
