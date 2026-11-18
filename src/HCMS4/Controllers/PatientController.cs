@@ -18,6 +18,7 @@ namespace HCMS4.Controllers
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
         private readonly IComplaintAttachmentService _attachmentService;
+        private readonly IInvoicePaymentService _paymentService;
 
         public PatientController(
             ApplicationDbContext context,
@@ -26,9 +27,11 @@ namespace HCMS4.Controllers
             ILeaveService leaveService,
             INotificationService notificationService,
             IActivityLogService activityLogService,
-            IComplaintAttachmentService attachmentService)
+            IComplaintAttachmentService attachmentService,
+            IInvoicePaymentService paymentService)
             : base(context, logger)
         {
+            _paymentService = paymentService;
             _appointmentService = appointmentService;
             _leaveService = leaveService;
             _notificationService = notificationService;
@@ -474,40 +477,8 @@ namespace HCMS4.Controllers
                 if (!patientId.HasValue)
                     return RedirectToAction("Login", "Account");
 
-                var invoice = await _context.Invoices
-                    .FirstOrDefaultAsync(i => i.Id == invoiceId && i.PatientId == patientId.Value);
-
-                if (invoice == null)
-                {
-                    TempData["ErrorMessage"] = "Invoice not found.";
-                    return RedirectToAction(nameof(InvoiceHistory));
-                }
-
-                if (amount <= 0 || amount > invoice.TotalAmount)
-                {
-                    TempData["ErrorMessage"] = "Invalid payment amount.";
-                    return RedirectToAction(nameof(InvoiceHistory));
-                }
-
-                invoice.AmountPaid = (invoice.AmountPaid ?? 0) + amount;
-                invoice.PaymentDate = DateTime.Now;
-                invoice.UpdatedAt = DateTime.Now;
-
-                if (invoice.AmountPaid >= invoice.TotalAmount)
-                    invoice.PaymentStatus = PaymentStatus.Paid;
-                else if (invoice.AmountPaid > 0 && invoice.AmountPaid < invoice.TotalAmount)
-                    invoice.PaymentStatus = PaymentStatus.Pending;
-
-                if (!string.IsNullOrEmpty(notes))
-                {
-                    var paymentNote = $"Payment of ${amount:F2} via {paymentMethod} on {DateTime.Now:yyyy-MM-dd}. {notes}";
-                    invoice.Notes = string.IsNullOrEmpty(invoice.Notes)
-                        ? paymentNote
-                        : $"{invoice.Notes}\n{paymentNote}";
-                }
-
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Payment of ${amount:F2} processed successfully for Invoice #{invoice.Id}.";
+                var result = await _paymentService.PayAsync(invoiceId, patientId.Value, amount, paymentMethod, notes);
+                TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
                 return RedirectToAction(nameof(InvoiceHistory));
             }
             catch (Exception ex)
