@@ -56,7 +56,7 @@ namespace HCMS4.Controllers
                     user.UserName,
                     model.Password,
                     model.RememberMe,
-                    lockoutOnFailure: false);
+                    lockoutOnFailure: true);
 
                 if (result.Succeeded)
                 {
@@ -65,9 +65,9 @@ namespace HCMS4.Controllers
                    
                     var roles = await _userManager.GetRolesAsync(user);
 
-                    if (returnUrl != null)
+                    if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     {
-                        return LocalRedirect(returnUrl); 
+                        return LocalRedirect(returnUrl);
                     }
                     else if (roles.Contains("Admin"))
                     {
@@ -92,7 +92,9 @@ namespace HCMS4.Controllers
                 if (result.IsLockedOut)
                 {
                     _logger.LogWarning("User account locked out.");
-                    return RedirectToAction("Index", "Home");
+                    ModelState.AddModelError(string.Empty,
+                        "تم قفل الحساب مؤقتاً بسبب تكرار محاولات الدخول الفاشلة. حاول مرة أخرى بعد 5 دقائق.");
+                    return View(model);
                 }
                 else
                 {
