@@ -7,6 +7,8 @@ namespace HCMS4.Modules.Records.Services
         Task<Patient> GetByIdAsync(int id);
         Task<Patient> GetByIdWithDetailsAsync(int id);
         Task<PaginatedResult<Patient>> GetAllAsync(PaginationParams pagination);
+        /// <summary>All patients with their user, for selection lists.</summary>
+        Task<List<Patient>> GetAllWithUserAsync();
         Task<ServiceResult> UpdateAsync(int id, Patient patient);
         Task<ServiceResult> DeleteAsync(int id);
         Task<bool> HasRelatedRecordsAsync(int id);

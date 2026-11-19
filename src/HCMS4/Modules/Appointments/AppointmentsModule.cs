@@ -7,6 +7,7 @@ namespace HCMS4.Modules.Appointments
         public static IServiceCollection AddAppointmentsModule(this IServiceCollection services)
         {
             services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<IDailyVisitReportService, DailyVisitReportService>();
             services.AddScoped<INoShowRiskService, NoShowRiskService>();
             services.AddHttpClient("NoShowAPI", client =>
             {

@@ -7,6 +7,7 @@ namespace HCMS4.Modules.Feedback
         public static IServiceCollection AddFeedbackModule(this IServiceCollection services)
         {
             services.AddScoped<IComplaintAttachmentService, ComplaintAttachmentService>();
+            services.AddScoped<IVisitRatingService, VisitRatingService>();
             return services;
         }
     }

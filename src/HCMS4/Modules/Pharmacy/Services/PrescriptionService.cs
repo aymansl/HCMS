@@ -17,6 +17,12 @@ namespace HCMS4.Modules.Pharmacy.Services
             _logger = logger;
         }
 
+        public Task<List<Prescription>> GetByAppointmentIdsAsync(IReadOnlyCollection<int> appointmentIds) =>
+            _context.Prescriptions.AsNoTracking()
+                .Include(p => p.PrescriptionItems)
+                .Where(p => p.AppointmentId.HasValue && appointmentIds.Contains(p.AppointmentId.Value))
+                .ToListAsync();
+
         public async Task<Prescription> GetByIdAsync(int id)
         {
             return await _context.Prescriptions

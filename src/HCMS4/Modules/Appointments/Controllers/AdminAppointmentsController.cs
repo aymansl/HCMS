@@ -1,82 +1,54 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Billing.Models;
-using HCMS4.Modules.Feedback.Models;
-using HCMS4.Modules.Pharmacy.Models;
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Records.Services;
-using HCMS4.Modules.Staff.Models;
 using HCMS4.Modules.Staff.Services;
 using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
-using HCMS4.Shared.Identity.Models;
 using HCMS4.Shared.Notifications.Models;
 using HCMS4.Shared.Notifications.Services;
-using HCMS4.Shared.Reporting.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using static HCMS4.ViewModels.GenerateInvoiceViewModel;
-using System.Security.Claims;
 
 namespace HCMS4.Modules.Appointments.Controllers
 {
     // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
     [Authorize(Roles = "Admin")]
     [ControllerName("Admin")]
-    public class AdminAppointmentsController : BaseController
+    public class AdminAppointmentsController : HcmsControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IDailyReportService _reportService;
-        private readonly IPatientService _patientService;
         private readonly IAppointmentService _appointmentService;
-        private readonly IPrescriptionService _prescriptionService;
-        private readonly ApplicationDbContext _adminContext;
+        private readonly IPatientService _patientService;
+        private readonly IStaffService _staffService;
         private readonly INoShowRiskService _noShowRiskService;
-        private readonly ILeaveService _leaveService;
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
+        private readonly IClinicClock _clock;
+        private readonly ILogger<AdminAppointmentsController> _logger;
 
         public AdminAppointmentsController(
-            UserManager<ApplicationUser> userManager,
-            ApplicationDbContext context,
-            SignInManager<ApplicationUser> signInManager,
-            ILogger<AdminAppointmentsController> logger,
-            IDailyReportService reportService,
-            IPatientService patientService,
             IAppointmentService appointmentService,
-            IPrescriptionService prescriptionService,
+            IPatientService patientService,
+            IStaffService staffService,
             INoShowRiskService noShowRiskService,
-            ILeaveService leaveService,
             INotificationService notificationService,
-            IActivityLogService activityLogService)
-            : base(context, logger)
+            IActivityLogService activityLogService,
+            IClinicClock clock,
+            ILogger<AdminAppointmentsController> logger)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _reportService = reportService;
-            _patientService = patientService;
             _appointmentService = appointmentService;
-            _prescriptionService = prescriptionService;
-            _adminContext = context;
+            _patientService = patientService;
+            _staffService = staffService;
             _noShowRiskService = noShowRiskService;
-            _leaveService = leaveService;
             _notificationService = notificationService;
             _activityLogService = activityLogService;
+            _clock = clock;
+            _logger = logger;
         }
 
         public async Task<IActionResult> ManageAppointments(string status = "all", string riskLevel = "all")
         {
             await _appointmentService.UpdatePastScheduledToCompletedAsync();
-
-            var today = ClinicTime.Today;
 
             var todayAppointments = await _appointmentService.GetTodayAppointmentsAsync();
             var upcomingAppointments = await _appointmentService.GetUpcomingAppointmentsAsync();
@@ -155,53 +127,18 @@ namespace HCMS4.Modules.Appointments.Controllers
                 .Where(a => RiskLevelHelper.Matches(riskLevel, riskScores.GetValueOrDefault(a.Id)))
                 .ToList();
 
-            var doctorsOnLeave = await _context.DoctorLeaves
-                .Where(dl => dl.Status == LeaveStatus.Approved && dl.StartDate <= today && dl.EndDate >= today)
-                .Select(dl => dl.DoctorId)
-                .ToListAsync();
-
-            viewModel.AvailableDoctors = await _context.Doctors
-                .Include(d => d.User)
-                .Where(d => d.IsAvailable && !doctorsOnLeave.Contains(d.Id))
-                .ToListAsync();
+            viewModel.AvailableDoctors = await _staffService.GetBookableDoctorsAsync(_clock.Today);
 
             return View(viewModel);
         }
 
         public async Task<IActionResult> BookAppointment(int? patientId = null)
         {
-            var today = ClinicTime.Today;
-            var doctorsOnLeave = await _context.DoctorLeaves
-                .Where(dl => dl.Status == LeaveStatus.Approved && dl.StartDate <= today && dl.EndDate >= today)
-                .Select(dl => dl.DoctorId)
-                .ToListAsync();
-
-            var doctors = await _context.Doctors
-                .Include(d => d.User)
-                .Include(d => d.Specialization)
-                .Where(d => d.IsAvailable && !doctorsOnLeave.Contains(d.Id))
-                .ToListAsync();
-
-            var patients = await _context.Patients
-                .Include(p => p.User)
-                .ToListAsync();
-
             var viewModel = new BookAppointmentViewModel
             {
-                AvailableDoctors = doctors.Select(d => new DoctorSelectDto
-                {
-                    Id = d.Id,
-                    FullName = d.User != null ? d.User.FullName : "Unknown",
-                    Specialization = d.Specialization != null ? d.Specialization.Name : "Not set",
-                    ConsultationFee = d.Specialization != null ? d.Specialization.ConsultationFee : 0
-                }).ToList(),
-                AvailablePatients = patients.Select(p => new PatientSelectDto
-                {
-                    Id = p.Id,
-                    FullName = p.User != null ? p.User.FullName : "Unknown",
-                    Email = p.User != null ? p.User.Email : "N/A"
-                }).ToList(),
-                AppointmentDateTime = ClinicTime.Now.AddDays(1).Date.AddHours(9),
+                AvailableDoctors = BookingSelectLists.ToDoctorOptions(await _staffService.GetBookableDoctorsAsync(_clock.Today)),
+                AvailablePatients = BookingSelectLists.ToPatientOptions(await _patientService.GetAllWithUserAsync()),
+                AppointmentDateTime = _clock.Now.AddDays(1).Date.AddHours(9),
             };
 
             if (patientId.HasValue)
@@ -214,10 +151,6 @@ namespace HCMS4.Modules.Appointments.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BookAppointment(BookAppointmentViewModel model)
         {
-            var doctor = await _context.Doctors
-                .Include(d => d.Specialization)
-                .FirstOrDefaultAsync(d => d.Id == model.DoctorId);
-
             if (ModelState.IsValid)
             {
                 try
@@ -228,9 +161,9 @@ namespace HCMS4.Modules.Appointments.Controllers
                         DoctorId = model.DoctorId,
                         AppointmentDateTime = model.AppointmentDateTime,
                         Status = AppointmentStatus.Scheduled,
-                        ConsultationFee = doctor?.Specialization?.ConsultationFee ?? 0,
-                        CreatedAt = ClinicTime.Now,
-                        UpdatedAt = ClinicTime.Now
+                        ConsultationFee = await _appointmentService.GetConsultationFeeAsync(model.DoctorId),
+                        CreatedAt = _clock.Now,
+                        UpdatedAt = _clock.Now
                     };
 
                     if (!string.IsNullOrEmpty(model.Symptoms))
@@ -256,30 +189,8 @@ namespace HCMS4.Modules.Appointments.Controllers
                 }
             }
 
-            var doctorsForReload = await _context.Doctors
-                .Include(d => d.User)
-                .Include(d => d.Specialization)
-                .Where(d => d.IsAvailable)
-                .ToListAsync();
-
-            var patientsForReload = await _context.Patients
-                .Include(p => p.User)
-                .ToListAsync();
-
-            model.AvailableDoctors = doctorsForReload.Select(d => new DoctorSelectDto
-            {
-                Id = d.Id,
-                FullName = d.User != null ? d.User.FullName : "Unknown",
-                Specialization = d.Specialization != null ? d.Specialization.Name : "Not set",
-                ConsultationFee = d.Specialization != null ? d.Specialization.ConsultationFee : 0
-            }).ToList();
-
-            model.AvailablePatients = patientsForReload.Select(p => new PatientSelectDto
-            {
-                Id = p.Id,
-                FullName = p.User != null ? p.User.FullName : "Unknown",
-                Email = p.User != null ? p.User.Email : "N/A"
-            }).ToList();
+            model.AvailableDoctors = BookingSelectLists.ToDoctorOptions(await _staffService.GetBookableDoctorsAsync(_clock.Today));
+            model.AvailablePatients = BookingSelectLists.ToPatientOptions(await _patientService.GetAllWithUserAsync());
 
             return View(model);
         }
@@ -295,12 +206,7 @@ namespace HCMS4.Modules.Appointments.Controllers
             if (id == null)
                 return NotFound();
 
-            var appointment = await _context.Appointments
-                .Include(a => a.Patient)
-                    .ThenInclude(p => p.User)
-                .Include(a => a.Doctor)
-                    .ThenInclude(d => d.User)
-                .FirstOrDefaultAsync(a => a.Id == id);
+            var appointment = await _appointmentService.GetByIdAsync(id.Value);
 
             if (appointment == null)
                 return NotFound();
@@ -327,9 +233,7 @@ namespace HCMS4.Modules.Appointments.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RescheduleAppointment(RescheduleAppointmentViewModel model)
         {
-            var appointment = await _context.Appointments
-                .Include(a => a.Patient)
-                .FirstOrDefaultAsync(a => a.Id == model.AppointmentId);
+            var appointment = await _appointmentService.GetByIdAsync(model.AppointmentId);
 
             if (appointment == null)
             {
@@ -345,11 +249,10 @@ namespace HCMS4.Modules.Appointments.Controllers
 
                 if (result.Success)
                 {
-                    var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == appointment.PatientId);
-                    if (patient != null)
+                    if (appointment.Patient != null)
                     {
                         await _notificationService.CreateForUserAsync(
-                            patient.UserId,
+                            appointment.Patient.UserId,
                             "Appointment rescheduled",
                             $"Your appointment was rescheduled from {previousDateTime:yyyy-MM-dd HH:mm} to {model.NewAppointmentDateTime:yyyy-MM-dd HH:mm}.",
                             NotificationType.AppointmentReminder,
@@ -383,9 +286,7 @@ namespace HCMS4.Modules.Appointments.Controllers
         {
             _logger.LogDebug("CancelAppointment called - ID: {Id}, Reason: {Reason}", id, cancellationReason);
 
-            var appointment = await _context.Appointments
-                .Include(a => a.Patient)
-                .FirstOrDefaultAsync(a => a.Id == id);
+            var appointment = await _appointmentService.GetByIdAsync(id);
 
             if (appointment == null)
             {
@@ -434,9 +335,7 @@ namespace HCMS4.Modules.Appointments.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendReminder(int id)
         {
-            var appointment = await _context.Appointments
-                .Include(a => a.Patient)
-                .FirstOrDefaultAsync(a => a.Id == id);
+            var appointment = await _appointmentService.GetByIdAsync(id);
 
             if (appointment == null || appointment.Status != AppointmentStatus.Scheduled)
             {
@@ -479,18 +378,14 @@ namespace HCMS4.Modules.Appointments.Controllers
             return RedirectToAction(nameof(ManageAppointments));
         }
 
-        private bool AppointmentExists(int id) => _context.Appointments.Any(e => e.Id == id);
-
         public async Task<IActionResult> DoctorSchedule(int id, string status = "all")
         {
-            var doctor = await _context.Doctors
-                .Include(d => d.User)
-                .FirstOrDefaultAsync(d => d.Id == id);
+            var doctor = await _staffService.GetDoctorProfileAsync(id);
 
             if (doctor == null)
                 return NotFound();
             var allAppointments = await _appointmentService.GetByDoctorIdAsync(id);
-            var today = ClinicTime.Today;
+            var today = _clock.Today;
 
             var todayAppointments = allAppointments
                 .Where(a => a.AppointmentDateTime.Date == today)

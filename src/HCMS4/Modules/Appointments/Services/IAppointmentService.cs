@@ -23,5 +23,14 @@ namespace HCMS4.Modules.Appointments.Services
         Task<decimal> GetConsultationFeeAsync(int doctorId);
 
         Task<int> CountByStatusAsync(AppointmentStatus status);
+
+        /// <summary>A doctor's appointments whose date is between <paramref name="fromDate"/> and <paramref name="toDate"/> (inclusive), oldest first.</summary>
+        Task<List<Appointment>> GetDoctorAppointmentsAsync(int doctorId, DateTime fromDate, DateTime toDate, bool scheduledOnly, int? take = null);
+
+        /// <summary>Completed appointments of all doctors on the given date, with patient and user.</summary>
+        Task<List<Appointment>> GetCompletedOnDateAsync(DateTime date);
+
+        /// <summary>Number of completed appointments per patient.</summary>
+        Task<Dictionary<int, int>> CountCompletedByPatientAsync(IReadOnlyCollection<int> patientIds);
     }
 }

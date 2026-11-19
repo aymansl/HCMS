@@ -24,6 +24,8 @@ namespace HCMS4.Modules.Staff.Services
         Task<int> CountScheduledAppointmentsAsync(int doctorId, DateTime from, DateTime to);
         Task<DoctorLeaveViewModel?> GetDoctorLeavesAsync(int doctorId);
         Task<Doctor?> GetDoctorProfileAsync(int doctorId);
+        /// <summary>Doctors marked available and not on approved leave on <paramref name="date"/>, with user and specialization.</summary>
+        Task<List<Doctor>> GetBookableDoctorsAsync(DateTime date);
 
         Task<List<Pharmacist>> GetPharmacistsAsync();
         Task<PharmacistEditViewModel?> GetPharmacistForEditAsync(int id);
@@ -220,6 +222,21 @@ namespace HCMS4.Modules.Staff.Services
                 .Include(d => d.User)
                 .Include(d => d.Specialization)
                 .FirstOrDefaultAsync(d => d.Id == doctorId);
+
+        public async Task<List<Doctor>> GetBookableDoctorsAsync(DateTime date)
+        {
+            var day = date.Date;
+            var doctorsOnLeave = await _context.DoctorLeaves
+                .Where(dl => dl.Status == LeaveStatus.Approved && dl.StartDate <= day && dl.EndDate >= day)
+                .Select(dl => dl.DoctorId)
+                .ToListAsync();
+
+            return await _context.Doctors.AsNoTracking()
+                .Include(d => d.User)
+                .Include(d => d.Specialization)
+                .Where(d => d.IsAvailable && !doctorsOnLeave.Contains(d.Id))
+                .ToListAsync();
+        }
 
         public Task<List<Pharmacist>> GetPharmacistsAsync() =>
             _context.Pharmacists.AsNoTracking()

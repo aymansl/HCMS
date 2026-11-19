@@ -24,6 +24,9 @@ namespace HCMS4.Modules.Records.Services
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
+        public Task<List<Patient>> GetAllWithUserAsync() =>
+            _context.Patients.AsNoTracking().Include(p => p.User).ToListAsync();
+
         public async Task<Patient> GetByIdWithDetailsAsync(int id)
         {
             return await _context.Patients

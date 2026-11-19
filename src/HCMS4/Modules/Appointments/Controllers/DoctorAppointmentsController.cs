@@ -1,14 +1,5 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Billing.Models;
-using HCMS4.Modules.Feedback.Models;
-using HCMS4.Modules.Pharmacy.Models;
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Staff.Models;
-using HCMS4.Modules.Staff.Services;
 using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
 using HCMS4.Shared.Notifications.Models;
@@ -16,39 +7,38 @@ using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCMS4.Modules.Appointments.Controllers
 {
     // Part of the former DoctorController; [ControllerName] keeps the /Doctor/... URLs.
     [Authorize(Roles = "Doctor")]
     [ControllerName("Doctor")]
-    public class DoctorAppointmentsController : BaseController
+    public class DoctorAppointmentsController : HcmsControllerBase
     {
         private readonly IAppointmentService _appointmentService;
-        private readonly IPrescriptionService _prescriptionService;
-        private readonly ILeaveService _leaveService;
+        private readonly IDailyVisitReportService _visitReportService;
         private readonly INoShowRiskService _noShowRiskService;
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
+        private readonly IClinicClock _clock;
+        private readonly ILogger<DoctorAppointmentsController> _logger;
 
         public DoctorAppointmentsController(
-            ApplicationDbContext context,
-            ILogger<DoctorAppointmentsController> logger,
             IAppointmentService appointmentService,
-            IPrescriptionService prescriptionService,
-            ILeaveService leaveService,
+            IDailyVisitReportService visitReportService,
             INoShowRiskService noShowRiskService,
             INotificationService notificationService,
-            IActivityLogService activityLogService)
-            : base(context, logger)
+            IActivityLogService activityLogService,
+            IClinicClock clock,
+            ILogger<DoctorAppointmentsController> logger)
         {
             _appointmentService = appointmentService;
-            _prescriptionService = prescriptionService;
-            _leaveService = leaveService;
+            _visitReportService = visitReportService;
             _noShowRiskService = noShowRiskService;
             _notificationService = notificationService;
             _activityLogService = activityLogService;
+            _clock = clock;
+            _logger = logger;
         }
 
         public async Task<IActionResult> ViewAppointments(string viewMode = "today", DateTime? selectedDate = null,
@@ -70,55 +60,26 @@ namespace HCMS4.Modules.Appointments.Controllers
                     SelectedRiskLevel = riskLevel
                 };
 
-                var today = ClinicTime.Today;
-                var now = ClinicTime.Now;
+                var today = _clock.Today;
+                var now = _clock.Now;
 
                 if (viewMode == "today")
                 {
-                    viewModel.TodayAppointments = await _context.Appointments
-                        .Include(a => a.Patient)
-                            .ThenInclude(p => p.User)
-                        .Include(a => a.Doctor)
-                        .Where(a => a.DoctorId == doctorId.Value &&
-                               a.AppointmentDateTime.Date == today &&
-                               a.Status == AppointmentStatus.Scheduled)
-                        .OrderBy(a => a.AppointmentDateTime)
-                        .ToListAsync();
-
-                    viewModel.UpcomingAppointments = await _context.Appointments
-                        .Include(a => a.Patient)
-                            .ThenInclude(p => p.User)
-                        .Include(a => a.Doctor)
-                        .Where(a => a.DoctorId == doctorId.Value &&
-                               a.AppointmentDateTime > today.AddDays(1) &&
-                               a.Status == AppointmentStatus.Scheduled)
-                        .OrderBy(a => a.AppointmentDateTime)
-                        .Take(50)
-                        .ToListAsync();
+                    viewModel.TodayAppointments = await _appointmentService.GetDoctorAppointmentsAsync(
+                        doctorId.Value, today, today, scheduledOnly: true);
+                    viewModel.UpcomingAppointments = await _appointmentService.GetDoctorAppointmentsAsync(
+                        doctorId.Value, today.AddDays(1), DateTime.MaxValue, scheduledOnly: true,
+                        take: BusinessRules.MaxUpcomingAppointments);
                 }
                 else if (viewMode == "date" && selectedDate.HasValue)
                 {
-                    viewModel.TodayAppointments = await _context.Appointments
-                        .Include(a => a.Patient)
-                            .ThenInclude(p => p.User)
-                        .Include(a => a.Doctor)
-                        .Where(a => a.DoctorId == doctorId.Value &&
-                               a.AppointmentDateTime.Date == selectedDate.Value.Date &&
-                               a.Status == AppointmentStatus.Scheduled)
-                        .OrderBy(a => a.AppointmentDateTime)
-                        .ToListAsync();
+                    viewModel.TodayAppointments = await _appointmentService.GetDoctorAppointmentsAsync(
+                        doctorId.Value, selectedDate.Value, selectedDate.Value, scheduledOnly: true);
                 }
                 else if (viewMode == "range" && startDate.HasValue && endDate.HasValue)
                 {
-                    var appointments = await _context.Appointments
-                        .Include(a => a.Patient)
-                            .ThenInclude(p => p.User)
-                        .Include(a => a.Doctor)
-                        .Where(a => a.DoctorId == doctorId.Value &&
-                               a.AppointmentDateTime.Date >= startDate.Value.Date &&
-                               a.AppointmentDateTime.Date <= endDate.Value.Date)
-                        .OrderBy(a => a.AppointmentDateTime)
-                        .ToListAsync();
+                    var appointments = await _appointmentService.GetDoctorAppointmentsAsync(
+                        doctorId.Value, startDate.Value, endDate.Value, scheduledOnly: false);
 
                     foreach (var appointment in appointments)
                     {
@@ -184,21 +145,18 @@ namespace HCMS4.Modules.Appointments.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var appointment = await _context.Appointments
-                .Include(a => a.Patient)
-                .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == doctorId.Value);
+            var appointment = await _appointmentService.GetByIdAsync(id);
 
-            if (appointment == null || appointment.Status != AppointmentStatus.Scheduled)
+            if (appointment == null || appointment.DoctorId != doctorId.Value || appointment.Status != AppointmentStatus.Scheduled)
             {
                 TempData["ErrorMessage"] = "Appointment not found or cannot receive reminders.";
                 return RedirectToAction(nameof(ViewAppointments));
             }
 
-            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.Id == appointment.PatientId);
-            if (patient != null)
+            if (appointment.Patient != null)
             {
                 await _notificationService.CreateForUserAsync(
-                    patient.UserId,
+                    appointment.Patient.UserId,
                     "Appointment reminder",
                     $"Reminder: you have an appointment on {appointment.AppointmentDateTime:yyyy-MM-dd HH:mm}.",
                     NotificationType.AppointmentReminder,
@@ -242,9 +200,9 @@ namespace HCMS4.Modules.Appointments.Controllers
         {
             try
             {
-                var reportDate = date ?? ClinicTime.Today;
+                var reportDate = date ?? _clock.Today;
 
-                if (reportDate > ClinicTime.Today)
+                if (reportDate > _clock.Today)
                 {
                     TempData["ErrorMessage"] = "Cannot display report for a future date.";
                     return View(new DailyVisitingPatientsReportViewModel
@@ -254,48 +212,7 @@ namespace HCMS4.Modules.Appointments.Controllers
                     });
                 }
 
-                var appointments = await _context.Appointments
-                    .Include(a => a.Patient)
-                        .ThenInclude(p => p.User)
-                    .Include(a => a.Doctor)
-                    .Where(a => a.Status == AppointmentStatus.Completed &&
-                               a.AppointmentDateTime.Date == reportDate.Date)
-                    .OrderBy(a => a.AppointmentDateTime)
-                    .ToListAsync();
-
-                var prescriptions = await _context.Prescriptions
-                    .Where(p => p.AppointmentId.HasValue &&
-                               appointments.Select(a => a.Id).Contains(p.AppointmentId.Value))
-                    .Include(p => p.PrescriptionItems)
-                    .ToListAsync();
-
-                var viewModel = new DailyVisitingPatientsReportViewModel
-                {
-                    ReportDate = reportDate,
-                    TotalPatients = appointments.Count,
-                    Patients = appointments.Select(a =>
-                    {
-                        var prescription = prescriptions.FirstOrDefault(p => p.AppointmentId == a.Id);
-                        var hasPrescription = prescription != null;
-                        var diagnosis = GetDiagnosis(prescription);
-                        return new VisitingPatientItem
-                        {
-                            AppointmentId = a.Id,
-                            PatientName = a.Patient?.User?.FullName ?? "Unknown",
-                            PhoneNumber = a.Patient?.User?.PhoneNumber,
-                            AppointmentTime = a.AppointmentDateTime,
-                            VisitType = DetermineVisitType(a.PatientId, a.Id),
-                            Diagnosis = diagnosis,
-                            HasPrescription = hasPrescription
-                        };
-                    }).ToList()
-                };
-
-                if (!viewModel.Patients.Any())
-                {
-                    viewModel.ErrorMessage = "No visiting patients on the selected date.";
-                }
-
+                var viewModel = await _visitReportService.GetReportAsync(reportDate);
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -304,29 +221,6 @@ namespace HCMS4.Modules.Appointments.Controllers
                 TempData["ErrorMessage"] = "Failed to load report data, please try again later.";
                 return View(new DailyVisitingPatientsReportViewModel { ErrorMessage = "Failed to load report data, please try again later." });
             }
-        }
-
-        private string DetermineVisitType(int patientId, int currentAppointmentId)
-        {
-            var previousAppointments = _context.Appointments
-                .Count(a => a.PatientId == patientId &&
-                           a.Id != currentAppointmentId &&
-                           a.Status == AppointmentStatus.Completed);
-
-            return previousAppointments > 0 ? "Follow-up" : "Consultation";
-        }
-
-        private string? GetDiagnosis(Prescription? prescription)
-        {
-            if (prescription != null && prescription.PrescriptionItems.Any())
-            {
-                var drugName = prescription.PrescriptionItems.First().DrugName;
-                return drugName?.Length > 20
-                    ? drugName.Substring(0, 20) + "..."
-                    : drugName;
-            }
-
-            return null;
         }
 
         [HttpGet]

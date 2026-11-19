@@ -322,6 +322,50 @@ namespace HCMS4.Modules.Appointments.Services
         public Task<int> CountByStatusAsync(AppointmentStatus status) =>
             _context.Appointments.CountAsync(a => a.Status == status);
 
+        public async Task<List<Appointment>> GetDoctorAppointmentsAsync(int doctorId, DateTime fromDate, DateTime toDate,
+            bool scheduledOnly, int? take = null)
+        {
+            var from = fromDate.Date;
+            var to = toDate.Date;
+            var query = _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Patient)
+                    .ThenInclude(p => p.User)
+                .Include(a => a.Doctor)
+                .Where(a => a.DoctorId == doctorId &&
+                            a.AppointmentDateTime.Date >= from &&
+                            a.AppointmentDateTime.Date <= to);
+
+            if (scheduledOnly)
+                query = query.Where(a => a.Status == AppointmentStatus.Scheduled);
+
+            query = query.OrderBy(a => a.AppointmentDateTime);
+            if (take.HasValue)
+                query = query.Take(take.Value);
+
+            return await query.ToListAsync();
+        }
+
+        public Task<List<Appointment>> GetCompletedOnDateAsync(DateTime date)
+        {
+            var day = date.Date;
+            return _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Patient)
+                    .ThenInclude(p => p.User)
+                .Include(a => a.Doctor)
+                .Where(a => a.Status == AppointmentStatus.Completed && a.AppointmentDateTime.Date == day)
+                .OrderBy(a => a.AppointmentDateTime)
+                .ToListAsync();
+        }
+
+        public Task<Dictionary<int, int>> CountCompletedByPatientAsync(IReadOnlyCollection<int> patientIds) =>
+            _context.Appointments
+                .Where(a => a.Status == AppointmentStatus.Completed && patientIds.Contains(a.PatientId))
+                .GroupBy(a => a.PatientId)
+                .Select(g => new { PatientId = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.PatientId, x => x.Count);
+
         public async Task<decimal> GetConsultationFeeAsync(int doctorId)
         {
             var fee = await _context.Doctors

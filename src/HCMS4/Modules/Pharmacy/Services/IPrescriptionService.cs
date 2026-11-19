@@ -9,6 +9,8 @@ namespace HCMS4.Modules.Pharmacy.Services
         Task<List<Prescription>> GetPendingAsync();
         Task<List<Prescription>> GetByPatientIdAsync(int patientId);
         Task<List<Prescription>> GetByDoctorIdAsync(int doctorId);
+        /// <summary>Prescriptions written during the given appointments, with their items.</summary>
+        Task<List<Prescription>> GetByAppointmentIdsAsync(IReadOnlyCollection<int> appointmentIds);
         Task<ServiceResult> CreateAsync(Prescription prescription, List<PrescriptionItem> items);
         Task<ServiceResult> MarkAsCompletedAsync(int id);
         Task<ServiceResult> CancelAsync(int id);
