@@ -28,14 +28,9 @@
                     </a>
                     @if (Model.Status == PrescriptionStatus.Pending)
                     {
-                        <form asp-action="MarkPrescriptionCompleted" asp-route-id="@Model.Id"
-                              method="post" style="display: inline;"
-                              onsubmit="return confirm('Mark this prescription as completed?')">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-check-lg"></i> Mark as Completed
-                            </button>
-                        </form>
+                        <a asp-action="ProcessPrescription" asp-route-id="@Model.Id" class="btn btn-success">
+                            <i class="bi bi-cash-stack"></i> Dispense
+                        </a>
                     }
                     <a asp-action="RequestDoctorReview" asp-route-prescriptionId="@Model.Id" class="btn btn-outline-warning">
                         <i class="bi bi-arrow-repeat"></i> Request Doctor Review
@@ -364,13 +359,9 @@
 
                                 @if (Model.Status == PrescriptionStatus.Pending)
                                 {
-                                    <form asp-action="MarkPrescriptionCompleted" asp-route-id="@Model.Id"
-                                          method="post" onsubmit="return confirm('Mark this prescription as completed?')">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-success w-100">
-                                            <i class="bi bi-check-lg me-2"></i> Mark as Completed
-                                        </button>
-                                    </form>
+                                    <a asp-action="ProcessPrescription" asp-route-id="@Model.Id" class="btn btn-success w-100">
+                                        <i class="bi bi-cash-stack me-2"></i> Dispense
+                                    </a>
                                 }
                             </div>
                         </div>
@@ -436,18 +427,6 @@
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        // Prevent double submission
-        document.querySelectorAll('form[action*="MarkPrescriptionCompleted"]').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Processing...';
-            });
-        });
-    </script>
-}
 
 <style>
     /* Gradient Headers */

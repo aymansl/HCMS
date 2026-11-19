@@ -151,14 +151,8 @@ namespace HCMS4.Modules.Pharmacy.Services
                         item.DrugName = catalogDrug.Name;
                     }
 
+                    // Stock is checked here but taken only when the pharmacist dispenses (DispensingService).
                     _context.PrescriptionItems.Add(item);
-
-                    // Use pre-loaded drug from dictionary
-                    if (item.DrugId > 0 && drugs.TryGetValue(item.DrugId, out var drug))
-                    {
-                        drug.Quantity -= item.Quantity;
-                        drug.UpdatedAt = now;
-                    }
                 }
 
                 await _context.SaveChangesAsync();
@@ -177,90 +171,30 @@ namespace HCMS4.Modules.Pharmacy.Services
             }
         }
 
-        public async Task<ServiceResult> MarkAsCompletedAsync(int id)
-        {
-            try
-            {
-                var prescription = await _context.Prescriptions
-                    .Include(p => p.Patient)
-                        .ThenInclude(pat => pat.User)
-                    .FirstOrDefaultAsync(p => p.Id == id);
-
-                if (prescription == null)
-                {
-                    return ServiceResult.Fail("Prescription not found.");
-                }
-
-                if (prescription.Status != PrescriptionStatus.Pending)
-                {
-                    return ServiceResult.Fail("Only pending prescriptions can be marked as completed.");
-                }
-
-                prescription.Status = PrescriptionStatus.Completed;
-                prescription.UpdatedAt = ClinicTime.Now;
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Prescription {PrescriptionId} marked as completed for patient {PatientName}",
-                    id, prescription.Patient?.User?.FullName);
-
-                return ServiceResult.Ok($"Prescription for {prescription.Patient?.User?.FullName} marked as completed!");
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                _logger.LogWarning("Concurrency conflict updating prescription {PrescriptionId}", id);
-                return ServiceResult.Fail("The prescription was modified by another user. Please refresh and try again.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error marking prescription {PrescriptionId} as completed", id);
-                return ServiceResult.Fail("An error occurred while updating the prescription.");
-            }
-        }
-
         public async Task<ServiceResult> CancelAsync(int id)
         {
             try
             {
-                var prescription = await _context.Prescriptions
-                    .Include(p => p.PrescriptionItems)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                var prescription = await _context.Prescriptions.FirstOrDefaultAsync(p => p.Id == id);
 
                 if (prescription == null)
                 {
                     return ServiceResult.Fail("Prescription not found.");
                 }
 
-                if (prescription.Status == PrescriptionStatus.Canceled)
+                // Only a pending prescription can be canceled; no stock was taken for it yet.
+                if (prescription.Status != PrescriptionStatus.Pending)
                 {
-                    return ServiceResult.Fail("Prescription is already canceled.");
-                }
-
-                using var transaction = await _context.Database.BeginTransactionAsync();
-
-                // Batch load all drugs for stock restoration
-                var drugIds = prescription.PrescriptionItems.Select(i => i.DrugId).Where(id => id > 0).Distinct().ToList();
-                var drugs = await _context.Drugs
-                    .Where(d => drugIds.Contains(d.Id))
-                    .ToDictionaryAsync(d => d.Id);
-
-                // Restore stock
-                foreach (var item in prescription.PrescriptionItems)
-                {
-                    if (item.DrugId > 0 && drugs.TryGetValue(item.DrugId, out var drug))
-                    {
-                        drug.Quantity += item.Quantity;
-                        drug.UpdatedAt = ClinicTime.Now;
-                    }
+                    return ServiceResult.Fail("Only pending prescriptions can be canceled.");
                 }
 
                 prescription.Status = PrescriptionStatus.Canceled;
                 prescription.UpdatedAt = ClinicTime.Now;
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
 
-                _logger.LogInformation("Prescription {PrescriptionId} canceled and stock restored", id);
-                return ServiceResult.Ok("Prescription cancelled and stock restored.");
+                _logger.LogInformation("Prescription {PrescriptionId} canceled", id);
+                return ServiceResult.Ok("Prescription cancelled.");
             }
             catch (Exception ex)
             {

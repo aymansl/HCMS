@@ -40,6 +40,8 @@ namespace HCMS4.Tests.Integration
             new object[] { "Admin", "/Admin/EditSupplier/{supplierId}" },
             new object[] { "Admin", "/Admin/PurchaseRequests" },
             new object[] { "Admin", "/Admin/PurchaseRequestDetails/{purchaseRequestId}" },
+            new object[] { "Admin", "/Admin/ManageInvoices" },
+            new object[] { "Admin", "/Admin/ManageInvoices?Status=Pending&Search=a&From=2020-01-01&To=2099-01-01" },
             new object[] { "Admin", "/Admin/GenerateInvoice?patientId={patientId}" },
             new object[] { "Admin", "/Admin/ViewInvoice/{invoiceId}" },
             new object[] { "Admin", "/Admin/InvoiceDetails/{invoiceId}" },

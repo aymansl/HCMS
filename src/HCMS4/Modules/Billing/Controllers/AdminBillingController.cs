@@ -29,6 +29,21 @@ namespace HCMS4.Modules.Billing.Controllers
             _logger = logger;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> ManageInvoices([FromQuery] InvoiceListFilter filter)
+        {
+            try
+            {
+                return View(await _invoiceService.GetListAsync(filter));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading the invoice list");
+                TempData["ErrorMessage"] = "تعذّر تحميل قائمة الفواتير، يرجى المحاولة لاحقاً.";
+                return View(new AdminInvoiceListViewModel { Filter = filter });
+            }
+        }
+
         public async Task<IActionResult> GenerateInvoice(int patientId)
         {
             try

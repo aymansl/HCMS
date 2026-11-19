@@ -44,15 +44,6 @@ namespace HCMS4.Modules.Pharmacy.Controllers
             }
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkPrescriptionCompleted(int id)
-        {
-            var result = await _prescriptionService.MarkAsCompletedAsync(id);
-            TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
-            return RedirectToAction(nameof(PendingPrescriptions));
-        }
-
         public async Task<IActionResult> Suppliers()
         {
             try

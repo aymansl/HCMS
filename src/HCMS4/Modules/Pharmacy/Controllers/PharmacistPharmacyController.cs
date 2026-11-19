@@ -176,15 +176,6 @@ namespace HCMS4.Modules.Pharmacy.Controllers
             }
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkPrescriptionCompleted(int id)
-        {
-            var result = await _pharmacistService.MarkPrescriptionCompletedAsync(id, CurrentUserId!);
-            TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
-            return RedirectToAction(nameof(PrescriptionDetails), new { id });
-        }
-
         [HttpGet]
         public async Task<IActionResult> ProcessPrescription(int id)
         {
@@ -229,11 +220,11 @@ namespace HCMS4.Modules.Pharmacy.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DispensePrescription(int id, List<int> selectedItemIds, string dispensingNotes)
+        public async Task<IActionResult> DispensePrescription(int id, string? dispensingNotes)
         {
             try
             {
-                var result = await _dispensingService.DispenseAsync(id, selectedItemIds ?? new List<int>(), dispensingNotes, CurrentUserId!);
+                var result = await _dispensingService.DispenseAsync(id, dispensingNotes, CurrentUserId!);
                 if (!result.Success)
                 {
                     return Json(new { success = false, message = result.Message });
@@ -244,8 +235,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                     success = true,
                     message = result.Message,
                     invoiceId = result.Data.InvoiceId,
-                    totalAmount = result.Data.TotalAmount,
-                    isPartial = result.Data.IsPartial
+                    totalAmount = result.Data.TotalAmount
                 });
             }
             catch (Exception ex)

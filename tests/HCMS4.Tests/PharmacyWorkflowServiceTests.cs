@@ -139,14 +139,13 @@ namespace HCMS4.Tests
         // ---- Dispensing ----
 
         [Fact]
-        public async Task Dispense_AllItems_CompletesPrescription_TakesStock_AndCreatesInvoiceWithTax()
+        public async Task Dispense_CompletesPrescription_TakesAllStock_AndCreatesInvoiceWithTax()
         {
             var seed = await SeedPrescriptionAsync();
 
-            var result = await Dispensing.DispenseAsync(seed.prescription.Id, new[] { seed.first.Id, seed.second.Id }, "ok", seed.pharmacistUserId);
+            var result = await Dispensing.DispenseAsync(seed.prescription.Id, "ok", seed.pharmacistUserId);
 
             Assert.True(result.Success);
-            Assert.False(result.Data.IsPartial);
             Assert.Equal(157.5m, result.Data.TotalAmount); // 6 x 25 = 150 + 5% tax
             Assert.Equal(94, (await _db.Drugs.AsNoTracking().SingleAsync(d => d.Id == seed.drug.Id)).Quantity);
             var prescription = await _db.Prescriptions.AsNoTracking().SingleAsync(p => p.Id == seed.prescription.Id);
@@ -158,33 +157,44 @@ namespace HCMS4.Tests
         }
 
         [Fact]
-        public async Task Dispense_SomeItems_IsPartial_AndKeepsPrescriptionPending()
+        public async Task Dispense_Twice_IsRejected_SoStockAndInvoiceAreTakenOnce()
         {
             var seed = await SeedPrescriptionAsync();
 
-            var result = await Dispensing.DispenseAsync(seed.prescription.Id, new[] { seed.first.Id }, null, seed.pharmacistUserId);
+            Assert.True((await Dispensing.DispenseAsync(seed.prescription.Id, null, seed.pharmacistUserId)).Success);
+            Assert.False((await Dispensing.DispenseAsync(seed.prescription.Id, null, seed.pharmacistUserId)).Success);
 
-            Assert.True(result.Success);
-            Assert.True(result.Data.IsPartial);
-            var prescription = await _db.Prescriptions.AsNoTracking().SingleAsync(p => p.Id == seed.prescription.Id);
-            Assert.Equal(PrescriptionStatus.Pending, prescription.Status);
-            Assert.StartsWith("Partially dispensed", prescription.Notes);
+            Assert.Single(await _db.Invoices.ToListAsync());
+            Assert.Equal(94, (await _db.Drugs.AsNoTracking().SingleAsync(d => d.Id == seed.drug.Id)).Quantity);
         }
 
         [Fact]
-        public async Task Dispense_InsufficientStock_OrNoSelection_OrUnknownPharmacist_ChangesNothing()
+        public async Task Dispense_OneItemShort_DispensesNothing()
         {
+            // Stock 3 covers the second item (2) but not both (4 + 2): no partial dispensing.
             var seed = await SeedPrescriptionAsync();
             var drug = await _db.Drugs.SingleAsync(d => d.Id == seed.drug.Id);
             drug.Quantity = 3;
             await _db.SaveChangesAsync();
 
-            Assert.False((await Dispensing.DispenseAsync(seed.prescription.Id, new[] { seed.first.Id }, null, seed.pharmacistUserId)).Success);
-            Assert.False((await Dispensing.DispenseAsync(seed.prescription.Id, Array.Empty<int>(), null, seed.pharmacistUserId)).Success);
-            Assert.False((await Dispensing.DispenseAsync(seed.prescription.Id, new[] { seed.second.Id }, null, "no-such-user")).Success);
+            var result = await Dispensing.DispenseAsync(seed.prescription.Id, null, seed.pharmacistUserId);
 
+            Assert.False(result.Success);
+            Assert.Contains("insufficient stock", result.Message);
             Assert.False(await _db.Invoices.AnyAsync());
             Assert.Equal(3, (await _db.Drugs.AsNoTracking().SingleAsync(d => d.Id == seed.drug.Id)).Quantity);
+            Assert.Equal(PrescriptionStatus.Pending, (await _db.Prescriptions.AsNoTracking().SingleAsync(p => p.Id == seed.prescription.Id)).Status);
+        }
+
+        [Fact]
+        public async Task Dispense_UnknownPharmacist_ChangesNothing()
+        {
+            var seed = await SeedPrescriptionAsync();
+
+            Assert.False((await Dispensing.DispenseAsync(seed.prescription.Id, null, "no-such-user")).Success);
+
+            Assert.False(await _db.Invoices.AnyAsync());
+            Assert.Equal(100, (await _db.Drugs.AsNoTracking().SingleAsync(d => d.Id == seed.drug.Id)).Quantity);
         }
 
         [Fact]
@@ -192,7 +202,7 @@ namespace HCMS4.Tests
         {
             var seed = await SeedPrescriptionAsync(PrescriptionStatus.Completed);
 
-            Assert.False((await Dispensing.DispenseAsync(seed.prescription.Id, new[] { seed.first.Id }, null, seed.pharmacistUserId)).Success);
+            Assert.False((await Dispensing.DispenseAsync(seed.prescription.Id, null, seed.pharmacistUserId)).Success);
         }
 
         [Fact]

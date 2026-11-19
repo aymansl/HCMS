@@ -3,6 +3,13 @@
 @{
     ViewData["Title"] = "Process Prescription";
     Layout = "_LayoutAuth";
+
+    // The whole prescription is dispensed at once, so the totals cover every item.
+    var items = Model.PrescriptionItems?.ToList() ?? new List<HCMS4.Modules.Pharmacy.Models.PrescriptionItem>();
+    var medicationTotal = items.Sum(i => (i.Drug?.Price ?? 0) * i.Quantity);
+    var tax = medicationTotal * HCMS4.Modules.Pharmacy.Services.DispensingService.TaxRate;
+    var grandTotal = medicationTotal + tax;
+    var canDispense = items.Any() && items.All(i => i.Drug != null && i.Drug.Quantity >= i.Quantity);
 }
 
 <div class="container-fluid p-4">
@@ -130,9 +137,6 @@
                                     <table class="table table-bordered">
                                         <thead class="table-light">
                                             <tr>
-                                                <th style="width: 40px">
-                                                    <input type="checkbox" id="selectAll" class="form-check-input">
-                                                </th>
                                                 <th>Medicine</th>
                                                 <th>Dosage</th>
                                                 <th>Quantity</th>
@@ -149,16 +153,6 @@
                                                     var stockAvailable = item.Drug?.Quantity ?? 0;
                                                     var isInStock = stockAvailable >= item.Quantity;
                                                     <tr class="prescription-item @(!isInStock ? "table-danger" : "")">
-                                                        <td class="text-center">
-                                                            <input type="checkbox"
-                                                                   name="selectedItemIds"
-                                                                   value="@item.Id"
-                                                                   class="form-check-input item-checkbox"
-                                                                   data-item-id="@item.Id"
-                                                                   data-quantity="@item.Quantity"
-                                                                   data-price="@(item.Drug?.Price ?? 0)"
-                                                                   @(!isInStock ? "disabled" : "")>
-                                                        </td>
                                                         <td>
                                                             <strong>@(item.Drug?.Name ?? "Unknown")</strong>
                                                             @if (!isInStock)
@@ -185,7 +179,7 @@
                                             else
                                             {
                                                 <tr>
-                                                    <td colspan="7" class="text-center py-4">
+                                                    <td colspan="6" class="text-center py-4">
                                                         <i class="bi bi-inbox display-6 text-muted"></i>
                                                         <p class="mt-2 mb-0">No medications found in this prescription</p>
                                                     </td>
@@ -194,21 +188,21 @@
                                         </tbody>
                                         <tfoot class="table-light">
                                             <tr>
-                                                <td colspan="5" class="text-end fw-bold">Total Amount:</td>
+                                                <td colspan="4" class="text-end fw-bold">Total Amount:</td>
                                                 <td colspan="2">
-                                                    <h5 class="mb-0" id="totalAmount">$0.00</h5>
+                                                    <h5 class="mb-0" id="totalAmount">@medicationTotal.ToString("C")</h5>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="5" class="text-end fw-bold">Tax (5%):</td>
+                                                <td colspan="4" class="text-end fw-bold">Tax (5%):</td>
                                                 <td colspan="2">
-                                                    <span id="taxAmount">$0.00</span>
+                                                    <span id="taxAmount">@tax.ToString("C")</span>
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td colspan="5" class="text-end fw-bold">Grand Total:</td>
+                                                <td colspan="4" class="text-end fw-bold">Grand Total:</td>
                                                 <td colspan="2">
-                                                    <h4 class="mb-0 text-primary" id="grandTotal">$0.00</h4>
+                                                    <h4 class="mb-0 text-primary" id="grandTotal">@grandTotal.ToString("C")</h4>
                                                 </td>
                                             </tr>
                                         </tfoot>
@@ -235,7 +229,13 @@
                                         <button type="button" class="btn btn-warning me-2" id="holdButton">
                                             <i class="bi bi-pause-circle"></i> Hold Prescription
                                         </button>
-                                        <button type="submit" class="btn btn-success" id="dispenseButton" disabled>
+                                        @if (!canDispense)
+                                        {
+                                            <div class="text-danger small mb-2">
+                                                <i class="bi bi-exclamation-triangle"></i> Cannot dispense: some medications are out of stock. Partial dispensing is not allowed.
+                                            </div>
+                                        }
+                                        <button type="submit" class="btn btn-success" id="dispenseButton" @(canDispense ? "" : "disabled")>
                                             <i class="bi bi-check2-circle"></i> Dispense & Send to Billing
                                         </button>
                                     </div>
@@ -264,16 +264,16 @@
                             <div class="billing-summary">
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Medications Total:</span>
-                                    <span id="sidebarTotal" class="fw-bold">$0.00</span>
+                                    <span id="sidebarTotal" class="fw-bold">@medicationTotal.ToString("C")</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Tax (5%):</span>
-                                    <span id="sidebarTax">$0.00</span>
+                                    <span id="sidebarTax">@tax.ToString("C")</span>
                                 </div>
                                 <hr>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span class="fw-bold">Amount to be Paid:</span>
-                                    <span id="sidebarGrandTotal" class="fw-bold text-primary fs-5">$0.00</span>
+                                    <span id="sidebarGrandTotal" class="fw-bold text-primary fs-5">@grandTotal.ToString("C")</span>
                                 </div>
                                 <div class="text-muted small">
                                     <i class="bi bi-receipt"></i> Invoice will be generated at billing counter
@@ -358,57 +358,6 @@
 
 @section Scripts {
     <script>
-        // Calculate totals based on selected items
-        function calculateTotals() {
-            let total = 0;
-            const checkboxes = document.querySelectorAll('.item-checkbox:checked');
-
-            checkboxes.forEach(checkbox => {
-                const quantity = parseFloat(checkbox.dataset.quantity);
-                const price = parseFloat(checkbox.dataset.price);
-                total += quantity * price;
-            });
-
-            const tax = total * 0.05;
-            const grandTotal = total + tax;
-
-            // Update all displays
-            document.getElementById('totalAmount').textContent = formatCurrency(total);
-            document.getElementById('taxAmount').textContent = formatCurrency(tax);
-            document.getElementById('grandTotal').textContent = formatCurrency(grandTotal);
-
-            document.getElementById('sidebarTotal').textContent = formatCurrency(total);
-            document.getElementById('sidebarTax').textContent = formatCurrency(tax);
-            document.getElementById('sidebarGrandTotal').textContent = formatCurrency(grandTotal);
-
-            // Enable/disable dispense button
-            const dispenseBtn = document.getElementById('dispenseButton');
-            dispenseBtn.disabled = checkboxes.length === 0;
-        }
-
-        // Format currency
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-            }).format(amount);
-        }
-
-        // Select All functionality
-        document.getElementById('selectAll')?.addEventListener('change', function(e) {
-            const checkboxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
-            checkboxes.forEach(cb => cb.checked = e.target.checked);
-            calculateTotals();
-        });
-
-        // Individual checkbox changes
-        document.querySelectorAll('.item-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', calculateTotals);
-        });
-
-        // Initial calculation
-        calculateTotals();
-
         // Hold prescription
         document.getElementById('holdButton')?.addEventListener('click', async function() {
             if (confirm('Hold this prescription? It will remain in pending queue for later processing.')) {
@@ -448,13 +397,7 @@
         document.getElementById('processForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const selectedItems = document.querySelectorAll('.item-checkbox:checked');
-            if (selectedItems.length === 0) {
-                alert('Please select at least one medication to dispense.');
-                return;
-            }
-
-            if (confirm('Dispense selected medications and send to billing?')) {
+            if (confirm('Dispense all medications of this prescription and send to billing?')) {
                 const formData = new FormData(this);
 
                 const dispenseBtn = document.getElementById('dispenseButton');

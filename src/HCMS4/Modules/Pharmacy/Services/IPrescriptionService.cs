@@ -12,7 +12,7 @@ namespace HCMS4.Modules.Pharmacy.Services
         /// <summary>Prescriptions written during the given appointments, with their items.</summary>
         Task<List<Prescription>> GetByAppointmentIdsAsync(IReadOnlyCollection<int> appointmentIds);
         Task<ServiceResult> CreateAsync(Prescription prescription, List<PrescriptionItem> items);
-        Task<ServiceResult> MarkAsCompletedAsync(int id);
+        /// <summary>Cancels a pending prescription (no stock has been taken for it).</summary>
         Task<ServiceResult> CancelAsync(int id);
         Task<bool> HasDrugStockAsync(int drugId, int quantity);
     }

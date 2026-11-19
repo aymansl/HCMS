@@ -1,0 +1,173 @@
+@model HCMS4.ViewModels.AdminInvoiceListViewModel
+@using HCMS4.Modules.Billing.Models
+
+@{
+    ViewData["Title"] = "إدارة الفواتير";
+    Layout = "_LayoutAuth";
+    var filter = Model.Filter;
+    var result = Model.Invoices;
+
+    string StatusLabel(PaymentStatus status) => status == PaymentStatus.Paid ? "مدفوعة" : "قيد الانتظار";
+    string StatusBadge(PaymentStatus status) => status == PaymentStatus.Paid ? "bg-success" : "bg-warning text-dark";
+}
+
+<div class="container-fluid p-4" dir="rtl" lang="ar">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0"><i class="bi bi-receipt ms-2"></i>إدارة الفواتير</h1>
+        <a asp-action="Patients" class="btn btn-outline-primary">
+            <i class="bi bi-plus-circle ms-1"></i> إنشاء فاتورة لمريض
+        </a>
+    </div>
+
+    <!-- Totals of all invoices that match the filter -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">عدد الفواتير</div>
+                    <div class="fs-4 fw-bold" id="invoice-count">@result.TotalCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">قيد الانتظار / مدفوعة</div>
+                    <div class="fs-4 fw-bold">@Model.PendingCount / @Model.PaidCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">المبلغ المحصّل</div>
+                    <div class="fs-4 fw-bold text-success">@Model.PaidAmount.ToString("N2")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">المبلغ غير المدفوع</div>
+                    <div class="fs-4 fw-bold text-danger">@Model.OutstandingAmount.ToString("N2")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" asp-action="ManageInvoices" class="card shadow-sm mb-4">
+        <div class="card-body row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label" for="search">بحث</label>
+                <input id="search" name="Search" value="@filter.Search" class="form-control"
+                       placeholder="رقم الفاتورة أو اسم المريض أو بريده" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="status">حالة الدفع</label>
+                <select id="status" name="Status" class="form-select">
+                    <option value="all" selected="@(filter.Status == "all")">الكل</option>
+                    <option value="Pending" selected="@(filter.Status == "Pending")">قيد الانتظار</option>
+                    <option value="Paid" selected="@(filter.Status == "Paid")">مدفوعة</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="from">من تاريخ</label>
+                <input id="from" type="date" name="From" value="@filter.From?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="to">إلى تاريخ</label>
+                <input id="to" type="date" name="To" value="@filter.To?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-fill"><i class="bi bi-funnel ms-1"></i> تطبيق</button>
+                <a asp-action="ManageInvoices" class="btn btn-outline-secondary flex-fill">مسح</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- Invoice list -->
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            @if (!result.Items.Any())
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-inbox display-6"></i>
+                    <p class="mt-2 mb-0">لا توجد فواتير مطابقة.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 text-end">
+                        <thead class="table-light">
+                            <tr>
+                                <th>رقم الفاتورة</th>
+                                <th>المريض</th>
+                                <th>التاريخ</th>
+                                <th>النوع</th>
+                                <th>المبلغ</th>
+                                <th>الحالة</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var invoice in result.Items)
+                            {
+                                <tr>
+                                    <td>#@invoice.Id</td>
+                                    <td>@(invoice.Patient?.User?.FullName ?? "غير معروف")</td>
+                                    <td>@invoice.InvoiceDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>
+                                        @if (invoice.PrescriptionId.HasValue)
+                                        {
+                                            <span class="badge bg-info text-dark">أدوية</span>
+                                        }
+                                        @if (invoice.AppointmentId.HasValue)
+                                        {
+                                            <span class="badge bg-secondary">كشف</span>
+                                        }
+                                    </td>
+                                    <td>@invoice.TotalAmount.ToString("N2")</td>
+                                    <td><span class="badge @StatusBadge(invoice.PaymentStatus)">@StatusLabel(invoice.PaymentStatus)</span></td>
+                                    <td class="text-nowrap">
+                                        <a asp-action="InvoiceDetails" asp-route-id="@invoice.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> التفاصيل
+                                        </a>
+                                        @if (invoice.PaymentStatus != PaymentStatus.Paid)
+                                        {
+                                            <a asp-action="UpdatePaymentStatus" asp-route-id="@invoice.Id" class="btn btn-sm btn-outline-success">
+                                                <i class="bi bi-cash"></i> تسجيل الدفع
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (result.TotalPages > 1)
+    {
+        <nav class="mt-3" aria-label="صفحات الفواتير">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(result.HasPreviousPage ? "" : "disabled")">
+                    <a class="page-link" asp-action="ManageInvoices" asp-route-Page="@(result.PageNumber - 1)"
+                       asp-route-Status="@filter.Status" asp-route-Search="@filter.Search"
+                       asp-route-From="@filter.From?.ToString("yyyy-MM-dd")" asp-route-To="@filter.To?.ToString("yyyy-MM-dd")">السابق</a>
+                </li>
+                <li class="page-item disabled">
+                    <span class="page-link">صفحة @result.PageNumber من @result.TotalPages</span>
+                </li>
+                <li class="page-item @(result.HasNextPage ? "" : "disabled")">
+                    <a class="page-link" asp-action="ManageInvoices" asp-route-Page="@(result.PageNumber + 1)"
+                       asp-route-Status="@filter.Status" asp-route-Search="@filter.Search"
+                       asp-route-From="@filter.From?.ToString("yyyy-MM-dd")" asp-route-To="@filter.To?.ToString("yyyy-MM-dd")">التالي</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

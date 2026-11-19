@@ -25,6 +25,9 @@ namespace HCMS4.Modules.Billing.Services
         Task FillGenerateFormOptionsAsync(GenerateInvoiceViewModel model);
         Task<ServiceResult<Invoice>> CreateAsync(GenerateInvoiceViewModel model);
 
+        /// <summary>The admin's invoice list: filtered, newest first, one page, with totals of everything that matches.</summary>
+        Task<AdminInvoiceListViewModel> GetListAsync(InvoiceListFilter filter);
+
         /// <summary>The invoice with patient, doctors and (when it has a prescription) prescription items.</summary>
         Task<Invoice?> GetAsync(int id);
         Task<PaymentUpdateResult> UpdatePaymentStatusAsync(int id, PaymentUpdateRequest request);
@@ -141,6 +144,75 @@ namespace HCMS4.Modules.Billing.Services
             await _context.SaveChangesAsync();
 
             return ServiceResult<Invoice>.Ok(invoice, $"Invoice #{invoice.Id} created successfully for {patientName}!");
+        }
+
+        public async Task<AdminInvoiceListViewModel> GetListAsync(InvoiceListFilter filter)
+        {
+            var query = _context.Invoices.AsNoTracking().AsQueryable();
+
+            if (filter.Status != "all" && Enum.TryParse<PaymentStatus>(filter.Status, true, out var status))
+                query = query.Where(i => i.PaymentStatus == status);
+
+            if (filter.From.HasValue)
+            {
+                var from = filter.From.Value.Date;
+                query = query.Where(i => i.InvoiceDate >= from);
+            }
+
+            if (filter.To.HasValue)
+            {
+                var toExclusive = filter.To.Value.Date.AddDays(1);
+                query = query.Where(i => i.InvoiceDate < toExclusive);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Search))
+            {
+                var term = filter.Search.Trim();
+                var isNumber = int.TryParse(term, out var invoiceId);
+                query = query.Where(i =>
+                    (isNumber && i.Id == invoiceId) ||
+                    (i.Patient.User.FirstName + " " + i.Patient.User.LastName).Contains(term) ||
+                    (i.Patient.User.Email != null && i.Patient.User.Email.Contains(term)));
+            }
+
+            var totals = await query
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Count = g.Count(),
+                    Pending = g.Count(i => i.PaymentStatus == PaymentStatus.Pending),
+                    Paid = g.Count(i => i.PaymentStatus == PaymentStatus.Paid),
+                    Total = g.Sum(i => i.TotalAmount),
+                    PaidAmount = g.Sum(i => i.PaymentStatus == PaymentStatus.Paid ? (i.AmountPaid ?? i.TotalAmount) : 0)
+                })
+                .FirstOrDefaultAsync();
+
+            var pageSize = Math.Clamp(filter.PageSize, 1, 100);
+            var page = Math.Max(filter.Page, 1);
+            var items = await query
+                .Include(i => i.Patient)
+                    .ThenInclude(p => p.User)
+                .OrderByDescending(i => i.InvoiceDate)
+                .ThenByDescending(i => i.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new AdminInvoiceListViewModel
+            {
+                Filter = filter,
+                Invoices = new PaginatedResult<Invoice>
+                {
+                    Items = items,
+                    TotalCount = totals?.Count ?? 0,
+                    PageNumber = page,
+                    PageSize = pageSize
+                },
+                PendingCount = totals?.Pending ?? 0,
+                PaidCount = totals?.Paid ?? 0,
+                TotalAmount = totals?.Total ?? 0,
+                PaidAmount = totals?.PaidAmount ?? 0
+            };
         }
 
         public Task<Invoice?> GetAsync(int id) =>

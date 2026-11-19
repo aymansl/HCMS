@@ -8,7 +8,6 @@ namespace HCMS4.Modules.Pharmacy.Services
         Task<Pharmacist> GetByIdAsync(int id);
         Task<Pharmacist?> GetByUserIdAsync(string userId);
         Task<ServiceResult> UpdateProfileAsync(int id, string qualifications, string? contactInfo, string? shift);
-        Task<ServiceResult> MarkPrescriptionCompletedAsync(int prescriptionId, string pharmacistUserId);
         /// <summary>Keeps a pending prescription in the queue for later processing.</summary>
         Task<ServiceResult> HoldPrescriptionAsync(int prescriptionId);
     }

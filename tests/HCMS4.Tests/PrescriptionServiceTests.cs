@@ -148,119 +148,65 @@ namespace HCMS4.Tests
         }
 
         [Fact]
-        public async Task MarkAsCompletedAsync_PendingPrescription_MarksAsCompleted()
+        public async Task CreateAsync_DoesNotTakeStock_StockLeavesOnlyAtDispensing()
         {
-            // Arrange
-            using var context = TestDbContextFactory.CreateInMemoryContext();
-            var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(context);
-            var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(context);
-
-            var prescriptionId = 5101;
-            var prescription = new Prescription
-            {
-                Id = prescriptionId,
-                PatientId = patient.Id,
-                DoctorId = doctor.Id,
-                Notes = "Test prescription",
-                Status = PrescriptionStatus.Pending
-            };
-            context.Prescriptions.Add(prescription);
-            await context.SaveChangesAsync();
-
-            var service = new PrescriptionService(context, NullLogger<PrescriptionService>.Instance);
-
-            // Act
-            var result = await service.MarkAsCompletedAsync(prescriptionId);
-
-            // Assert
-            Assert.True(result.Success);
-            var completedPrescription = await context.Prescriptions.FindAsync(prescriptionId);
-            Assert.Equal(PrescriptionStatus.Completed, completedPrescription.Status);
-        }
-
-        [Fact]
-        public async Task MarkAsCompletedAsync_AlreadyCompleted_FailsWithMessage()
-        {
-            // Arrange
-            using var context = TestDbContextFactory.CreateInMemoryContext();
-            var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(context);
-            var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(context);
-
-            var prescriptionId = 5102;
-            var prescription = new Prescription
-            {
-                Id = prescriptionId,
-                PatientId = patient.Id,
-                DoctorId = doctor.Id,
-                Notes = "Test prescription",
-                Status = PrescriptionStatus.Completed
-            };
-            context.Prescriptions.Add(prescription);
-            await context.SaveChangesAsync();
-
-            var service = new PrescriptionService(context, NullLogger<PrescriptionService>.Instance);
-
-            // Act
-            var result = await service.MarkAsCompletedAsync(prescriptionId);
-
-            // Assert
-            Assert.False(result.Success);
-            Assert.Contains("Only pending", result.Message);
-        }
-
-        [Fact]
-        public async Task CancelAsync_PrescriptionWithItems_RestoresStock()
-        {
-            // Arrange
             using var context = TestDbContextFactory.CreateInMemoryContext();
             var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(context);
             var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(context);
             var drug = await TestDbContextFactory.CreateTestDrugAsync(context);
-            var initialStock = drug.Quantity;
-
-            var prescriptionId = 5103;
-            var prescription = new Prescription
-            {
-                Id = prescriptionId,
-                PatientId = patient.Id,
-                DoctorId = doctor.Id,
-                Notes = "Test prescription",
-                Status = PrescriptionStatus.Pending
-            };
-            context.Prescriptions.Add(prescription);
-
-            var itemQuantity = 10;
-            var prescriptionItem = new PrescriptionItem
-            {
-                Id = 5103,
-                PrescriptionId = prescriptionId,
-                DrugId = drug.Id,
-                DrugName = drug.Name,
-                Dosage = "500mg",
-                Duration = "7 days",
-                Frequency = "3 times daily",
-                Quantity = itemQuantity
-            };
-            context.PrescriptionItems.Add(prescriptionItem);
-            await context.SaveChangesAsync();
-
-            // Simulate stock being deducted (as would happen in CreateAsync)
-            drug.Quantity -= itemQuantity;
-            context.Drugs.Update(drug);
-            await context.SaveChangesAsync();
-
+            var stockBefore = drug.Quantity;
             var service = new PrescriptionService(context, NullLogger<PrescriptionService>.Instance);
 
-            // Act
-            var result = await service.CancelAsync(prescriptionId);
+            var result = await service.CreateAsync(
+                new Prescription { PatientId = patient.Id, DoctorId = doctor.Id },
+                new List<PrescriptionItem> { new PrescriptionItem { DrugId = drug.Id, DrugName = "typed name", Quantity = 10, Dosage = "1", Duration = "5", Frequency = "daily" } });
 
-            // Assert
             Assert.True(result.Success);
-            var canceledPrescription = await context.Prescriptions.FindAsync(prescriptionId);
-            Assert.Equal(PrescriptionStatus.Canceled, canceledPrescription.Status);
+            Assert.Equal(stockBefore, (await context.Drugs.AsNoTracking().SingleAsync(d => d.Id == drug.Id)).Quantity);
+            Assert.Equal(drug.Name, (await context.PrescriptionItems.SingleAsync()).DrugName);
+        }
 
-            var updatedDrug = await context.Drugs.FindAsync(drug.Id);
-            Assert.Equal(initialStock, updatedDrug.Quantity);
+        [Fact]
+        public async Task CancelAsync_PendingPrescription_IsCanceled_WithoutStockChange()
+        {
+            using var context = TestDbContextFactory.CreateInMemoryContext();
+            var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(context);
+            var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(context);
+            var drug = await TestDbContextFactory.CreateTestDrugAsync(context);
+            var stockBefore = drug.Quantity;
+            var prescription = new Prescription
+            {
+                PatientId = patient.Id,
+                DoctorId = doctor.Id,
+                Status = PrescriptionStatus.Pending,
+                PrescriptionItems = { new PrescriptionItem { DrugId = drug.Id, DrugName = drug.Name, Quantity = 10, Dosage = "1", Duration = "5", Frequency = "daily" } }
+            };
+            context.Prescriptions.Add(prescription);
+            await context.SaveChangesAsync();
+            var service = new PrescriptionService(context, NullLogger<PrescriptionService>.Instance);
+
+            var result = await service.CancelAsync(prescription.Id);
+
+            Assert.True(result.Success);
+            Assert.Equal(PrescriptionStatus.Canceled, (await context.Prescriptions.AsNoTracking().SingleAsync()).Status);
+            Assert.Equal(stockBefore, (await context.Drugs.AsNoTracking().SingleAsync(d => d.Id == drug.Id)).Quantity);
+        }
+
+        [Fact]
+        public async Task CancelAsync_DispensedPrescription_IsRejected()
+        {
+            using var context = TestDbContextFactory.CreateInMemoryContext();
+            var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(context);
+            var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(context);
+            var prescription = new Prescription { PatientId = patient.Id, DoctorId = doctor.Id, Status = PrescriptionStatus.Completed };
+            context.Prescriptions.Add(prescription);
+            await context.SaveChangesAsync();
+            var service = new PrescriptionService(context, NullLogger<PrescriptionService>.Instance);
+
+            var result = await service.CancelAsync(prescription.Id);
+
+            Assert.False(result.Success);
+            Assert.Equal(PrescriptionStatus.Completed, (await context.Prescriptions.AsNoTracking().SingleAsync()).Status);
         }
 
         [Fact]

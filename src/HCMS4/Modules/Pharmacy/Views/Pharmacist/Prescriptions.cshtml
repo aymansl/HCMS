@@ -165,15 +165,6 @@
                                                            class="btn btn-sm btn-success" title="Process Prescription">
                                                             <i class="bi bi-cash-stack"></i>
                                                         </a>
-
-                                                        <form asp-action="MarkPrescriptionCompleted" asp-route-id="@prescription.Id"
-                                                              method="post" style="display: inline;"
-                                                              onsubmit="return confirm('Mark this prescription as completed?')">
-                                                            @Html.AntiForgeryToken()
-                                                            <button type="submit" class="btn btn-sm btn-secondary" title="Mark as Completed">
-                                                                <i class="bi bi-check-lg"></i>
-                                                            </button>
-                                                        </form>
                                                     }
                                                 </div>
                                             </td>
@@ -315,15 +306,6 @@
                 }, 30000);
                 </text>
         }
-
-        // Prevent double submission on complete buttons
-        document.querySelectorAll('form[action*="MarkPrescriptionCompleted"]').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                const submitBtn = this.querySelector('button[type="submit"]');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
-            });
-        });
 
         // Search functionality (optional enhancement)
         document.getElementById('searchInput')?.addEventListener('keyup', function() {

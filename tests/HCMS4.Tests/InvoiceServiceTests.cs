@@ -113,6 +113,48 @@ namespace HCMS4.Tests
         }
 
         [Fact]
+        public async Task GetList_FiltersByStatusDateAndSearch_AndTotalsAllMatches()
+        {
+            var seed = await SeedAsync();
+            var (otherUser, other) = await TestDbContextFactory.CreateTestPatientAsync(_db);
+            otherUser.FirstName = "Lina";
+            _db.Invoices.AddRange(
+                new Invoice { PatientId = seed.patientId, TotalAmount = 100, InvoiceDate = new DateTime(2026, 11, 1, 9, 0, 0), PaymentStatus = PaymentStatus.Paid, AmountPaid = 100 },
+                new Invoice { PatientId = seed.patientId, TotalAmount = 40, InvoiceDate = new DateTime(2026, 11, 10, 23, 0, 0), PaymentStatus = PaymentStatus.Pending },
+                new Invoice { PatientId = other.Id, TotalAmount = 60, InvoiceDate = new DateTime(2026, 11, 15, 9, 0, 0), PaymentStatus = PaymentStatus.Pending });
+            await _db.SaveChangesAsync();
+
+            var all = await Service.GetListAsync(new InvoiceListFilter());
+            Assert.Equal(3, all.Invoices.TotalCount);
+            Assert.Equal(200, all.TotalAmount);
+            Assert.Equal(100, all.PaidAmount);
+            Assert.Equal(100, all.OutstandingAmount);
+            Assert.Equal(2, all.PendingCount);
+            Assert.Equal(new DateTime(2026, 11, 15, 9, 0, 0), all.Invoices.Items[0].InvoiceDate); // newest first
+
+            Assert.Equal(2, (await Service.GetListAsync(new InvoiceListFilter { Status = "Pending" })).Invoices.TotalCount);
+            // "To" includes the whole day.
+            Assert.Equal(2, (await Service.GetListAsync(new InvoiceListFilter { From = new DateTime(2026, 11, 1), To = new DateTime(2026, 11, 10) })).Invoices.TotalCount);
+            var byName = await Service.GetListAsync(new InvoiceListFilter { Search = "Lina" });
+            Assert.Equal(other.Id, Assert.Single(byName.Invoices.Items).PatientId);
+            var byId = all.Invoices.Items[1].Id;
+            Assert.Equal(byId, Assert.Single((await Service.GetListAsync(new InvoiceListFilter { Search = byId.ToString() })).Invoices.Items).Id);
+
+            var paged = await Service.GetListAsync(new InvoiceListFilter { PageSize = 2, Page = 2 });
+            Assert.Single(paged.Invoices.Items);
+            Assert.Equal(2, paged.Invoices.TotalPages);
+        }
+
+        [Fact]
+        public async Task GetList_NoInvoices_ReturnsEmptyTotals()
+        {
+            var list = await Service.GetListAsync(new InvoiceListFilter { Status = "Paid" });
+
+            Assert.Empty(list.Invoices.Items);
+            Assert.Equal(0, list.TotalAmount);
+        }
+
+        [Fact]
         public async Task PatientQueries_OnlyReturnTheirOwnInvoices_WithDetails()
         {
             var seed = await SeedAsync();

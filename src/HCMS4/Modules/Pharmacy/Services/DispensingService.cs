@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HCMS4.Modules.Pharmacy.Services
 {
-    public record DispenseOutcome(int InvoiceId, decimal TotalAmount, bool IsPartial);
+    public record DispenseOutcome(int InvoiceId, decimal TotalAmount);
 
     public record PrescriptionDetails(
         Prescription Prescription,
@@ -30,11 +30,11 @@ namespace HCMS4.Modules.Pharmacy.Services
         Task<PrescriptionParties?> GetPartiesAsync(int prescriptionId);
 
         /// <summary>
-        /// Dispenses the selected items of a pending prescription, takes them out of stock and creates
-        /// a pending invoice (medication + tax). The prescription is completed when every item is dispensed.
+        /// Dispenses every item of a pending prescription: takes them out of stock, completes the prescription
+        /// and creates a pending invoice (medication + tax). There is no partial dispensing: when any item is
+        /// short, nothing is dispensed. This is the only place where prescribed drugs leave the stock.
         /// </summary>
-        Task<ServiceResult<DispenseOutcome>> DispenseAsync(int prescriptionId, IReadOnlyCollection<int> selectedItemIds,
-            string? dispensingNotes, string pharmacistUserId);
+        Task<ServiceResult<DispenseOutcome>> DispenseAsync(int prescriptionId, string? dispensingNotes, string pharmacistUserId);
 
         Task<ServiceResult<RecordCreated>> RequestDoctorReviewAsync(string pharmacistUserId, PrescriptionReviewRequestFormViewModel model);
         /// <summary>The returned doctor user id is set only when the note asks to notify the doctor.</summary>
@@ -130,8 +130,7 @@ namespace HCMS4.Modules.Pharmacy.Services
                     p.Doctor != null && p.Doctor.User != null ? p.Doctor.User.FullName : "Doctor"))
                 .FirstOrDefaultAsync();
 
-        public async Task<ServiceResult<DispenseOutcome>> DispenseAsync(int prescriptionId, IReadOnlyCollection<int> selectedItemIds,
-            string? dispensingNotes, string pharmacistUserId)
+        public async Task<ServiceResult<DispenseOutcome>> DispenseAsync(int prescriptionId, string? dispensingNotes, string pharmacistUserId)
         {
             var pharmacist = await _context.Pharmacists.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == pharmacistUserId);
             if (pharmacist == null)
@@ -148,12 +147,12 @@ namespace HCMS4.Modules.Pharmacy.Services
             if (prescription.Status != PrescriptionStatus.Pending)
                 return ServiceResult<DispenseOutcome>.Fail("Only pending prescriptions can be dispensed.");
 
-            if (selectedItemIds == null || !selectedItemIds.Any())
-                return ServiceResult<DispenseOutcome>.Fail("Please select at least one medication to dispense.");
+            var items = prescription.PrescriptionItems.ToList();
+            if (!items.Any())
+                return ServiceResult<DispenseOutcome>.Fail("This prescription has no medications to dispense.");
 
-            var selectedItems = prescription.PrescriptionItems.Where(pi => selectedItemIds.Contains(pi.Id)).ToList();
             var insufficientStock = new List<string>();
-            foreach (var item in selectedItems)
+            foreach (var item in items)
             {
                 if (item.Drug == null)
                     insufficientStock.Add($"Item #{item.Id}: Drug not found");
@@ -171,7 +170,7 @@ namespace HCMS4.Modules.Pharmacy.Services
             await using var transaction = await _context.Database.BeginTransactionAsync();
 
             decimal totalAmount = 0;
-            foreach (var item in selectedItems)
+            foreach (var item in items)
             {
                 item.Drug.Quantity -= item.Quantity;
                 item.Drug.UpdatedAt = now;
@@ -180,25 +179,12 @@ namespace HCMS4.Modules.Pharmacy.Services
 
             var grandTotal = totalAmount + totalAmount * TaxRate;
 
+            prescription.Status = PrescriptionStatus.Completed;
             prescription.MedicationTotal = totalAmount;
             prescription.DispensedDate = now;
             prescription.DispensedBy = pharmacistUserId;
             prescription.UpdatedAt = now;
             prescription.DispensingNotes = dispensingNotes;
-
-            var allItemsDispensed = prescription.PrescriptionItems.All(pi => selectedItemIds.Contains(pi.Id));
-            if (allItemsDispensed)
-            {
-                prescription.Status = PrescriptionStatus.Completed;
-            }
-            else
-            {
-                var dispensedNames = string.Join(", ", selectedItems.Select(i => i.Drug.Name));
-                var remainingNames = string.Join(", ", prescription.PrescriptionItems
-                    .Where(pi => !selectedItemIds.Contains(pi.Id))
-                    .Select(i => i.Drug?.Name ?? i.DrugName));
-                prescription.Notes = $"Partially dispensed on {now:yyyy-MM-dd HH:mm}. Dispensed: {dispensedNames}. Remaining: {remainingNames}";
-            }
 
             var invoice = new Invoice
             {
@@ -219,13 +205,11 @@ namespace HCMS4.Modules.Pharmacy.Services
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            _logger.LogInformation("Prescription {PrescriptionId} dispensed ({Items} items, partial: {Partial}); invoice {InvoiceId} total {Total}",
-                prescription.Id, selectedItems.Count, !allItemsDispensed, invoice.Id, grandTotal);
+            _logger.LogInformation("Prescription {PrescriptionId} dispensed ({Items} items); invoice {InvoiceId} total {Total}",
+                prescription.Id, items.Count, invoice.Id, grandTotal);
 
-            var message = allItemsDispensed
-                ? $"Prescription fully dispensed. Invoice #{invoice.Id} created. Total: {grandTotal:C2}"
-                : $"Partially dispensed ({selectedItems.Count} items). Invoice #{invoice.Id} created for dispensed items. Total: {grandTotal:C2}";
-            return ServiceResult<DispenseOutcome>.Ok(new DispenseOutcome(invoice.Id, grandTotal, !allItemsDispensed), message);
+            return ServiceResult<DispenseOutcome>.Ok(new DispenseOutcome(invoice.Id, grandTotal),
+                $"Prescription dispensed. Invoice #{invoice.Id} created. Total: {grandTotal:C2}");
         }
 
         public async Task<ServiceResult<RecordCreated>> RequestDoctorReviewAsync(string pharmacistUserId,

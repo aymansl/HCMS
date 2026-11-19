@@ -59,6 +59,7 @@ GET /Admin/Complaints
 GET /Admin/CreateSurvey
 GET /Admin/DisablePatient
 GET /Admin/GetDoctorConsultationFee
+GET /Admin/ManageInvoices
 GET /Admin/RegisterDoctorLeave
 GET /Admin/Surveys
 GET /Admin/UpdatePaymentStatus
@@ -105,7 +106,6 @@ POST /Admin/EditPharmacist
 POST /Admin/EditSupplier
 POST /Admin/EnablePatient
 POST /Admin/GenerateInvoice
-POST /Admin/MarkPrescriptionCompleted
 POST /Admin/RegisterDoctorLeave
 POST /Admin/RejectLeaveRequest
 POST /Admin/RejectPurchaseRequest
@@ -136,6 +136,5 @@ POST /Pharmacist/DeleteDrug
 POST /Pharmacist/DispensePrescription
 POST /Pharmacist/EditDrug
 POST /Pharmacist/HoldPrescription
-POST /Pharmacist/MarkPrescriptionCompleted
 POST /Pharmacist/RequestDoctorReview
 POST /Pharmacist/UpdateStock
