@@ -20,7 +20,7 @@ namespace HCMS4.Modules.Appointments.Services
             _clock = clock ?? ClinicTime.Default;
         }
 
-        public async Task<Appointment> GetByIdAsync(int id)
+        public async Task<Appointment?> GetByIdAsync(int id)
         {
             return await _context.Appointments
                 .AsNoTracking()
@@ -31,7 +31,7 @@ namespace HCMS4.Modules.Appointments.Services
                 .FirstOrDefaultAsync(a => a.Id == id);
         }
 
-        public async Task<Appointment> GetByIdWithDetailsAsync(int id)
+        public async Task<Appointment?> GetByIdWithDetailsAsync(int id)
         {
             return await _context.Appointments
                 .AsNoTracking()

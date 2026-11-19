@@ -38,7 +38,7 @@ namespace HCMS4.Modules.Pharmacy.Services
             return ServiceResult.Ok("Prescription kept in the pending queue.");
         }
 
-        public async Task<Pharmacist> GetByIdAsync(int id)
+        public async Task<Pharmacist?> GetByIdAsync(int id)
         {
             return await _context.Pharmacists
                 .AsNoTracking()

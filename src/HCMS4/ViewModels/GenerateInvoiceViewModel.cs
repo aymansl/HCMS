@@ -12,7 +12,7 @@ namespace HCMS4.ViewModels
         public int PatientId { get; set; }
 
         [Display(Name = "Patient Name")]
-        public string PatientName { get; set; }
+        public string PatientName { get; set; } = string.Empty;
 
         [Display(Name = "Appointment")]
         public int? AppointmentId { get; set; }
@@ -52,18 +52,18 @@ namespace HCMS4.ViewModels
         public class AppointmentSelectDto
         {
             public int Id { get; set; }
-            public string DisplayText { get; set; }
+            public string DisplayText { get; set; } = string.Empty;
             public DateTime AppointmentDate { get; set; }
-            public string DoctorName { get; set; }
+            public string DoctorName { get; set; } = string.Empty;
             public decimal? ConsultationFee { get; set; }
         }
 
         public class PrescriptionSelectDto
         {
             public int Id { get; set; }
-            public string DisplayText { get; set; }
+            public string DisplayText { get; set; } = string.Empty;
             public DateTime PrescriptionDate { get; set; }
-            public string DoctorName { get; set; }
+            public string DoctorName { get; set; } = string.Empty;
             public decimal? MedicationTotal { get; set; }
         }
     }

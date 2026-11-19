@@ -68,7 +68,7 @@ namespace HCMS4.Shared.Identity.Controllers
 
                 
                 var result = await _signInManager.PasswordSignInAsync(
-                    user.UserName,
+                    user.UserName ?? model.Email,
                     model.Password,
                     model.RememberMe,
                     lockoutOnFailure: true);
@@ -204,7 +204,7 @@ namespace HCMS4.Shared.Identity.Controllers
             var profile = new ProfileViewModel
             {
                 Id = user.Id,
-                Email = user.Email,
+                Email = user.Email ?? string.Empty,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 PhoneNumber = user.PhoneNumber,

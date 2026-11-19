@@ -23,7 +23,7 @@ namespace HCMS4.Modules.Pharmacy.Services
                 .Where(p => p.AppointmentId.HasValue && appointmentIds.Contains(p.AppointmentId.Value))
                 .ToListAsync();
 
-        public async Task<Prescription> GetByIdAsync(int id)
+        public async Task<Prescription?> GetByIdAsync(int id)
         {
             return await _context.Prescriptions
                 .AsNoTracking()
@@ -37,7 +37,7 @@ namespace HCMS4.Modules.Pharmacy.Services
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task<Prescription> GetByIdWithDetailsAsync(int id)
+        public async Task<Prescription?> GetByIdWithDetailsAsync(int id)
         {
             // GetByIdAsync already includes all necessary navigation properties
             return await GetByIdAsync(id);

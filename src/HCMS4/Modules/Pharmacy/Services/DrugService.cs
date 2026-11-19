@@ -16,7 +16,7 @@ namespace HCMS4.Modules.Pharmacy.Services
             _logger = logger;
         }
 
-        public async Task<Drug> GetByIdAsync(int id)
+        public async Task<Drug?> GetByIdAsync(int id)
         {
             return await _context.Drugs
                 .AsNoTracking()

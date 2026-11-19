@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Admin Dashboard";
     Layout = "_LayoutAuth";
-    var todayReport = ViewBag.TodayReport as DailyPharmacyReportViewModel;
+    var todayReport = ViewBag.TodayReport as DailyPharmacyReportViewModel ?? new DailyPharmacyReportViewModel();
 }
   <div class="container-fluid p-4">
     <div class="row mb-4">

@@ -48,7 +48,7 @@ namespace HCMS4.Tests
             Assert.Equal(40, form!.ConsultationFee);
             Assert.Equal(15, form.MedicationTotal);
             Assert.Equal(55, form.TotalAmount);
-            Assert.Single(form.RecentAppointments);
+            Assert.Single(form.RecentAppointments!);
             Assert.Null(await Service.GetGenerateFormAsync(999999));
         }
 
@@ -60,8 +60,8 @@ namespace HCMS4.Tests
 
             await Service.FillGenerateFormOptionsAsync(model);
 
-            Assert.Equal(2, model.RecentAppointments.Count);
-            Assert.Single(model.RecentPrescriptions);
+            Assert.Equal(2, model.RecentAppointments!.Count);
+            Assert.Single(model.RecentPrescriptions!);
             Assert.False(string.IsNullOrEmpty(model.PatientName));
         }
 

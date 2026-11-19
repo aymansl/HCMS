@@ -45,7 +45,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Drugs(string searchTerm = null, string expiryFilter = null)
+        public async Task<IActionResult> Drugs(string? searchTerm = null, string? expiryFilter = null)
         {
             try
             {
@@ -148,10 +148,6 @@ namespace HCMS4.Modules.Pharmacy.Controllers
             var result = await _drugService.UpdateStockAsync(id, newQuantity);
             if (result.Success)
             {
-                var messagePrefix = "Warning";
-                if (newQuantity == 0)
-                    messagePrefix = "Alert";
-
                 TempData[newQuantity < BusinessRules.LowStockThreshold ? "WarningMessage" : "SuccessMessage"] = result.Message;
             }
             else

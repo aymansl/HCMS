@@ -7,8 +7,8 @@ namespace HCMS4.ViewModels
     {
 
         public int DoctorId { get; set; }
-        public string DoctorName { get; set; }
-        public string Specialization { get; set; }
+        public string DoctorName { get; set; } = string.Empty;
+        public string Specialization { get; set; } = string.Empty;
         public string SelectedStatus { get; set; } = "all";
 
         

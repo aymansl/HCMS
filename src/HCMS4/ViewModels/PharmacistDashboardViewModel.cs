@@ -12,10 +12,10 @@ namespace HCMS4.ViewModels
         public int PendingPrescriptions { get; set; }
         public int CompletedPrescriptions { get; set; }
 
-        public List<Drug> ExpiringDrugs { get; set; }
-        public List<Drug> LowStockDrugs { get; set; }
-        public List<Prescription> RecentPrescriptions { get; set; }
+        public List<Drug> ExpiringDrugs { get; set; } = new();
+        public List<Drug> LowStockDrugs { get; set; } = new();
+        public List<Prescription> RecentPrescriptions { get; set; } = new();
 
-        public List<string> Alerts { get; set; }
+        public List<string> Alerts { get; set; } = new();
     }
 }

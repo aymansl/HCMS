@@ -5,8 +5,8 @@ namespace HCMS4.Modules.Appointments.Services
 {
     public interface IAppointmentService
     {
-        Task<Appointment> GetByIdAsync(int id);
-        Task<Appointment> GetByIdWithDetailsAsync(int id);
+        Task<Appointment?> GetByIdAsync(int id);
+        Task<Appointment?> GetByIdWithDetailsAsync(int id);
         Task<PaginatedResult<Appointment>> GetAllAsync(PaginationParams pagination, string status = "all");
         Task<List<Appointment>> GetByDoctorIdAsync(int doctorId);
         Task<List<Appointment>> GetByPatientIdAsync(int patientId);

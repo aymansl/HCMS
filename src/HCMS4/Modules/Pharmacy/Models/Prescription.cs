@@ -43,10 +43,10 @@ namespace HCMS4.Modules.Pharmacy.Models
 
         
         [Display(Name = "Patient")]
-        public Patient Patient { get; set; }
+        public Patient Patient { get; set; } = null!;
 
         [Display(Name = "Doctor")]
-        public Doctor Doctor { get; set; }
+        public Doctor Doctor { get; set; } = null!;
 
         [Display(Name = "Appointment")]
         public Appointment? Appointment { get; set; }

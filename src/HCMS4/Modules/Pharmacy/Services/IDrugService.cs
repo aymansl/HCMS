@@ -4,7 +4,7 @@ namespace HCMS4.Modules.Pharmacy.Services
 {
     public interface IDrugService
     {
-        Task<Drug> GetByIdAsync(int id);
+        Task<Drug?> GetByIdAsync(int id);
         Task<List<Drug>> GetAllAsync(string? searchTerm = null, string? expiryFilter = null);
         Task<ServiceResult> CreateAsync(Drug drug);
         Task<ServiceResult> UpdateAsync(Drug drug);

@@ -44,7 +44,7 @@ namespace HCMS4.Modules.Records.Services
             {
                 PatientId = patient.Id,
                 FullName = patient.User != null ? patient.User.FullName : "Unknown",
-                Email = patient.User != null ? patient.User.Email : "No email",
+                Email = patient.User?.Email ?? "No email",
                 PhoneNumber = patient.User?.PhoneNumber,
                 DateOfBirth = patient.DateOfBirth,
                 Address = patient.Address,

@@ -43,7 +43,7 @@ namespace HCMS4.Tests
 
             // Assert
             var updated = await context.Drugs.FindAsync(drug.Id);
-            Assert.Equal(30.00m, updated.Price);
+            Assert.Equal(30.00m, updated!.Price);
             Assert.Equal(150, updated.Quantity);
         }
 

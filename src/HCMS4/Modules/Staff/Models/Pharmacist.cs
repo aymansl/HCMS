@@ -11,10 +11,10 @@ namespace HCMS4.Modules.Staff.Models
         public int Id { get; set; }
 
         [Required]
-        public string UserId { get; set; } 
+        public string UserId { get; set; } = string.Empty;
 
         [ForeignKey("UserId")]
-        public virtual ApplicationUser User { get; set; }
+        public virtual ApplicationUser User { get; set; } = null!;
 
         [StringLength(500)]
         [Display(Name = "Qualifications")]

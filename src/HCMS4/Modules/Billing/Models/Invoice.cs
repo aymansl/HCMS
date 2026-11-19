@@ -61,7 +61,7 @@ namespace HCMS4.Modules.Billing.Models
         public DateTime UpdatedAt { get; set; } = ClinicTime.Now;
 
 
-        public virtual Patient Patient { get; set; }
+        public virtual Patient Patient { get; set; } = null!;
         public virtual Appointment? Appointment { get; set; }
         public virtual Prescription? Prescription { get; set; }
 

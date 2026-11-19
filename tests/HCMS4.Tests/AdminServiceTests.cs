@@ -93,7 +93,7 @@ namespace HCMS4.Tests
 
             // Assert
             var deletedSupplier = await context.Suppliers.FindAsync(1);
-            Assert.False(deletedSupplier.IsActive);
+            Assert.False(deletedSupplier!.IsActive);
             var existingPurchaseRequest = await context.PurchaseRequests.FindAsync(1);
             Assert.NotNull(existingPurchaseRequest);
         }
@@ -120,7 +120,7 @@ namespace HCMS4.Tests
 
             // Assert
             var updated = await context.Specializations.FindAsync(7101);
-            Assert.Equal(200, updated.ConsultationFee);
+            Assert.Equal(200, updated!.ConsultationFee);
         }
 
         [Fact]
@@ -144,7 +144,7 @@ namespace HCMS4.Tests
 
             // Assert - Fee should be zero (no validation in this direct update test)
             var updated = await context.Specializations.FindAsync(7102);
-            Assert.Equal(0, updated.ConsultationFee);
+            Assert.Equal(0, updated!.ConsultationFee);
         }
 
         [Fact]
@@ -224,7 +224,7 @@ namespace HCMS4.Tests
 
             // Assert
             var updated = await context.Invoices.FindAsync(invoiceId);
-            Assert.Equal(PaymentStatus.Paid, updated.PaymentStatus);
+            Assert.Equal(PaymentStatus.Paid, updated!.PaymentStatus);
             Assert.Equal(100, updated.AmountPaid);
         }
 
@@ -316,7 +316,7 @@ namespace HCMS4.Tests
             var updated = await context.PurchaseRequests
                 .Include(p => p.Items)
                 .FirstOrDefaultAsync(p => p.Id == 1);
-            Assert.Equal(325, updated.TotalAmount);
+            Assert.Equal(325, updated!.TotalAmount);
         }
     }
 }

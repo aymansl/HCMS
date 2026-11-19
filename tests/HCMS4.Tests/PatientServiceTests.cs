@@ -100,7 +100,7 @@ namespace HCMS4.Tests
             // Assert
             Assert.True(result.Success);
             var updatedPatient = await context.Patients.FindAsync(patient.Id);
-            Assert.Equal("123 Test Street", updatedPatient.Address);
+            Assert.Equal("123 Test Street", updatedPatient!.Address);
         }
 
         [Fact]

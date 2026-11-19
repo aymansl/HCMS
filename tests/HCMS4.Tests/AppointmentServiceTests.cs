@@ -103,7 +103,7 @@ namespace HCMS4.Tests
             // Assert
             Assert.True(result.Success);
             var canceledAppointment = await context.Appointments.FindAsync(appointmentId);
-            Assert.Equal(AppointmentStatus.Canceled, canceledAppointment.Status);
+            Assert.Equal(AppointmentStatus.Canceled, canceledAppointment!.Status);
             Assert.Equal("Patient requested cancellation", canceledAppointment.CancellationReason);
         }
 
@@ -196,7 +196,7 @@ namespace HCMS4.Tests
             // Assert
             Assert.True(result.Success);
             var rescheduledAppointment = await context.Appointments.FindAsync(appointmentId);
-            Assert.Equal(newDateTime, rescheduledAppointment.AppointmentDateTime);
+            Assert.Equal(newDateTime, rescheduledAppointment!.AppointmentDateTime);
         }
 
         [Fact]

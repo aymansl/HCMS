@@ -10,7 +10,7 @@ namespace HCMS4.Modules.Pharmacy.Models
         [Required(ErrorMessage = "Drug name is required")]
         [StringLength(100, ErrorMessage = "Drug name cannot exceed 100 characters")]
         [Display(Name = "Drug Name")]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(100, ErrorMessage = "Supplier name cannot exceed 100 characters")]
         [Display(Name = "Supplier")]

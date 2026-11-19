@@ -25,7 +25,7 @@ namespace HCMS4.ViewModels
         public decimal TotalAmount { get; set; }
 
         [Display(Name = "Payment Status")]
-        public string PaymentStatus { get; set; }
+        public string PaymentStatus { get; set; } = string.Empty;
 
         [Display(Name = "Status Badge Class")]
         public string StatusBadgeClass

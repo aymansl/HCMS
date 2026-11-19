@@ -21,7 +21,7 @@ namespace HCMS4.Modules.Appointments.Services
             {
                 Id = p.Id,
                 FullName = p.User != null ? p.User.FullName : "Unknown",
-                Email = p.User != null ? p.User.Email : "N/A"
+                Email = p.User?.Email ?? "N/A"
             }).ToList();
     }
 }

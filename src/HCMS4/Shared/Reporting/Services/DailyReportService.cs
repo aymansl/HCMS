@@ -30,7 +30,7 @@ namespace HCMS4.Shared.Reporting.Services
                     .Include(i => i.Patient)
                         .ThenInclude(p => p.User)
                     .Include(i => i.Pharmacist)
-                        .ThenInclude(p => p.User)
+                        .ThenInclude(p => p!.User)
                     .Where(i => i.InvoiceDate >= startOfDay &&
                                 i.InvoiceDate < endOfDay &&
                                 i.PrescriptionId != null)
@@ -78,7 +78,7 @@ namespace HCMS4.Shared.Reporting.Services
                     .Include(i => i.Patient)
                         .ThenInclude(p => p.User)
                     .Include(i => i.Pharmacist)
-                        .ThenInclude(p => p.User)
+                        .ThenInclude(p => p!.User)
                     .Where(i => i.PrescriptionId != null);
 
                 if (startDate.HasValue)

@@ -7,24 +7,24 @@ namespace HCMS4.ViewModels
         public int Id { get; set; }
 
         [Display(Name = "First Name")]
-        public string FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         [Display(Name = "Last Name")]
-        public string LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Display(Name = "Phone Number")]
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; } = string.Empty;
 
         [Display(Name = "Qualifications")]
-        public string Qualifications { get; set; }
+        public string Qualifications { get; set; } = string.Empty;
 
         [Display(Name = "Contact Info")]
-        public string ContactInfo { get; set; }
+        public string ContactInfo { get; set; } = string.Empty;
 
         [Display(Name = "Shift")]
-        public string Shift { get; set; }
+        public string Shift { get; set; } = string.Empty;
 
         [Display(Name = "Account Created")]
         public DateTime CreatedAt { get; set; }

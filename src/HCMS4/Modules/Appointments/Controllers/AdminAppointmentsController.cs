@@ -221,8 +221,8 @@ namespace HCMS4.Modules.Appointments.Controllers
             var viewModel = new RescheduleAppointmentViewModel
             {
                 AppointmentId = appointment.Id,
-                PatientName = appointment.Patient?.User?.FullName,
-                DoctorName = appointment.Doctor?.User?.FullName,
+                PatientName = appointment.Patient?.User?.FullName ?? string.Empty,
+                DoctorName = appointment.Doctor?.User?.FullName ?? string.Empty,
                 CurrentAppointmentDateTime = appointment.AppointmentDateTime,
                 NewAppointmentDateTime = appointment.AppointmentDateTime.AddDays(1)
             };
