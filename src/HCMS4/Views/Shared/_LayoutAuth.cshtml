@@ -1,4 +1,9 @@
 @using System.Security.Claims
+@inject HCMS4.Shared.Notifications.Services.INotificationService NotificationService
+@{
+    // Shown on the bell and in the user menu.
+    var unreadNotifications = await NotificationService.CountUnreadAsync(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty);
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -268,8 +273,12 @@
                 
                 <div class="user-dropdown d-flex align-items-center">
                    
-                    <a asp-controller="Patient" asp-action="Dashboard" class="nav-link me-3 position-relative">
+                    <a asp-controller="Notifications" asp-action="Index" class="nav-link me-3 position-relative" id="notifications-bell" title="Notifications">
                         <i class="bi bi-bell fs-5"></i>
+                        @if (unreadNotifications > 0)
+                        {
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">@unreadNotifications</span>
+                        }
                     </a>
                     
                     <div class="dropdown">
@@ -296,7 +305,15 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end shadow-lg">
                             <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile"><i class="bi bi-person me-2"></i>My Profile</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-bell me-2"></i>Notifications</a></li>
+                            <li>
+                                <a class="dropdown-item d-flex justify-content-between align-items-center" asp-controller="Notifications" asp-action="Index">
+                                    <span><i class="bi bi-bell me-2"></i>Notifications</span>
+                                    @if (unreadNotifications > 0)
+                                    {
+                                        <span class="badge bg-danger rounded-pill ms-2" id="unread-notifications">@unreadNotifications</span>
+                                    }
+                                </a>
+                            </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline w-100">

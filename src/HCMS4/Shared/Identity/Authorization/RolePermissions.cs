@@ -8,6 +8,7 @@ namespace HCMS4.Shared.Identity.Authorization
             {
                 [Roles.Admin] = new[]
                 {
+                    Permissions.Notifications.View,
                     Permissions.Portal.AdminDashboard,
                     Permissions.Staff.Manage,
                     Permissions.Records.ManagePatients,
@@ -19,6 +20,7 @@ namespace HCMS4.Shared.Identity.Authorization
                 },
                 [Roles.Doctor] = new[]
                 {
+                    Permissions.Notifications.View,
                     Permissions.Portal.DoctorDashboard,
                     Permissions.Staff.OwnProfile,
                     Permissions.Records.ViewMedicalRecords,
@@ -29,6 +31,7 @@ namespace HCMS4.Shared.Identity.Authorization
                 },
                 [Roles.Patient] = new[]
                 {
+                    Permissions.Notifications.View,
                     Permissions.Portal.PatientDashboard,
                     Permissions.Appointments.Book,
                     Permissions.Pharmacy.ViewOwnPrescriptions,
@@ -38,11 +41,13 @@ namespace HCMS4.Shared.Identity.Authorization
                 },
                 [Roles.Pharmacist] = new[]
                 {
+                    Permissions.Notifications.View,
                     Permissions.Portal.PharmacistDashboard,
                     Permissions.Pharmacy.Dispense,
                 },
                 [Roles.LabTechnician] = new[]
                 {
+                    Permissions.Notifications.View,
                     Permissions.Portal.LabDashboard,
                     Permissions.Lab.ReceiveRequest,
                     Permissions.Lab.ManageTests,
@@ -50,11 +55,13 @@ namespace HCMS4.Shared.Identity.Authorization
                 },
                 [Roles.Radiologist] = new[]
                 {
+                    Permissions.Notifications.View,
                     Permissions.Radiology.ScheduleSession,
                     Permissions.Radiology.WriteReport,
                 },
                 [Roles.EmergencySupervisor] = new[]
                 {
+                    Permissions.Notifications.View,
                     Permissions.Emergency.ManageCases,
                 },
             };

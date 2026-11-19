@@ -6,6 +6,12 @@ namespace HCMS4.Shared.Identity.Authorization
     /// </summary>
     public static class Permissions
     {
+        public static class Notifications
+        {
+            /// <summary>A user's own notifications; every role holds it.</summary>
+            public const string View = "Notifications.View";
+        }
+
         public static class Portal
         {
             public const string AdminDashboard = "Portal.AdminDashboard";

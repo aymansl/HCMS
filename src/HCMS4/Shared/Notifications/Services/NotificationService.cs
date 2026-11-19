@@ -15,6 +15,14 @@ namespace HCMS4.Shared.Notifications.Services
 
         /// <summary>The user's most recent notifications, newest first.</summary>
         Task<List<UserNotification>> GetRecentForUserAsync(string userId, int count = 5);
+
+        Task<int> CountUnreadAsync(string userId);
+
+        /// <summary>Marks the user's notification as read and returns it; null when it is not theirs.</summary>
+        Task<UserNotification?> MarkAsReadAsync(string userId, int id);
+
+        /// <summary>Marks all the user's notifications as read; returns how many changed.</summary>
+        Task<int> MarkAllAsReadAsync(string userId);
     }
 
     public class NotificationService : INotificationService
@@ -39,6 +47,31 @@ namespace HCMS4.Shared.Notifications.Services
                 .OrderByDescending(n => n.CreatedAt)
                 .Take(count)
                 .ToListAsync();
+        }
+
+        public Task<int> CountUnreadAsync(string userId) =>
+            string.IsNullOrWhiteSpace(userId)
+                ? Task.FromResult(0)
+                : _context.UserNotifications.CountAsync(n => n.UserId == userId && !n.IsRead);
+
+        public async Task<UserNotification?> MarkAsReadAsync(string userId, int id)
+        {
+            var notification = await _context.UserNotifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+            if (notification is { IsRead: false })
+            {
+                notification.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return notification;
+        }
+
+        public async Task<int> MarkAllAsReadAsync(string userId)
+        {
+            var unread = await _context.UserNotifications.Where(n => n.UserId == userId && !n.IsRead).ToListAsync();
+            unread.ForEach(n => n.IsRead = true);
+            await _context.SaveChangesAsync();
+            return unread.Count;
         }
 
         public async Task CreateForUserAsync(string userId, string title, string message, NotificationType type,

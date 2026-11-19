@@ -40,6 +40,7 @@ ANY /Lab/Dashboard
 ANY /Lab/RequestDetails
 ANY /Lab/Requests
 ANY /Lab/Tests
+ANY /Notifications/Index
 ANY /Patient/BookAppointment
 ANY /Patient/Dashboard
 ANY /Patient/InvoiceDetails
@@ -147,6 +148,8 @@ POST /Lab/DeleteTest
 POST /Lab/EditTest
 POST /Lab/ReceiveRequest
 POST /Lab/ReturnRequest
+POST /Notifications/MarkAllAsRead
+POST /Notifications/Open
 POST /Patient/BookAppointment
 POST /Patient/CreateComplaint
 POST /Patient/ProcessPayment
