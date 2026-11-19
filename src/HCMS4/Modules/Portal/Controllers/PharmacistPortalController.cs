@@ -1,14 +1,15 @@
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Shared.Audit.Services;
-using HCMS4.Shared.Notifications.Services;
+using HCMS4.Controllers;
+using HCMS4.Data;
 using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Audit.Services;
+using HCMS4.Shared.Common;
 using HCMS4.Shared.Identity.Models;
 using HCMS4.Shared.Notifications.Models;
-using HCMS4.Shared.Common;
-using HCMS4.Data;
+using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -16,23 +17,25 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace HCMS4.Controllers
+namespace HCMS4.Modules.Portal.Controllers
 {
+    // Part of the former PharmacistController; [ControllerName] keeps the /Pharmacist/... URLs.
     [Authorize(Roles = "Pharmacist")]
-    public class PharmacistController : Controller
+    [ControllerName("Pharmacist")]
+    public class PharmacistPortalController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
-        private readonly ILogger<PharmacistController> _logger;
+        private readonly ILogger<PharmacistPortalController> _logger;
         private readonly IDrugService _drugService;
         private readonly IPharmacistService _pharmacistService;
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
 
-        public PharmacistController(
+        public PharmacistPortalController(
             UserManager<ApplicationUser> userManager,
             ApplicationDbContext context,
-            ILogger<PharmacistController> logger,
+            ILogger<PharmacistPortalController> logger,
             IDrugService drugService,
             IPharmacistService pharmacistService,
             INotificationService notificationService,
@@ -107,8 +110,5 @@ namespace HCMS4.Controllers
                 return View(new PharmacistDashboardViewModel());
             }
         }
-
-
-
     }
 }

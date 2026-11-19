@@ -1,26 +1,29 @@
-using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Staff.Services;
-using HCMS4.Shared.Audit.Services;
-using HCMS4.Shared.Notifications.Services;
+using HCMS4.Controllers;
+using HCMS4.Data;
 using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Appointments.Services;
 using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Feedback.Models;
 using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
-using HCMS4.Shared.Notifications.Models;
+using HCMS4.Modules.Staff.Services;
+using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
-using HCMS4.Data;
+using HCMS4.Shared.Notifications.Models;
+using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace HCMS4.Controllers
+namespace HCMS4.Modules.Portal.Controllers
 {
+    // Part of the former DoctorController; [ControllerName] keeps the /Doctor/... URLs.
     [Authorize(Roles = "Doctor")]
-    public class DoctorController : BaseController
+    [ControllerName("Doctor")]
+    public class DoctorPortalController : BaseController
     {
         private readonly IAppointmentService _appointmentService;
         private readonly IPrescriptionService _prescriptionService;
@@ -29,9 +32,9 @@ namespace HCMS4.Controllers
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
 
-        public DoctorController(
+        public DoctorPortalController(
             ApplicationDbContext context,
-            ILogger<DoctorController> logger,
+            ILogger<DoctorPortalController> logger,
             IAppointmentService appointmentService,
             IPrescriptionService prescriptionService,
             ILeaveService leaveService,

@@ -3,7 +3,6 @@ using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
 using System.Net;
 using System.Reflection;
-using HCMS4.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -45,23 +44,34 @@ namespace HCMS4.Tests.Integration
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
+        // After Phase 5 the /Admin/... actions live in several module controllers named "Admin".
+        public static IEnumerable<Type> AdminControllers() =>
+            typeof(Program).Assembly.GetTypes()
+                .Where(t => t.GetCustomAttribute<HCMS4.Shared.Common.ControllerNameAttribute>()?.Name == "Admin");
+
         [Fact]
-        public void AdminController_AllowsOnlyAdminRole()
+        public void AdminControllers_AllowOnlyAdminRole()
         {
-            var classAttribute = typeof(AdminController).GetCustomAttribute<AuthorizeAttribute>();
-            Assert.NotNull(classAttribute);
-            Assert.Equal("Admin", classAttribute!.Roles);
+            var controllers = AdminControllers().ToList();
+            Assert.True(controllers.Count >= 6, "Expected the Admin actions to be split across the module controllers.");
 
-            var actions = typeof(AdminController)
-                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                .Where(m => typeof(IActionResult).IsAssignableFrom(m.ReturnType)
-                         || typeof(Task<IActionResult>).IsAssignableFrom(m.ReturnType));
-
-            foreach (var action in actions)
+            foreach (var controller in controllers)
             {
-                Assert.Null(action.GetCustomAttribute<AllowAnonymousAttribute>());
-                var roles = action.GetCustomAttributes<AuthorizeAttribute>().Select(a => a.Roles ?? string.Empty);
-                Assert.DoesNotContain(roles, r => r.Contains("Doctor", StringComparison.Ordinal));
+                var classAttribute = controller.GetCustomAttribute<AuthorizeAttribute>();
+                Assert.NotNull(classAttribute);
+                Assert.Equal("Admin", classAttribute!.Roles);
+
+                var actions = controller
+                    .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                    .Where(m => typeof(IActionResult).IsAssignableFrom(m.ReturnType)
+                             || typeof(Task<IActionResult>).IsAssignableFrom(m.ReturnType));
+
+                foreach (var action in actions)
+                {
+                    Assert.Null(action.GetCustomAttribute<AllowAnonymousAttribute>());
+                    var roles = action.GetCustomAttributes<AuthorizeAttribute>().Select(a => a.Roles ?? string.Empty);
+                    Assert.DoesNotContain(roles, r => r.Contains("Doctor", StringComparison.Ordinal));
+                }
             }
         }
 

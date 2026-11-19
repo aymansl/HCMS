@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace HCMS4.Controllers
+namespace HCMS4.Shared.Identity.Controllers
 {
 
     public class AccountController : Controller

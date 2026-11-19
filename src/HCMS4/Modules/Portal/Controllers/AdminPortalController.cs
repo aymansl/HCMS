@@ -1,33 +1,36 @@
-using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Services;
-using HCMS4.Modules.Staff.Services;
-using HCMS4.Shared.Audit.Services;
-using HCMS4.Shared.Notifications.Services;
-using HCMS4.Shared.Reporting.Services;
+using HCMS4.Controllers;
+using HCMS4.Data;
 using HCMS4.Modules.Appointments.Models;
+using HCMS4.Modules.Appointments.Services;
 using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Feedback.Models;
 using HCMS4.Modules.Pharmacy.Models;
+using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Modules.Records.Models;
+using HCMS4.Modules.Records.Services;
 using HCMS4.Modules.Staff.Models;
+using HCMS4.Modules.Staff.Services;
+using HCMS4.Shared.Audit.Services;
+using HCMS4.Shared.Common;
 using HCMS4.Shared.Identity.Models;
 using HCMS4.Shared.Notifications.Models;
-using HCMS4.Shared.Common;
-using HCMS4.Data;
+using HCMS4.Shared.Notifications.Services;
+using HCMS4.Shared.Reporting.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using static HCMS4.ViewModels.GenerateInvoiceViewModel;
+using System.Security.Claims;
 
-namespace HCMS4.Controllers
+namespace HCMS4.Modules.Portal.Controllers
 {
+    // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
     [Authorize(Roles = "Admin")]
-    public class AdminController : BaseController
+    [ControllerName("Admin")]
+    public class AdminPortalController : BaseController
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
@@ -41,11 +44,11 @@ namespace HCMS4.Controllers
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
 
-        public AdminController(
+        public AdminPortalController(
             UserManager<ApplicationUser> userManager,
             ApplicationDbContext context,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<AdminController> logger,
+            ILogger<AdminPortalController> logger,
             IDailyReportService reportService,
             IPatientService patientService,
             IAppointmentService appointmentService,
@@ -85,8 +88,5 @@ namespace HCMS4.Controllers
 
             return View();
         }
-
-
-
     }
 }

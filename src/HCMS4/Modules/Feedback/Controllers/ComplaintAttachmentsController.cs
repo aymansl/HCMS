@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 
-namespace HCMS4.Controllers
+namespace HCMS4.Modules.Feedback.Controllers
 {
     /// <summary>Serves complaint attachments, which are stored outside wwwroot (issue #29).</summary>
     [Authorize(Roles = "Admin,Patient")]

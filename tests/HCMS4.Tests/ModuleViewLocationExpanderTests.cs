@@ -48,7 +48,7 @@ namespace HCMS4.Tests
         public void NonModuleController_KeepsDefaultLocations()
         {
             var expander = new ModuleViewLocationExpander();
-            var context = ContextFor(typeof(HCMS4.Controllers.HomeController));
+            var context = ContextFor(typeof(HCMS4.Shared.Common.Controllers.HomeController));
 
             expander.PopulateValues(context);
             var locations = expander.ExpandViewLocations(context, new[] { "/Views/{1}/{0}.cshtml" }).ToList();

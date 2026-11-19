@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
-namespace HCMS4.Controllers
+namespace HCMS4.Shared.Common.Controllers
 {
     [AllowAnonymous]
     public class HomeController : Controller
