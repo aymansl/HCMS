@@ -7,8 +7,8 @@
     <LangVersion>latest</LangVersion>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <!-- Warnings stay warnings until the cleanup quality phase. -->
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- 0 warnings (cleanup Phase 6). Exceptions, each with its reason, are listed in .editorconfig. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
 </Project>
