@@ -1,14 +1,6 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
-using HCMS4.Modules.Appointments.Models;
-using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Billing.Models;
-using HCMS4.Modules.Feedback.Models;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Staff.Models;
-using HCMS4.Modules.Staff.Services;
+using HCMS4.Modules.Records.Services;
 using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
 using HCMS4.Shared.Notifications.Models;
@@ -16,39 +8,41 @@ using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCMS4.Modules.Pharmacy.Controllers
 {
     // Part of the former DoctorController; [ControllerName] keeps the /Doctor/... URLs.
     [Authorize(Roles = "Doctor")]
     [ControllerName("Doctor")]
-    public class DoctorPrescriptionsController : BaseController
+    public class DoctorPrescriptionsController : HcmsControllerBase
     {
-        private readonly IAppointmentService _appointmentService;
         private readonly IPrescriptionService _prescriptionService;
-        private readonly ILeaveService _leaveService;
-        private readonly INoShowRiskService _noShowRiskService;
+        private readonly IPrescriptionRequestService _requestService;
+        private readonly IDrugService _drugService;
+        private readonly IPatientService _patientService;
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
+        private readonly IClinicClock _clock;
+        private readonly ILogger<DoctorPrescriptionsController> _logger;
 
         public DoctorPrescriptionsController(
-            ApplicationDbContext context,
-            ILogger<DoctorPrescriptionsController> logger,
-            IAppointmentService appointmentService,
             IPrescriptionService prescriptionService,
-            ILeaveService leaveService,
-            INoShowRiskService noShowRiskService,
+            IPrescriptionRequestService requestService,
+            IDrugService drugService,
+            IPatientService patientService,
             INotificationService notificationService,
-            IActivityLogService activityLogService)
-            : base(context, logger)
+            IActivityLogService activityLogService,
+            IClinicClock clock,
+            ILogger<DoctorPrescriptionsController> logger)
         {
-            _appointmentService = appointmentService;
             _prescriptionService = prescriptionService;
-            _leaveService = leaveService;
-            _noShowRiskService = noShowRiskService;
+            _requestService = requestService;
+            _drugService = drugService;
+            _patientService = patientService;
             _notificationService = notificationService;
             _activityLogService = activityLogService;
+            _clock = clock;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -60,15 +54,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var requests = await _context.PrescriptionReissueRequests
-                .Include(r => r.Patient)
-                    .ThenInclude(p => p.User)
-                .Include(r => r.Prescription)
-                .Where(r => r.DoctorId == doctorId.Value)
-                .OrderByDescending(r => r.RequestDate)
-                .ToListAsync();
-
-            return View(requests);
+            return View(await _requestService.GetReissueRequestsForDoctorAsync(doctorId.Value));
         }
 
         [HttpPost]
@@ -81,40 +67,29 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var request = await _context.PrescriptionReissueRequests
-                .Include(r => r.Patient)
-                .FirstOrDefaultAsync(r => r.Id == id && r.DoctorId == doctorId.Value);
-
-            if (request == null)
+            var result = await _requestService.ReviewReissueRequestAsync(doctorId.Value, id, approve, doctorResponse);
+            if (!result.Success)
             {
-                TempData["ErrorMessage"] = "Request not found.";
+                TempData["ErrorMessage"] = result.Message;
                 return RedirectToAction(nameof(ReissueRequests));
             }
 
-            request.Status = approve ? ReissueRequestStatus.Approved : ReissueRequestStatus.Rejected;
-            request.DoctorResponse = doctorResponse;
-            request.ReviewedAt = ClinicTime.Now;
-            await _context.SaveChangesAsync();
-
             await _notificationService.CreateForUserAsync(
-                request.Patient.UserId,
+                result.Data.NotifyUserId,
                 "Prescription re-issuance updated",
-                $"Your re-issuance request for prescription #{request.PrescriptionId} was {(approve ? "approved" : "rejected")}.",
+                $"Your re-issuance request for prescription #{result.Data.PrescriptionId} was {(approve ? "approved" : "rejected")}.",
                 NotificationType.PrescriptionReissue,
                 "/Patient/Prescriptions",
                 "PrescriptionReissueRequest",
-                request.Id);
+                id);
 
-            var currentUser = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(
+            await LogActivityAsync(
                 approve ? "PrescriptionReissueApproved" : "PrescriptionReissueRejected",
                 "PrescriptionReissueRequest",
-                $"Doctor {(approve ? "approved" : "rejected")} re-issuance request #{request.Id}.",
-                request.Id.ToString(),
-                currentUser?.Id,
-                currentUser?.UserName);
+                $"Doctor {(approve ? "approved" : "rejected")} re-issuance request #{id}.",
+                id);
 
-            TempData["SuccessMessage"] = $"Request {(approve ? "approved" : "rejected")} successfully.";
+            TempData["SuccessMessage"] = result.Message;
             return RedirectToAction(nameof(ReissueRequests));
         }
 
@@ -127,17 +102,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var requests = await _context.DoctorReviewRequests
-                .Include(r => r.Pharmacist)
-                    .ThenInclude(p => p.User)
-                .Include(r => r.Prescription)
-                    .ThenInclude(p => p.Patient)
-                        .ThenInclude(p => p.User)
-                .Where(r => r.DoctorId == doctorId.Value)
-                .OrderByDescending(r => r.RequestDate)
-                .ToListAsync();
-
-            return View(requests);
+            return View(await _requestService.GetReviewRequestsForDoctorAsync(doctorId.Value));
         }
 
         [HttpPost]
@@ -150,46 +115,26 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            if (string.IsNullOrWhiteSpace(doctorResponse))
+            var result = await _requestService.RespondToReviewRequestAsync(doctorId.Value, id, doctorResponse);
+            if (!result.Success)
             {
-                TempData["ErrorMessage"] = "Please provide a response.";
+                TempData["ErrorMessage"] = result.Message;
                 return RedirectToAction(nameof(DoctorReviewRequests));
             }
-
-            var request = await _context.DoctorReviewRequests
-                .Include(r => r.Pharmacist)
-                .FirstOrDefaultAsync(r => r.Id == id && r.DoctorId == doctorId.Value);
-
-            if (request == null)
-            {
-                TempData["ErrorMessage"] = "Review request not found.";
-                return RedirectToAction(nameof(DoctorReviewRequests));
-            }
-
-            request.DoctorResponse = doctorResponse.Trim();
-            request.Status = ReviewRequestStatus.Responded;
-            request.ReviewedAt = ClinicTime.Now;
-            await _context.SaveChangesAsync();
 
             await _notificationService.CreateForUserAsync(
-                request.Pharmacist.UserId,
+                result.Data.NotifyUserId,
                 "Doctor review response",
-                $"Doctor responded to review request for prescription #{request.PrescriptionId}.",
+                $"Doctor responded to review request for prescription #{result.Data.PrescriptionId}.",
                 NotificationType.DoctorReview,
                 "/Pharmacist/Prescriptions",
                 "DoctorReviewRequest",
-                request.Id);
+                id);
 
-            var currentUser = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(
-                "DoctorReviewResponded",
-                "DoctorReviewRequest",
-                $"Doctor responded to doctor review request #{request.Id}.",
-                request.Id.ToString(),
-                currentUser?.Id,
-                currentUser?.UserName);
+            await LogActivityAsync("DoctorReviewResponded", "DoctorReviewRequest",
+                $"Doctor responded to doctor review request #{id}.", id);
 
-            TempData["SuccessMessage"] = "Response sent successfully.";
+            TempData["SuccessMessage"] = result.Message;
             return RedirectToAction(nameof(DoctorReviewRequests));
         }
 
@@ -202,36 +147,18 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 if (!doctorId.HasValue)
                     return RedirectToAction("Login", "Account");
 
-                var patient = await _context.Patients
-                    .Include(p => p.User)
-                    .FirstOrDefaultAsync(p => p.Id == patientId);
-
+                var patient = await _patientService.GetByIdAsync(patientId);
                 if (patient == null)
                 {
                     TempData["ErrorMessage"] = "Patient not found.";
                     return RedirectToAction("ViewAppointments");
                 }
 
-                var drugs = await _context.Drugs
-                    .Where(d => d.Quantity > 0 && d.ExpiryDate > ClinicTime.Now)
-                    .OrderBy(d => d.Name)
-                    .ToListAsync();
-
                 var viewModel = new CreatePrescriptionViewModel
                 {
                     PatientId = patientId,
                     AppointmentId = appointmentId,
-                    AvailableDrugs = drugs.Select(d => new DrugSelectionViewModel
-                    {
-                        Id = d.Id,
-                        Name = d.Name,
-                        Supplier = d.Supplier,
-                        Price = d.Price,
-                        Quantity = d.Quantity,
-                        ExpiryDate = d.ExpiryDate,
-                        ExpiryStatus = d.ExpiryStatus,
-                        Description = d.Description
-                    }).ToList()
+                    AvailableDrugs = await _drugService.GetPrescribableDrugsAsync()
                 };
 
                 ViewBag.PatientName = patient.User != null ? patient.User.FullName : "Unknown Patient";
@@ -257,92 +184,33 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 if (!doctorId.HasValue)
                     return RedirectToAction("Login", "Account");
 
+                if (ModelState.IsValid && string.IsNullOrWhiteSpace(viewModel.DoctorSignature))
+                {
+                    ModelState.AddModelError("DoctorSignature", "Electronic signature is required.");
+                }
+
                 if (ModelState.IsValid)
                 {
-                    if (string.IsNullOrWhiteSpace(viewModel.DoctorSignature))
-                    {
-                        ModelState.AddModelError("DoctorSignature", "Electronic signature is required.");
-                        return View(viewModel);
-                    }
-
-                    var validationErrors = new List<string>();
-                    foreach (var item in viewModel.Items)
-                    {
-                        var drug = await _context.Drugs.FindAsync(item.SelectedDrugId);
-                        if (drug == null)
-                        {
-                            validationErrors.Add($"Drug '{item.DrugName}' not found in database.");
-                            continue;
-                        }
-
-                        if (drug.Quantity < item.Quantity)
-                        {
-                            validationErrors.Add($"Insufficient stock for '{item.DrugName}'. Available: {drug.Quantity}, Requested: {item.Quantity}");
-                        }
-
-                        if (drug.ExpiryDate <= ClinicTime.Now)
-                        {
-                            validationErrors.Add($"Drug '{item.DrugName}' has expired on {drug.ExpiryDate:yyyy-MM-dd}");
-                        }
-                    }
-
-                    if (validationErrors.Any())
-                    {
-                        foreach (var error in validationErrors)
-                        {
-                            ModelState.AddModelError(string.Empty, error);
-                        }
-
-                        var drugs = await _context.Drugs
-                            .Where(d => d.Quantity > 0 && d.ExpiryDate > ClinicTime.Now)
-                            .OrderBy(d => d.Name)
-                            .ToListAsync();
-
-                        viewModel.AvailableDrugs = drugs.Select(d => new DrugSelectionViewModel
-                        {
-                            Id = d.Id,
-                            Name = d.Name,
-                            Supplier = d.Supplier,
-                            Price = d.Price,
-                            Quantity = d.Quantity,
-                            ExpiryDate = d.ExpiryDate,
-                            ExpiryStatus = d.ExpiryStatus,
-                            Description = d.Description
-                        }).ToList();
-
-                        var patient = await _context.Patients
-                            .Include(p => p.User)
-                            .FirstOrDefaultAsync(p => p.Id == viewModel.PatientId);
-
-                        ViewBag.PatientName = patient?.User != null ? patient.User.FullName : "Unknown Patient";
-                        return View(viewModel);
-                    }
-
                     var prescription = new Prescription
                     {
                         PatientId = viewModel.PatientId,
                         DoctorId = doctorId.Value,
                         AppointmentId = viewModel.AppointmentId,
-                        PrescriptionDate = ClinicTime.Now,
+                        PrescriptionDate = _clock.Now,
                         Notes = viewModel.Notes,
-                        Status = PrescriptionStatus.Pending,
-                        CreatedAt = ClinicTime.Now,
-                        UpdatedAt = ClinicTime.Now
+                        Status = PrescriptionStatus.Pending
                     };
 
-                    var items = viewModel.Items.Select(item =>
+                    // The service checks stock and expiry and takes the drug names from the catalog.
+                    var items = viewModel.Items.Select(item => new PrescriptionItem
                     {
-                        var drug = _context.Drugs.Find(item.SelectedDrugId);
-                        return new PrescriptionItem
-                        {
-                            DrugId = item.SelectedDrugId,
-                            DrugName = drug != null ? drug.Name : item.DrugName,
-                            Dosage = item.Dosage,
-                            Duration = item.Duration,
-                            Frequency = item.Frequency,
-                            Quantity = item.Quantity,
-                            Instructions = item.Instructions ?? string.Empty
-                        };
+                        DrugId = item.SelectedDrugId,
+                        DrugName = item.DrugName,
+                        Dosage = item.Dosage,
+                        Duration = item.Duration,
+                        Frequency = item.Frequency,
+                        Quantity = item.Quantity,
+                        Instructions = item.Instructions ?? string.Empty
                     }).ToList();
 
                     var result = await _prescriptionService.CreateAsync(prescription, items);
@@ -352,40 +220,21 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                         return RedirectToAction("PatientRecord", new { patientId = viewModel.PatientId });
                     }
 
-                    foreach (var error in result.Errors)
+                    if (result.Errors?.Any() == true)
                     {
-                        ModelState.AddModelError(string.Empty, error);
+                        foreach (var error in result.Errors)
+                            ModelState.AddModelError(string.Empty, error);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, result.Message);
                     }
                 }
 
-                var drugsForReload = await _context.Drugs
-                    .Where(d => d.Quantity > 0 && d.ExpiryDate > ClinicTime.Now)
-                    .OrderBy(d => d.Name)
-                    .ToListAsync();
-
-                viewModel.AvailableDrugs = drugsForReload.Select(d => new DrugSelectionViewModel
-                {
-                    Id = d.Id,
-                    Name = d.Name,
-                    Supplier = d.Supplier,
-                    Price = d.Price,
-                    Quantity = d.Quantity,
-                    ExpiryDate = d.ExpiryDate,
-                    ExpiryStatus = d.ExpiryStatus,
-                    Description = d.Description
-                }).ToList();
-
-                var patientRecord = await _context.Patients
-                    .Include(p => p.User)
-                    .FirstOrDefaultAsync(p => p.Id == viewModel.PatientId);
-
-                ViewBag.PatientName = patientRecord?.User != null ? patientRecord.User.FullName : "Unknown Patient";
+                viewModel.AvailableDrugs = await _drugService.GetPrescribableDrugsAsync();
+                var patient = await _patientService.GetByIdAsync(viewModel.PatientId);
+                ViewBag.PatientName = patient?.User != null ? patient.User.FullName : "Unknown Patient";
                 return View(viewModel);
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogError(ex, "Database error while creating prescription");
-                TempData["ErrorMessage"] = "Database error occurred. Please try again.";
             }
             catch (Exception ex)
             {
@@ -394,6 +243,12 @@ namespace HCMS4.Modules.Pharmacy.Controllers
             }
 
             return RedirectToAction("PatientRecord", new { patientId = viewModel.PatientId });
+        }
+
+        private async Task LogActivityAsync(string action, string entityName, string description, int entityId)
+        {
+            var user = await GetCurrentUserAsync();
+            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(), user?.Id, user?.UserName);
         }
     }
 }

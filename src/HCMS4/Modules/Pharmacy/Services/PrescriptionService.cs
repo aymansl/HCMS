@@ -146,6 +146,11 @@ namespace HCMS4.Modules.Pharmacy.Services
                 foreach (var item in items)
                 {
                     item.PrescriptionId = prescription.Id;
+                    if (drugs.TryGetValue(item.DrugId, out var catalogDrug))
+                    {
+                        item.DrugName = catalogDrug.Name;
+                    }
+
                     _context.PrescriptionItems.Add(item);
 
                     // Use pre-loaded drug from dictionary

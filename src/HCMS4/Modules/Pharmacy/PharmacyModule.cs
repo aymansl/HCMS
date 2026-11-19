@@ -9,6 +9,10 @@ namespace HCMS4.Modules.Pharmacy
             services.AddScoped<IDrugService, DrugService>();
             services.AddScoped<IPrescriptionService, PrescriptionService>();
             services.AddScoped<IPharmacistService, PharmacistService>();
+            services.AddScoped<ISupplierService, SupplierService>();
+            services.AddScoped<IPurchaseRequestService, PurchaseRequestService>();
+            services.AddScoped<IDispensingService, DispensingService>();
+            services.AddScoped<IPrescriptionRequestService, PrescriptionRequestService>();
             return services;
         }
     }

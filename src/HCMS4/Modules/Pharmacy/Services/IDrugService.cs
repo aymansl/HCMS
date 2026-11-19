@@ -13,5 +13,7 @@ namespace HCMS4.Modules.Pharmacy.Services
         Task<List<Drug>> GetExpiringDrugsAsync(int daysThreshold = BusinessRules.DrugExpiryWarningDays);
         Task<List<Drug>> GetLowStockDrugsAsync(int threshold = BusinessRules.LowStockThreshold);
         Task<decimal> GetTotalInventoryValueAsync();
+        /// <summary>Drugs a doctor can prescribe: in stock and not expired, by name.</summary>
+        Task<List<HCMS4.ViewModels.DrugSelectionViewModel>> GetPrescribableDrugsAsync();
     }
 }

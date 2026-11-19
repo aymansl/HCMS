@@ -206,5 +206,26 @@ namespace HCMS4.Modules.Pharmacy.Services
                 .AsNoTracking()
                 .SumAsync(d => d.Price * d.Quantity);
         }
+
+        public async Task<List<HCMS4.ViewModels.DrugSelectionViewModel>> GetPrescribableDrugsAsync()
+        {
+            var now = ClinicTime.Now;
+            var drugs = await _context.Drugs.AsNoTracking()
+                .Where(d => d.Quantity > 0 && d.ExpiryDate > now)
+                .OrderBy(d => d.Name)
+                .ToListAsync();
+
+            return drugs.Select(d => new HCMS4.ViewModels.DrugSelectionViewModel
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Supplier = d.Supplier,
+                Price = d.Price,
+                Quantity = d.Quantity,
+                ExpiryDate = d.ExpiryDate,
+                ExpiryStatus = d.ExpiryStatus,
+                Description = d.Description
+            }).ToList();
+        }
     }
 }

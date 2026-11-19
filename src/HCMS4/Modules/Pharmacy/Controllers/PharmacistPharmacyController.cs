@@ -1,53 +1,47 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
-using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Staff.Models;
 using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
-using HCMS4.Shared.Identity.Models;
 using HCMS4.Shared.Notifications.Models;
 using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace HCMS4.Modules.Pharmacy.Controllers
 {
     // Part of the former PharmacistController; [ControllerName] keeps the /Pharmacist/... URLs.
     [Authorize(Roles = "Pharmacist")]
     [ControllerName("Pharmacist")]
-    public class PharmacistPharmacyController : Controller
+    public class PharmacistPharmacyController : HcmsControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly ApplicationDbContext _context;
-        private readonly ILogger<PharmacistPharmacyController> _logger;
         private readonly IDrugService _drugService;
         private readonly IPharmacistService _pharmacistService;
+        private readonly IDispensingService _dispensingService;
+        private readonly IPurchaseRequestService _purchaseRequestService;
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
+        private readonly IClinicClock _clock;
+        private readonly ILogger<PharmacistPharmacyController> _logger;
 
         public PharmacistPharmacyController(
-            UserManager<ApplicationUser> userManager,
-            ApplicationDbContext context,
-            ILogger<PharmacistPharmacyController> logger,
             IDrugService drugService,
             IPharmacistService pharmacistService,
+            IDispensingService dispensingService,
+            IPurchaseRequestService purchaseRequestService,
             INotificationService notificationService,
-            IActivityLogService activityLogService)
+            IActivityLogService activityLogService,
+            IClinicClock clock,
+            ILogger<PharmacistPharmacyController> logger)
         {
-            _userManager = userManager;
-            _context = context;
-            _logger = logger;
             _drugService = drugService;
             _pharmacistService = pharmacistService;
+            _dispensingService = dispensingService;
+            _purchaseRequestService = purchaseRequestService;
             _notificationService = notificationService;
             _activityLogService = activityLogService;
+            _clock = clock;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Drugs(string searchTerm = null, string expiryFilter = null)
@@ -56,7 +50,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
             {
                 var drugs = await _drugService.GetAllAsync(searchTerm, expiryFilter);
 
-                var today = ClinicTime.Now;
+                var today = _clock.Now;
                 ViewBag.SearchTerm = searchTerm;
                 ViewBag.ExpiryFilter = expiryFilter;
                 ViewBag.TotalValue = drugs.Sum(d => d.Price * d.Quantity);
@@ -171,29 +165,8 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         {
             try
             {
-                var query = _context.Prescriptions
-                    .Include(p => p.Patient)
-                        .ThenInclude(pat => pat.User)
-                    .Include(p => p.Doctor)
-                        .ThenInclude(doc => doc.User)
-                    .Include(p => p.PrescriptionItems)
-                        .ThenInclude(pi => pi.Drug)
-                    .AsQueryable();
-
-                if (!string.IsNullOrWhiteSpace(status) && status != "all")
-                {
-                    if (Enum.TryParse<PrescriptionStatus>(status, true, out var statusEnum))
-                    {
-                        query = query.Where(p => p.Status == statusEnum);
-                    }
-                }
-
-                var prescriptions = await query
-                    .OrderByDescending(p => p.PrescriptionDate)
-                    .ToListAsync();
-
                 ViewBag.CurrentStatus = status;
-                return View(prescriptions);
+                return View(await _dispensingService.GetQueueAsync(status));
             }
             catch (Exception ex)
             {
@@ -207,16 +180,8 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkPrescriptionCompleted(int id)
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            var result = await _pharmacistService.MarkPrescriptionCompletedAsync(id, currentUser.Id);
-
-            if (result.Success)
-            {
-                TempData["SuccessMessage"] = result.Message;
-                return RedirectToAction(nameof(PrescriptionDetails), new { id });
-            }
-
-            TempData["ErrorMessage"] = result.Message;
+            var result = await _pharmacistService.MarkPrescriptionCompletedAsync(id, CurrentUserId!);
+            TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
             return RedirectToAction(nameof(PrescriptionDetails), new { id });
         }
 
@@ -225,23 +190,10 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         {
             try
             {
-                _logger.LogInformation("ProcessPrescription called with ID: {Id}", id);
-
-                var prescription = await _context.Prescriptions
-                    .Include(p => p.Patient)
-                        .ThenInclude(pat => pat.User)
-                    .Include(p => p.Doctor)
-                        .ThenInclude(doc => doc.User)
-                    .Include(p => p.Doctor)
-                        .ThenInclude(doc => doc.Specialization)
-                    .Include(p => p.PrescriptionItems)
-                        .ThenInclude(pi => pi.Drug)
-                    .FirstOrDefaultAsync(p => p.Id == id);
-
+                var prescription = await _dispensingService.GetForProcessingAsync(id);
                 if (prescription == null)
                 {
-                    _logger.LogWarning("Prescription with ID {Id} not found in database", id);
-
+                    _logger.LogWarning("Prescription with ID {Id} not found", id);
                     TempData["ErrorMessage"] = "Prescription not found.";
                     return RedirectToAction(nameof(Prescriptions));
                 }
@@ -269,14 +221,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
             var result = await _pharmacistService.HoldPrescriptionAsync(id);
             if (result.Success)
             {
-                var user = await _userManager.GetUserAsync(User);
-                await _activityLogService.LogAsync(
-                    "PrescriptionHeld",
-                    nameof(Prescription),
-                    $"Prescription #{id} was put on hold.",
-                    id.ToString(),
-                    user?.Id,
-                    user?.UserName);
+                await LogActivityAsync("PrescriptionHeld", nameof(Prescription), $"Prescription #{id} was put on hold.", id);
             }
 
             return Json(new { success = result.Success, message = result.Message });
@@ -286,169 +231,27 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DispensePrescription(int id, List<int> selectedItemIds, string dispensingNotes)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
-                var prescription = await _context.Prescriptions
-                    .Include(p => p.PrescriptionItems)
-                        .ThenInclude(pi => pi.Drug)
-                    .Include(p => p.Patient)
-                        .ThenInclude(pat => pat.User)
-                    .FirstOrDefaultAsync(p => p.Id == id);
-
-                if (prescription == null)
+                var result = await _dispensingService.DispenseAsync(id, selectedItemIds ?? new List<int>(), dispensingNotes, CurrentUserId!);
+                if (!result.Success)
                 {
-                    return Json(new { success = false, message = "Prescription not found." });
+                    return Json(new { success = false, message = result.Message });
                 }
-
-                if (prescription.Status != PrescriptionStatus.Pending)
-                {
-                    return Json(new { success = false, message = "Only pending prescriptions can be dispensed." });
-                }
-
-                if (selectedItemIds == null || !selectedItemIds.Any())
-                {
-                    return Json(new { success = false, message = "Please select at least one medication to dispense." });
-                }
-
-
-              
-
-               
-
-                var selectedItems = prescription.PrescriptionItems
-                    .Where(pi => selectedItemIds.Contains(pi.Id))
-                    .ToList();
-
-                var insufficientStock = new List<string>();
-                var itemsToDispense = new List<PrescriptionItem>();
-
-                foreach (var item in selectedItems)
-                {
-                    if (item.Drug == null)
-                    {
-                        insufficientStock.Add($"Item #{item.Id}: Drug not found");
-                        continue;
-                    }
-
-                    if (item.Drug.Quantity < item.Quantity)
-                    {
-                        insufficientStock.Add($"{item.Drug.Name}: Required {item.Quantity}, Available {item.Drug.Quantity}");
-                    }
-                    else
-                    {
-                        itemsToDispense.Add(item);
-                    }
-                }
-
-                if (insufficientStock.Any())
-                {
-                    await transaction.RollbackAsync();
-                    return Json(new
-                    {
-                        success = false,
-                        message = "Cannot dispense due to insufficient stock:\n" + string.Join("\n", insufficientStock)
-                    });
-                }
-
-                decimal totalAmount = 0;
-
-                foreach (var item in itemsToDispense)
-                {
-                    if (item.Drug != null)
-                    {
-                        item.Drug.Quantity -= item.Quantity;
-                        item.Drug.UpdatedAt = ClinicTime.Now;
-                        totalAmount += item.Drug.Price * item.Quantity;
-
-                        _logger.LogInformation("Dispensed {Quantity} units of {DrugName} for prescription {PrescriptionId}. New stock: {NewStock}",
-                            item.Quantity, item.Drug.Name, prescription.Id, item.Drug.Quantity);
-                    }
-                }
-
-                decimal taxAmount = totalAmount * 0.05m;
-                decimal grandTotal = totalAmount + taxAmount;
-
-                prescription.MedicationTotal = totalAmount;
-                prescription.DispensedDate = ClinicTime.Now;
-                prescription.DispensedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                prescription.UpdatedAt = ClinicTime.Now;
-                prescription.DispensingNotes = dispensingNotes;
-
-                var allItemsDispensed = prescription.PrescriptionItems.All(pi => selectedItemIds.Contains(pi.Id));
-
-                if (allItemsDispensed)
-                {
-                    prescription.Status = PrescriptionStatus.Completed;
-                    _logger.LogInformation("Prescription {PrescriptionId} fully dispensed and marked as completed", prescription.Id);
-                }
-                else
-                {
-                    prescription.Status = PrescriptionStatus.Pending;
-                    var dispensedNames = string.Join(", ", itemsToDispense.Select(i => i.Drug.Name));
-                    var remainingNames = string.Join(", ", prescription.PrescriptionItems
-                        .Where(pi => !selectedItemIds.Contains(pi.Id))
-                        .Select(i => i.Drug.Name));
-
-                    prescription.Notes = $"Partially dispensed on {ClinicTime.Now:yyyy-MM-dd HH:mm}. Dispensed: {dispensedNames}. Remaining: {remainingNames}";
-
-                    _logger.LogInformation("Prescription {PrescriptionId} partially dispensed. Items dispensed: {DispensedCount}, Remaining: {RemainingCount}",
-                        prescription.Id, itemsToDispense.Count, prescription.PrescriptionItems.Count - itemsToDispense.Count);
-                }
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                var currentUser = await _userManager.GetUserAsync(User);
-                var pharmacist = await _context.Pharmacists.FirstOrDefaultAsync(p => p.UserId == currentUser.Id);
-
-                if (pharmacist == null)
-                {
-                    return Json(new { success = false, message = "Pharmacist profile not found." });
-                }
-                var invoice = new Invoice
-                {
-                    PatientId = prescription.PatientId,
-                    PrescriptionId = prescription.Id,
-                    AppointmentId = prescription.AppointmentId,
-                    InvoiceDate = ClinicTime.Now,
-                    MedicationTotal = totalAmount,
-                    TotalAmount = grandTotal,
-                    PaymentStatus = PaymentStatus.Pending,
-                    Notes = $"Generated from prescription #{prescription.Id} on {ClinicTime.Now:yyyy-MM-dd HH:mm}",
-                    UpdatedAt = ClinicTime.Now,
-                    PharmacistId = pharmacist?.Id,
-                    DispensedAt = ClinicTime.Now,
-
-                };
-
-
-
-                _context.Invoices.Add(invoice);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Invoice #{InvoiceId} created for prescription {PrescriptionId}. Total amount: {GrandTotal:C2}",
-                    invoice.Id, prescription.Id, grandTotal);
-
-                var message = allItemsDispensed
-                    ? $"Prescription fully dispensed. Invoice #{invoice.Id} created. Total: {grandTotal:C2}"
-                    : $"Partially dispensed ({itemsToDispense.Count} items). Invoice #{invoice.Id} created for dispensed items. Total: {grandTotal:C2}";
 
                 return Json(new
                 {
                     success = true,
-                    message = message,
-                    invoiceId = invoice.Id,
-                    totalAmount = grandTotal,
-                    isPartial = !allItemsDispensed
+                    message = result.Message,
+                    invoiceId = result.Data.InvoiceId,
+                    totalAmount = result.Data.TotalAmount,
+                    isPartial = result.Data.IsPartial
                 });
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error dispensing prescription {PrescriptionId}", id);
-                return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+                return Json(new { success = false, message = "An error occurred while dispensing the prescription." });
             }
         }
 
@@ -457,43 +260,17 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         {
             try
             {
-                var prescription = await _context.Prescriptions
-                    .Include(p => p.Patient)
-                        .ThenInclude(pat => pat.User)
-                    .Include(p => p.Doctor)
-                        .ThenInclude(doc => doc.User)
-                    .Include(p => p.PrescriptionItems)
-                        .ThenInclude(pi => pi.Drug)
-                    .FirstOrDefaultAsync(p => p.Id == id);
-
-                if (prescription == null)
+                var details = await _dispensingService.GetDetailsAsync(id);
+                if (details == null)
                 {
                     TempData["ErrorMessage"] = "Prescription not found.";
                     return RedirectToAction(nameof(Prescriptions));
                 }
 
-                var invoice = await _context.Invoices
-                    .FirstOrDefaultAsync(i => i.PrescriptionId == id);
-
-                var pharmacistNotes = await _context.PharmacistPrescriptionNotes
-                    .Include(n => n.Pharmacist)
-                        .ThenInclude(p => p.User)
-                    .Where(n => n.PrescriptionId == id)
-                    .OrderByDescending(n => n.CreatedAt)
-                    .ToListAsync();
-
-                var reviewRequests = await _context.DoctorReviewRequests
-                    .Include(r => r.Pharmacist)
-                        .ThenInclude(p => p.User)
-                    .Where(r => r.PrescriptionId == id)
-                    .OrderByDescending(r => r.RequestDate)
-                    .ToListAsync();
-
-                ViewBag.Invoice = invoice;
-                ViewBag.PharmacistNotes = pharmacistNotes;
-                ViewBag.DoctorReviewRequests = reviewRequests;
-
-                return View(prescription);
+                ViewBag.Invoice = details.Invoice;
+                ViewBag.PharmacistNotes = details.PharmacistNotes;
+                ViewBag.DoctorReviewRequests = details.ReviewRequests;
+                return View(details.Prescription);
             }
             catch (Exception ex)
             {
@@ -506,14 +283,8 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         [HttpGet]
         public async Task<IActionResult> RequestDoctorReview(int prescriptionId)
         {
-            var prescription = await _context.Prescriptions
-                .Include(p => p.Patient)
-                    .ThenInclude(pat => pat.User)
-                .Include(p => p.Doctor)
-                    .ThenInclude(doc => doc.User)
-                .FirstOrDefaultAsync(p => p.Id == prescriptionId);
-
-            if (prescription == null)
+            var parties = await _dispensingService.GetPartiesAsync(prescriptionId);
+            if (parties == null)
             {
                 TempData["ErrorMessage"] = "Prescription not found.";
                 return RedirectToAction(nameof(Prescriptions));
@@ -521,9 +292,9 @@ namespace HCMS4.Modules.Pharmacy.Controllers
 
             return View(new PrescriptionReviewRequestFormViewModel
             {
-                PrescriptionId = prescription.Id,
-                PatientName = prescription.Patient?.User?.FullName ?? "Patient",
-                DoctorName = prescription.Doctor?.User?.FullName ?? "Doctor"
+                PrescriptionId = parties.PrescriptionId,
+                PatientName = parties.PatientName,
+                DoctorName = parties.DoctorName
             });
         }
 
@@ -531,85 +302,51 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RequestDoctorReview(PrescriptionReviewRequestFormViewModel model)
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            var pharmacist = await _context.Pharmacists.FirstOrDefaultAsync(p => p.UserId == currentUser.Id);
-            var prescription = await _context.Prescriptions
-                .Include(p => p.Doctor)
-                .FirstOrDefaultAsync(p => p.Id == model.PrescriptionId);
-
-            if (pharmacist == null || prescription == null)
-            {
-                TempData["ErrorMessage"] = "Prescription or pharmacist profile not found.";
-                return RedirectToAction(nameof(Prescriptions));
-            }
-
             if (!ModelState.IsValid)
             {
-                model.PatientName = (await _context.Prescriptions
-                    .Include(p => p.Patient)
-                        .ThenInclude(pt => pt.User)
-                    .Where(p => p.Id == model.PrescriptionId)
-                    .Select(p => p.Patient.User.FullName)
-                    .FirstOrDefaultAsync()) ?? "Patient";
-                model.DoctorName = (await _context.Doctors
-                    .Include(d => d.User)
-                    .Where(d => d.Id == prescription.DoctorId)
-                    .Select(d => d.User.FullName)
-                    .FirstOrDefaultAsync()) ?? "Doctor";
+                var parties = await _dispensingService.GetPartiesAsync(model.PrescriptionId);
+                if (parties == null)
+                {
+                    TempData["ErrorMessage"] = "Prescription or pharmacist profile not found.";
+                    return RedirectToAction(nameof(Prescriptions));
+                }
+
+                model.PatientName = parties.PatientName;
+                model.DoctorName = parties.DoctorName;
                 return View(model);
             }
 
-            var request = new DoctorReviewRequest
+            var result = await _dispensingService.RequestDoctorReviewAsync(CurrentUserId!, model);
+            if (!result.Success)
             {
-                PharmacistId = pharmacist.Id,
-                PrescriptionId = prescription.Id,
-                DoctorId = prescription.DoctorId,
-                ReasonForReview = model.ReasonForReview,
-                AdditionalComments = model.AdditionalComments,
-                SuggestedAlternative = model.SuggestedAlternative,
-                RequestDate = ClinicTime.Now,
-                Status = ReviewRequestStatus.Pending
-            };
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction(nameof(Prescriptions));
+            }
 
-            _context.DoctorReviewRequests.Add(request);
-            await _context.SaveChangesAsync();
-
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == prescription.DoctorId);
-            if (doctor != null)
+            if (result.Data.NotifyUserId != null)
             {
                 await _notificationService.CreateForUserAsync(
-                    doctor.UserId,
+                    result.Data.NotifyUserId,
                     "Doctor review requested",
-                    $"A pharmacist requested review for prescription #{prescription.Id}.",
+                    $"A pharmacist requested review for prescription #{model.PrescriptionId}.",
                     NotificationType.DoctorReview,
                     "/Doctor/DoctorReviewRequests",
                     "DoctorReviewRequest",
-                    request.Id);
+                    result.Data.Id);
             }
 
-            await _activityLogService.LogAsync(
-                "DoctorReviewRequested",
-                "DoctorReviewRequest",
-                $"Pharmacist requested doctor review for prescription #{prescription.Id}.",
-                request.Id.ToString(),
-                currentUser.Id,
-                currentUser.UserName);
+            await LogActivityAsync("DoctorReviewRequested", "DoctorReviewRequest",
+                $"Pharmacist requested doctor review for prescription #{model.PrescriptionId}.", result.Data.Id);
 
-            TempData["SuccessMessage"] = "Review request has been sent to the doctor.";
-            return RedirectToAction(nameof(PrescriptionDetails), new { id = prescription.Id });
+            TempData["SuccessMessage"] = result.Message;
+            return RedirectToAction(nameof(PrescriptionDetails), new { id = model.PrescriptionId });
         }
 
         [HttpGet]
         public async Task<IActionResult> AddPrescriptionNote(int prescriptionId)
         {
-            var prescription = await _context.Prescriptions
-                .Include(p => p.Patient)
-                    .ThenInclude(pat => pat.User)
-                .Include(p => p.Doctor)
-                    .ThenInclude(doc => doc.User)
-                .FirstOrDefaultAsync(p => p.Id == prescriptionId);
-
-            if (prescription == null)
+            var parties = await _dispensingService.GetPartiesAsync(prescriptionId);
+            if (parties == null)
             {
                 TempData["ErrorMessage"] = "Prescription not found.";
                 return RedirectToAction(nameof(Prescriptions));
@@ -617,9 +354,9 @@ namespace HCMS4.Modules.Pharmacy.Controllers
 
             return View(new PrescriptionNoteFormViewModel
             {
-                PrescriptionId = prescription.Id,
-                PatientName = prescription.Patient?.User?.FullName ?? "Patient",
-                DoctorName = prescription.Doctor?.User?.FullName ?? "Doctor"
+                PrescriptionId = parties.PrescriptionId,
+                PatientName = parties.PatientName,
+                DoctorName = parties.DoctorName
             });
         }
 
@@ -627,108 +364,60 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddPrescriptionNote(PrescriptionNoteFormViewModel model)
         {
-            var currentUser = await _userManager.GetUserAsync(User);
-            var pharmacist = await _context.Pharmacists.FirstOrDefaultAsync(p => p.UserId == currentUser.Id);
-            var prescription = await _context.Prescriptions
-                .Include(p => p.Doctor)
-                .FirstOrDefaultAsync(p => p.Id == model.PrescriptionId);
-
-            if (pharmacist == null || prescription == null)
-            {
-                TempData["ErrorMessage"] = "Prescription or pharmacist profile not found.";
-                return RedirectToAction(nameof(Prescriptions));
-            }
-
             if (!ModelState.IsValid)
             {
-                model.PatientName = (await _context.Prescriptions
-                    .Include(p => p.Patient)
-                        .ThenInclude(pt => pt.User)
-                    .Where(p => p.Id == model.PrescriptionId)
-                    .Select(p => p.Patient.User.FullName)
-                    .FirstOrDefaultAsync()) ?? "Patient";
-                model.DoctorName = (await _context.Doctors
-                    .Include(d => d.User)
-                    .Where(d => d.Id == prescription.DoctorId)
-                    .Select(d => d.User.FullName)
-                    .FirstOrDefaultAsync()) ?? "Doctor";
+                var parties = await _dispensingService.GetPartiesAsync(model.PrescriptionId);
+                if (parties == null)
+                {
+                    TempData["ErrorMessage"] = "Prescription or pharmacist profile not found.";
+                    return RedirectToAction(nameof(Prescriptions));
+                }
+
+                model.PatientName = parties.PatientName;
+                model.DoctorName = parties.DoctorName;
                 return View(model);
             }
 
-            var note = new PharmacistPrescriptionNote
+            var result = await _dispensingService.AddNoteAsync(CurrentUserId!, model);
+            if (!result.Success)
             {
-                PrescriptionId = prescription.Id,
-                PharmacistId = pharmacist.Id,
-                NoteText = model.NoteText.Trim(),
-                NotifyDoctor = model.NotifyDoctor,
-                CreatedAt = ClinicTime.Now
-            };
-
-            _context.PharmacistPrescriptionNotes.Add(note);
-            await _context.SaveChangesAsync();
-
-            if (model.NotifyDoctor)
-            {
-                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == prescription.DoctorId);
-                if (doctor != null)
-                {
-                    await _notificationService.CreateForUserAsync(
-                        doctor.UserId,
-                        "Prescription note added",
-                        $"A pharmacist added a note to prescription #{prescription.Id}.",
-                        NotificationType.PrescriptionNote,
-                        "/Doctor/PatientRecord",
-                        "PharmacistPrescriptionNote",
-                        note.Id);
-                }
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction(nameof(Prescriptions));
             }
 
-            await _activityLogService.LogAsync(
-                "PrescriptionNoteAdded",
-                "PharmacistPrescriptionNote",
-                $"Pharmacist added a prescription note to prescription #{prescription.Id}.",
-                note.Id.ToString(),
-                currentUser.Id,
-                currentUser.UserName);
+            if (result.Data.NotifyUserId != null)
+            {
+                await _notificationService.CreateForUserAsync(
+                    result.Data.NotifyUserId,
+                    "Prescription note added",
+                    $"A pharmacist added a note to prescription #{model.PrescriptionId}.",
+                    NotificationType.PrescriptionNote,
+                    "/Doctor/PatientRecord",
+                    "PharmacistPrescriptionNote",
+                    result.Data.Id);
+            }
 
-            TempData["SuccessMessage"] = "Note added successfully.";
-            return RedirectToAction(nameof(PrescriptionDetails), new { id = prescription.Id });
+            await LogActivityAsync("PrescriptionNoteAdded", "PharmacistPrescriptionNote",
+                $"Pharmacist added a prescription note to prescription #{model.PrescriptionId}.", result.Data.Id);
+
+            TempData["SuccessMessage"] = result.Message;
+            return RedirectToAction(nameof(PrescriptionDetails), new { id = model.PrescriptionId });
         }
 
-        // GET: Pharmacist/PurchaseRequests
         public async Task<IActionResult> PurchaseRequests(string status = "all")
         {
             try
             {
-                var currentUser = await _userManager.GetUserAsync(User);
-                var pharmacist = await _context.Pharmacists
-                    .FirstOrDefaultAsync(p => p.UserId == currentUser.Id);
-
+                var pharmacist = await _pharmacistService.GetByUserIdAsync(CurrentUserId!);
                 if (pharmacist == null)
                 {
                     TempData["ErrorMessage"] = "Pharmacist profile not found.";
                     return RedirectToAction("Dashboard");
                 }
 
-                var query = _context.PurchaseRequests
-                    .Include(pr => pr.Pharmacist)
-                        .ThenInclude(p => p.User)
-                    .Include(pr => pr.Supplier)
-                    .Include(pr => pr.Items)
-                    .Where(pr => pr.PharmacistId == pharmacist.Id)
-                    .AsQueryable();
+                var purchaseRequests = await _purchaseRequestService.GetAllAsync(status, pharmacist.Id);
 
-                // Apply status filter
-                if (status != "all" && Enum.TryParse<PurchaseRequestStatus>(status, true, out var statusEnum))
-                {
-                    query = query.Where(pr => pr.Status == statusEnum);
-                }
-
-                var purchaseRequests = await query
-                    .OrderByDescending(pr => pr.RequestDate)
-                    .ToListAsync();
-
-                var viewModel = new PurchaseRequestListViewModel
+                return View(new PurchaseRequestListViewModel
                 {
                     PurchaseRequests = purchaseRequests,
                     TotalCount = purchaseRequests.Count,
@@ -736,9 +425,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                     ApprovedCount = purchaseRequests.Count(pr => pr.Status == PurchaseRequestStatus.Approved),
                     ReceivedCount = purchaseRequests.Count(pr => pr.Status == PurchaseRequestStatus.Received),
                     CurrentFilter = status
-                };
-
-                return View(viewModel);
+                });
             }
             catch (Exception ex)
             {
@@ -752,41 +439,13 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         {
             try
             {
-                var suppliers = await _context.Suppliers
-                    .Where(s => s.IsActive)
-                    .Select(s => new SupplierSelectDto
-                    {
-                        Id = s.Id,
-                        Name = s.Name,
-                        ContactPerson = s.ContactPerson,
-                        Phone = s.Phone
-                    })
-                    .ToListAsync();
+                var viewModel = new CreatePurchaseRequestViewModel { Items = new List<PurchaseRequestItemDto>() };
+                await _purchaseRequestService.FillFormOptionsAsync(viewModel);
 
-                if (!suppliers.Any())
+                if (!viewModel.AvailableSuppliers.Any())
                 {
                     TempData["WarningMessage"] = "No suppliers registered. Please contact the administrator to add suppliers.";
                 }
-
-                var drugs = await _context.Drugs
-                    .Where(d => d.ExpiryDate > ClinicTime.Now)
-                    .Select(d => new DrugSelectDto
-                    {
-                        Id = d.Id,
-                        Name = d.Name,
-                        Price = d.Price,
-                        CurrentStock = d.Quantity,
-                        ExpiryStatus = d.ExpiryStatus
-                    })
-                    .OrderBy(d => d.Name)
-                    .ToListAsync();
-
-                var viewModel = new CreatePurchaseRequestViewModel
-                {
-                    AvailableSuppliers = suppliers,
-                    AvailableDrugs = drugs,
-                    Items = new List<PurchaseRequestItemDto>()
-                };
 
                 return View(viewModel);
             }
@@ -804,95 +463,34 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         {
             try
             {
-                var currentUser = await _userManager.GetUserAsync(User);
-                var pharmacist = await _context.Pharmacists
-                    .FirstOrDefaultAsync(p => p.UserId == currentUser.Id);
-
+                var pharmacist = await _pharmacistService.GetByUserIdAsync(CurrentUserId!);
                 if (pharmacist == null)
                 {
                     TempData["ErrorMessage"] = "Pharmacist profile not found.";
                     return RedirectToAction("PurchaseRequests");
                 }
 
-                if (!model.Items.Any())
-                {
-                    ModelState.AddModelError("", "Please add at least one item to the purchase request.");
-                }
-
                 if (ModelState.IsValid)
                 {
-                    var requestNumber = $"PO-{ClinicTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}";
-
-                    var purchaseRequest = new PurchaseRequest
+                    var result = await _purchaseRequestService.CreateAsync(pharmacist.Id, model);
+                    if (result.Success)
                     {
-                        RequestNumber = requestNumber,
-                        PharmacistId = pharmacist.Id,
-                        SupplierId = model.SupplierId,
-                        RequestDate = ClinicTime.Now,
-                        Status = PurchaseRequestStatus.Pending,
-                        Notes = model.Notes,
-                        TotalAmount = model.Items.Sum(i => i.Quantity * i.UnitPrice),
-                        CreatedAt = ClinicTime.Now,
-                        UpdatedAt = ClinicTime.Now
-                    };
-
-                    _context.PurchaseRequests.Add(purchaseRequest);
-                    await _context.SaveChangesAsync();
-
-                    foreach (var item in model.Items)
-                    {
-                        var purchaseItem = new PurchaseRequestItem
-                        {
-                            PurchaseRequestId = purchaseRequest.Id,
-                            DrugId = item.DrugId,
-                            DrugName = item.DrugName,
-                            Quantity = item.Quantity,
-                            UnitPrice = item.UnitPrice,
-                            Notes = item.Notes
-                        };
-                        _context.PurchaseRequestItems.Add(purchaseItem);
+                        _logger.LogInformation("Purchase request {RequestNumber} created by pharmacist {PharmacistId}",
+                            result.Data.RequestNumber, pharmacist.Id);
+                        TempData["SuccessMessage"] = result.Message;
+                        return RedirectToAction("PurchaseRequestDetails", new { id = result.Data.Id });
                     }
 
-                    await _context.SaveChangesAsync();
-
-                    _logger.LogInformation("Purchase request {RequestNumber} created by pharmacist {PharmacistName}",
-                        requestNumber, pharmacist.User?.FullName);
-
-                    TempData["SuccessMessage"] = $"Purchase request #{requestNumber} created successfully and sent for review!";
-
-                    return RedirectToAction("PurchaseRequestDetails", new { id = purchaseRequest.Id });
+                    ModelState.AddModelError("", result.Message);
                 }
 
-                model.AvailableSuppliers = await _context.Suppliers
-                    .Where(s => s.IsActive)
-                    .Select(s => new SupplierSelectDto
-                    {
-                        Id = s.Id,
-                        Name = s.Name,
-                        ContactPerson = s.ContactPerson,
-                        Phone = s.Phone
-                    })
-                    .ToListAsync();
-
-                model.AvailableDrugs = await _context.Drugs
-                    .Where(d => d.ExpiryDate > ClinicTime.Now)
-                    .Select(d => new DrugSelectDto
-                    {
-                        Id = d.Id,
-                        Name = d.Name,
-                        Price = d.Price,
-                        CurrentStock = d.Quantity,
-                        ExpiryStatus = d.ExpiryStatus
-                    })
-                    .OrderBy(d => d.Name)
-                    .ToListAsync();
-
+                await _purchaseRequestService.FillFormOptionsAsync(model);
                 return View(model);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating purchase request");
-                TempData["ErrorMessage"] = $"An error occurred while creating the purchase request: {ex.Message}";
+                TempData["ErrorMessage"] = "An error occurred while creating the purchase request.";
                 return RedirectToAction("PurchaseRequests");
             }
         }
@@ -901,33 +499,21 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         {
             try
             {
-                var purchaseRequest = await _context.PurchaseRequests
-                    .Include(pr => pr.Pharmacist)
-                        .ThenInclude(p => p.User)
-                    .Include(pr => pr.Supplier)
-                    .Include(pr => pr.Items)
-                        .ThenInclude(i => i.Drug)
-                    .FirstOrDefaultAsync(pr => pr.Id == id);
-
+                var purchaseRequest = await _purchaseRequestService.GetByIdAsync(id);
                 if (purchaseRequest == null)
                 {
                     TempData["ErrorMessage"] = "Purchase request not found.";
                     return RedirectToAction("PurchaseRequests");
                 }
 
-                var currentUser = await _userManager.GetUserAsync(User);
-                var isAdmin = await _userManager.IsInRoleAsync(currentUser, "Admin");
-                var isPharmacist = await _userManager.IsInRoleAsync(currentUser, "Pharmacist");
-
-                var viewModel = new PurchaseRequestDetailViewModel
+                var isAdmin = User.IsInRole("Admin");
+                return View(new PurchaseRequestDetailViewModel
                 {
                     PurchaseRequest = purchaseRequest,
                     Items = purchaseRequest.Items.ToList(),
                     CanApprove = isAdmin && purchaseRequest.Status == PurchaseRequestStatus.Pending,
                     CanReceive = isAdmin && purchaseRequest.Status == PurchaseRequestStatus.Ordered
-                };
-
-                return View(viewModel);
+                });
             }
             catch (Exception ex)
             {
@@ -935,6 +521,12 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 TempData["ErrorMessage"] = "An error occurred while loading the purchase request.";
                 return RedirectToAction("PurchaseRequests");
             }
+        }
+
+        private async Task LogActivityAsync(string action, string entityName, string description, int entityId)
+        {
+            var user = await GetCurrentUserAsync();
+            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(), user?.Id, user?.UserName);
         }
     }
 }
