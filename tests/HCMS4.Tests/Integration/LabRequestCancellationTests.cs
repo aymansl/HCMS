@@ -87,6 +87,37 @@ namespace HCMS4.Tests.Integration
         }
 
         [Fact]
+        public async Task TC_L4_01_TheTechnicianSeesTheCancellationNotification_OnTheLabDashboard()
+        {
+            // Regression: the notification was saved but no page showed it to the lab technician.
+            var technicianUserId = $"lab-{Guid.NewGuid():N}";
+            await _factory.WithDbAsync(async db =>
+            {
+                var role = await db.Roles.FirstOrDefaultAsync(r => r.Name == "LabTechnician");
+                if (role == null)
+                {
+                    role = new Microsoft.AspNetCore.Identity.IdentityRole("LabTechnician") { NormalizedName = "LABTECHNICIAN" };
+                    db.Roles.Add(role);
+                }
+                db.Users.Add(new HCMS4.Shared.Identity.Models.ApplicationUser
+                {
+                    Id = technicianUserId, UserName = $"{technicianUserId}@test.local", FirstName = "Lina", LastName = "Lab"
+                });
+                db.UserRoles.Add(new Microsoft.AspNetCore.Identity.IdentityUserRole<string> { RoleId = role.Id, UserId = technicianUserId });
+                await db.SaveChangesAsync();
+            });
+            var (doctorUserId, id) = await SeedAsync(LabRequestStatus.Received);
+
+            await CancelAsync(_factory.CreateClientAs("Doctor", doctorUserId), id, "Patient was transferred.");
+
+            var dashboard = await TextAsync(await _factory.CreateClientAs("LabTechnician", technicianUserId).GetAsync("/Lab/Dashboard"));
+            Assert.Contains("id=\"lab-notifications\"", dashboard);
+            Assert.Contains("Lab request cancelled", dashboard);
+            Assert.Contains("Patient was transferred.", dashboard);
+            Assert.Contains($"href=\"/Lab/RequestDetails/{id}\"", dashboard);
+        }
+
+        [Fact]
         public async Task TC_L4_02_CancelAfterTheResult_ShowsTheMessage_AndKeepsTheStatus()
         {
             var (doctorUserId, id) = await SeedAsync(LabRequestStatus.ResultIssued);

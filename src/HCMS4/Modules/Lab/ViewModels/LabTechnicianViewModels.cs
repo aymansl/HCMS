@@ -48,5 +48,8 @@ namespace HCMS4.Modules.Lab.ViewModels
 
         /// <summary>Active tests in the catalogue (UC-L06).</summary>
         public int ActiveTestCount { get; set; }
+
+        /// <summary>New, resent and cancelled request alerts (UC-L03, UC-L04), newest first.</summary>
+        public List<HCMS4.Shared.Notifications.Models.UserNotification> RecentNotifications { get; set; } = new();
     }
 }
