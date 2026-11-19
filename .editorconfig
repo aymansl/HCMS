@@ -106,3 +106,9 @@ dotnet_diagnostic.CA1000.severity = none
 # CA1707: test names use the Method_Scenario_Result convention.
 [tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none
+# CA1816: xUnit test classes are never derived from, so Dispose needs no GC.SuppressFinalize.
+dotnet_diagnostic.CA1816.severity = none
+# CA1861 / CA1859 / CA1822: inline expected arrays, interface-typed helpers and instance helpers keep tests readable.
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1822.severity = none

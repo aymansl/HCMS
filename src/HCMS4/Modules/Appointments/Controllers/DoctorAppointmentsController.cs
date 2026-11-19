@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Appointments.Services;
 using HCMS4.Shared.Audit.Services;
@@ -108,7 +109,7 @@ namespace HCMS4.Modules.Appointments.Controllers
                     .Distinct()
                     .ToList();
 
-                if (appointmentIds.Any())
+                if (appointmentIds.Count > 0)
                 {
                     var risk = await _noShowRiskService.CalculateRiskScoresAsync(appointmentIds);
                     viewModel.AppointmentRiskScores = risk.Scores;
@@ -171,7 +172,7 @@ namespace HCMS4.Modules.Appointments.Controllers
                 "AppointmentReminderSent",
                 nameof(Appointment),
                 $"Doctor sent a reminder for appointment #{appointment.Id}.",
-                appointment.Id.ToString(),
+                appointment.Id.ToString(CultureInfo.InvariantCulture),
                 currentUser?.Id,
                 currentUser?.UserName);
 
@@ -291,7 +292,7 @@ namespace HCMS4.Modules.Appointments.Controllers
                         "AppointmentRescheduled",
                         nameof(Appointment),
                         $"Appointment #{appointment.Id} was rescheduled from {previousDateTime:yyyy-MM-dd HH:mm} to {model.NewAppointmentDateTime:yyyy-MM-dd HH:mm}.",
-                        appointment.Id.ToString(),
+                        appointment.Id.ToString(CultureInfo.InvariantCulture),
                         currentUser?.Id,
                         currentUser?.UserName);
 

@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
+namespace HCMS4.ViewModels;
+
 public class ClinicalNoteViewModel
 {
     public int Id { get; set; }

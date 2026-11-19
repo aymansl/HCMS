@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Feedback.Models;
 using HCMS4.Modules.Records.Models;
 using System.Net;
@@ -82,7 +83,7 @@ namespace HCMS4.Tests.Integration
             var html = await client.GetStringAsync($"/Admin/ComplaintDetails/{id}");
 
             // Opening the details moves a new complaint to "Under Review" (value 1).
-            Assert.Equal(((int)ComplaintStatus.UnderReview).ToString(), SelectedStatus(html));
+            Assert.Equal(((int)ComplaintStatus.UnderReview).ToString(CultureInfo.InvariantCulture), SelectedStatus(html));
         }
 
         [Fact]
@@ -94,15 +95,15 @@ namespace HCMS4.Tests.Integration
             var post = await FormHelper.PostFormAsync(client, $"/Admin/ComplaintDetails/{id}", "/Admin/UpdateComplaintStatus",
                 new Dictionary<string, string>
                 {
-                    ["id"] = id.ToString(),
-                    ["Status"] = ((int)ComplaintStatus.Resolved).ToString(),
+                    ["id"] = id.ToString(CultureInfo.InvariantCulture),
+                    ["Status"] = ((int)ComplaintStatus.Resolved).ToString(CultureInfo.InvariantCulture),
                     ["resolutionNotes"] = "Refund issued"
                 });
             Assert.Equal(HttpStatusCode.Redirect, post.StatusCode);
 
             var html = await client.GetStringAsync(post.Headers.Location!.OriginalString);
 
-            Assert.Equal(((int)ComplaintStatus.Resolved).ToString(), SelectedStatus(html));
+            Assert.Equal(((int)ComplaintStatus.Resolved).ToString(CultureInfo.InvariantCulture), SelectedStatus(html));
             Assert.Contains("Complaint updated successfully.", html);
             await _factory.WithDbAsync(async db =>
             {

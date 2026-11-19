@@ -288,7 +288,7 @@ namespace HCMS4.Modules.Appointments.Services
                 .Where(a => a.AppointmentDateTime < now && a.Status == AppointmentStatus.Scheduled)
                 .ToListAsync();
 
-            if (pastScheduledAppointments.Any())
+            if (pastScheduledAppointments.Count > 0)
             {
                 foreach (var appointment in pastScheduledAppointments)
                 {

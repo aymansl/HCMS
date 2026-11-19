@@ -51,7 +51,7 @@ namespace HCMS4.Modules.Appointments.Services
                 }).ToList()
             };
 
-            if (!viewModel.Patients.Any())
+            if (viewModel.Patients.Count == 0)
             {
                 viewModel.ErrorMessage = "No visiting patients on the selected date.";
             }
@@ -63,7 +63,7 @@ namespace HCMS4.Modules.Appointments.Services
         {
             var drugName = prescription?.PrescriptionItems.FirstOrDefault()?.DrugName;
             return drugName?.Length > DiagnosisPreviewLength
-                ? drugName.Substring(0, DiagnosisPreviewLength) + "..."
+                ? string.Concat(drugName.AsSpan(0, DiagnosisPreviewLength), "...")
                 : drugName;
         }
     }

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using Microsoft.EntityFrameworkCore;
 
@@ -60,9 +61,9 @@ namespace HCMS4.Tests.Integration
                 $"/Doctor/CreatePrescription?patientId={patientId}", "/Doctor/CreatePrescription",
                 new Dictionary<string, string>
                 {
-                    ["PatientId"] = patientId.ToString(),
+                    ["PatientId"] = patientId.ToString(CultureInfo.InvariantCulture),
                     ["AppointmentId"] = "",
-                    ["Items[0].SelectedDrugId"] = drugId.ToString(),
+                    ["Items[0].SelectedDrugId"] = drugId.ToString(CultureInfo.InvariantCulture),
                     ["Items[0].DrugName"] = "Amoxicillin",
                     ["Items[0].Price"] = "25.00",
                     ["Items[0].AvailableStock"] = "100",

@@ -123,7 +123,7 @@ namespace HCMS4.Modules.Pharmacy.Services
                 }
             }
 
-            if (errors.Any())
+            if (errors.Count > 0)
             {
                 return ServiceResult.Fail("Validation failed.", errors);
             }

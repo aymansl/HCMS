@@ -125,7 +125,7 @@ namespace HCMS4.Modules.Pharmacy.Services
                     return ServiceResult.Fail("Drug not found.");
                 }
 
-                if (drug.PrescriptionItems.Any())
+                if (drug.PrescriptionItems.Count > 0)
                 {
                     return ServiceResult.Fail($"Cannot delete '{drug.Name}' because it is associated with existing prescriptions.");
                 }

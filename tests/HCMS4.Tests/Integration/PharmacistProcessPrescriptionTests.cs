@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
@@ -50,7 +51,7 @@ namespace HCMS4.Tests.Integration
             var client = _factory.CreateClientAs("Pharmacist");
 
             var response = await FormHelper.PostFormAsync(client, $"/Pharmacist/ProcessPrescription/{id}", "/Pharmacist/HoldPrescription",
-                new Dictionary<string, string> { ["id"] = id.ToString() });
+                new Dictionary<string, string> { ["id"] = id.ToString(CultureInfo.InvariantCulture) });
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var json = await response.Content.ReadFromJsonAsync<JsonElement>();

@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Staff.Models;
 using HCMS4.Modules.Staff.Services;
 using HCMS4.Shared.Common;
@@ -33,7 +34,7 @@ namespace HCMS4.Modules.Staff.Controllers
             ViewBag.Specializations = (await _staffService.GetActiveSpecializationsAsync())
                 .Select(s => new SelectListItem
                 {
-                    Value = s.Id.ToString(),
+                    Value = s.Id.ToString(CultureInfo.InvariantCulture),
                     Text = $"{s.Name} - {s.ConsultationFee:C2}"
                 })
                 .ToList();

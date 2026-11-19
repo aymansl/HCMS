@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Billing.Models;
 using HCMS4.Shared.Reporting.Models;
 using HCMS4.Shared.Common;
@@ -45,7 +46,7 @@ namespace HCMS4.Shared.Reporting.Services
                     TotalAmount = i.TotalAmount,
                     InvoiceTime = i.InvoiceDate,
                     PaymentStatus = i.PaymentStatus,
-                    PrescriptionId = i.PrescriptionId?.ToString()
+                    PrescriptionId = i.PrescriptionId?.ToString(CultureInfo.InvariantCulture)
                 }).ToList();
 
                 return new DailyPharmacyReportViewModel
@@ -54,7 +55,7 @@ namespace HCMS4.Shared.Reporting.Services
                     Invoices = invoiceItems,
                     TotalAmount = invoiceItems.Sum(i => i.TotalAmount),
                     TotalInvoices = invoiceItems.Count,
-                    HasInvoices = invoiceItems.Any()
+                    HasInvoices = invoiceItems.Count > 0
                 };
             }
             catch (Exception ex)
@@ -103,7 +104,7 @@ namespace HCMS4.Shared.Reporting.Services
                     // Note: Contains() with null checks for safety
                     query = query.Where(i =>
                         (i.Patient != null && i.Patient.User != null && i.Patient.User.FullName.Contains(searchTerm)) ||
-                        i.Id.ToString().Contains(searchTerm) ||
+                        i.Id.ToString(CultureInfo.InvariantCulture).Contains(searchTerm) ||
                         (i.Pharmacist != null && i.Pharmacist.User != null && i.Pharmacist.User.FullName.Contains(searchTerm)));
                 }
 
@@ -120,7 +121,7 @@ namespace HCMS4.Shared.Reporting.Services
                     TotalAmount = i.TotalAmount,
                     InvoiceTime = i.InvoiceDate,
                     PaymentStatus = i.PaymentStatus,
-                    PrescriptionId = i.PrescriptionId?.ToString()
+                    PrescriptionId = i.PrescriptionId?.ToString(CultureInfo.InvariantCulture)
                 }).ToList();
 
                 return new DailyPharmacyReportViewModel
@@ -132,7 +133,7 @@ namespace HCMS4.Shared.Reporting.Services
                     Invoices = invoiceItems,
                     TotalAmount = invoiceItems.Sum(i => i.TotalAmount),
                     TotalInvoices = invoiceItems.Count,
-                    HasInvoices = invoiceItems.Any()
+                    HasInvoices = invoiceItems.Count > 0
                 };
             }
             catch (Exception ex)

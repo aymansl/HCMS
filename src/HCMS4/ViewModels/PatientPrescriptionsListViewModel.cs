@@ -3,7 +3,7 @@
     public class PatientPrescriptionsListViewModel
     {
         public List<PatientPrescriptionsViewModel> Prescriptions { get; set; } = new();
-        public bool HasPrescriptions => Prescriptions.Any();
+        public bool HasPrescriptions => Prescriptions.Count > 0;
         public int TotalCount => Prescriptions.Count;
 
         // Summary statistics

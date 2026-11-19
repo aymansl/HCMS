@@ -124,7 +124,7 @@ namespace HCMS4.Modules.Billing.Services
                 errors.Add("Prescription not found or doesn't belong to this patient.");
             }
 
-            if (errors.Any())
+            if (errors.Count > 0)
                 return ServiceResult<Invoice>.Fail(errors[0], errors);
 
             var invoice = new Invoice

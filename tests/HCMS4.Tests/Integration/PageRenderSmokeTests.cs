@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Billing.Models;
@@ -150,17 +151,17 @@ namespace HCMS4.Tests.Integration
                     ids["DoctorUserId"] = doctorUser.Id;
                     ids["PatientUserId"] = patientUser.Id;
                     ids["PharmacistUserId"] = pharmacistUser.Id;
-                    ids["doctorId"] = doctor.Id.ToString();
-                    ids["patientId"] = patient.Id.ToString();
-                    ids["supplierId"] = supplier.Id.ToString();
-                    ids["completedId"] = completed.Id.ToString();
-                    ids["scheduledId"] = scheduled.Id.ToString();
-                    ids["visitDate"] = completed.AppointmentDateTime.ToString("yyyy-MM-dd");
-                    ids["pendingPrescriptionId"] = pending.Id.ToString();
-                    ids["completedPrescriptionId"] = done.Id.ToString();
-                    ids["invoiceId"] = invoice.Id.ToString();
-                    ids["complaintId"] = complaint.Id.ToString();
-                    ids["purchaseRequestId"] = purchaseRequest.Id.ToString();
+                    ids["doctorId"] = doctor.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["patientId"] = patient.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["supplierId"] = supplier.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["completedId"] = completed.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["scheduledId"] = scheduled.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["visitDate"] = completed.AppointmentDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                    ids["pendingPrescriptionId"] = pending.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["completedPrescriptionId"] = done.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["invoiceId"] = invoice.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["complaintId"] = complaint.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["purchaseRequestId"] = purchaseRequest.Id.ToString(CultureInfo.InvariantCulture);
                 });
 
                 _ids = ids;

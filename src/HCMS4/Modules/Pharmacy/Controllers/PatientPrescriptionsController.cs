@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
@@ -112,7 +113,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 "PrescriptionReissueRequested",
                 "PrescriptionReissueRequest",
                 $"Patient requested re-issuance for prescription #{prescriptionId}.",
-                result.Data.Id.ToString(),
+                result.Data.Id.ToString(CultureInfo.InvariantCulture),
                 currentUser?.Id,
                 currentUser?.UserName);
 

@@ -14,7 +14,7 @@ namespace HCMS4.ViewModels
         public List<Patient> AvailablePatients { get; set; } = new();
         public bool IsFilteredView => SelectedStatus != "all";
         public bool AnalyticsServiceAvailable { get; set; } = true;
-        public bool IsUsingAI { get; set; } = false;
+        public bool IsUsingAI { get; set; }
         public Dictionary<int, double> AppointmentRiskScores { get; set; } = new();
         public string SelectedRiskLevel { get; set; } = "all";
     }

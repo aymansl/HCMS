@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Billing.Services;
 using HCMS4.Shared.Common;
 using HCMS4.Shared.Reporting.Services;
@@ -89,7 +90,7 @@ namespace HCMS4.Modules.Billing.Controllers
                         return RedirectToAction("Patients");
                     }
 
-                    foreach (var error in result.Errors?.Any() == true ? result.Errors : new List<string> { result.Message })
+                    foreach (var error in result.Errors.Count > 0 ? result.Errors : new List<string> { result.Message })
                         ModelState.AddModelError("", error);
                 }
                 catch (Exception ex)
@@ -260,13 +261,13 @@ namespace HCMS4.Modules.Billing.Controllers
 
                 foreach (var invoice in report.Invoices)
                 {
-                    csv.AppendLine($"{invoice.InvoiceId},{invoice.PatientName},{invoice.PharmacistName},{invoice.TotalAmount:C2},{invoice.InvoiceTime:yyyy-MM-dd HH:mm},{invoice.PaymentStatus},{invoice.PrescriptionId}");
+                    csv.AppendLine(CultureInfo.CurrentCulture, $"{invoice.InvoiceId},{invoice.PatientName},{invoice.PharmacistName},{invoice.TotalAmount:C2},{invoice.InvoiceTime:yyyy-MM-dd HH:mm},{invoice.PaymentStatus},{invoice.PrescriptionId}");
                 }
 
                 csv.AppendLine();
-                csv.AppendLine($"Total Invoices,{report.TotalInvoices}");
-                csv.AppendLine($"Total Amount,{report.TotalAmount:C2}");
-                csv.AppendLine($"Report Date,{targetDate:yyyy-MM-dd}");
+                csv.AppendLine(CultureInfo.CurrentCulture, $"Total Invoices,{report.TotalInvoices}");
+                csv.AppendLine(CultureInfo.CurrentCulture, $"Total Amount,{report.TotalAmount:C2}");
+                csv.AppendLine(CultureInfo.CurrentCulture, $"Report Date,{targetDate:yyyy-MM-dd}");
 
                 var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
                 var result = new FileContentResult(bytes, "text/csv")

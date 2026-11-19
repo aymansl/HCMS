@@ -96,7 +96,7 @@ namespace HCMS4.Modules.Pharmacy.Services
                 return ServiceResult.Fail("Supplier not found.");
             }
 
-            if (supplier.PurchaseRequests?.Any() == true)
+            if (supplier.PurchaseRequests?.Count > 0)
             {
                 supplier.IsActive = false;
                 await _context.SaveChangesAsync();

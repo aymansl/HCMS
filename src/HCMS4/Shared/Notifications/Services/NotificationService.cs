@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Shared.Notifications.Models;
 using HCMS4.Shared.Common;
 using HCMS4.Data;
@@ -56,7 +57,7 @@ namespace HCMS4.Shared.Notifications.Services
                 Type = type,
                 LinkUrl = linkUrl,
                 RelatedEntityType = relatedEntityType,
-                RelatedEntityId = relatedEntityId?.ToString(),
+                RelatedEntityId = relatedEntityId?.ToString(CultureInfo.InvariantCulture),
                 CreatedAt = ClinicTime.Now
             });
 
@@ -73,7 +74,7 @@ namespace HCMS4.Shared.Notifications.Services
                 select userRole.UserId
             ).Distinct().ToListAsync();
 
-            if (!userIds.Any())
+            if (userIds.Count == 0)
             {
                 return;
             }
@@ -88,7 +89,7 @@ namespace HCMS4.Shared.Notifications.Services
                     Type = type,
                     LinkUrl = linkUrl,
                     RelatedEntityType = relatedEntityType,
-                    RelatedEntityId = relatedEntityId?.ToString(),
+                    RelatedEntityId = relatedEntityId?.ToString(CultureInfo.InvariantCulture),
                     CreatedAt = ClinicTime.Now
                 });
             }

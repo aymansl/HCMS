@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Modules.Records.Services;
@@ -163,7 +164,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 };
 
                 ViewBag.PatientName = patient.User != null ? patient.User.FullName : "Unknown Patient";
-                ViewBag.PatientInfo = $"ID: {patient.Id} | DOB: {patient.DateOfBirth?.ToString("yyyy-MM-dd") ?? "N/A"}";
+                ViewBag.PatientInfo = $"ID: {patient.Id} | DOB: {patient.DateOfBirth?.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture) ?? "N/A"}";
 
                 return View(viewModel);
             }
@@ -221,7 +222,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                         return RedirectToAction("PatientRecord", new { patientId = viewModel.PatientId });
                     }
 
-                    if (result.Errors?.Any() == true)
+                    if (result.Errors.Count > 0)
                     {
                         foreach (var error in result.Errors)
                             ModelState.AddModelError(string.Empty, error);
@@ -249,7 +250,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         private async Task LogActivityAsync(string action, string entityName, string description, int entityId)
         {
             var user = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(), user?.Id, user?.UserName);
+            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(CultureInfo.InvariantCulture), user?.Id, user?.UserName);
         }
     }
 }

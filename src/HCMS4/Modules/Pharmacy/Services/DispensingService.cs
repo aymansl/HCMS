@@ -148,7 +148,7 @@ namespace HCMS4.Modules.Pharmacy.Services
                 return ServiceResult<DispenseOutcome>.Fail("Only pending prescriptions can be dispensed.");
 
             var items = prescription.PrescriptionItems.ToList();
-            if (!items.Any())
+            if (items.Count == 0)
                 return ServiceResult<DispenseOutcome>.Fail("This prescription has no medications to dispense.");
 
             var insufficientStock = new List<string>();
@@ -160,7 +160,7 @@ namespace HCMS4.Modules.Pharmacy.Services
                     insufficientStock.Add($"{item.Drug.Name}: Required {item.Quantity}, Available {item.Drug.Quantity}");
             }
 
-            if (insufficientStock.Any())
+            if (insufficientStock.Count > 0)
             {
                 return ServiceResult<DispenseOutcome>.Fail(
                     "Cannot dispense due to insufficient stock:\n" + string.Join("\n", insufficientStock));

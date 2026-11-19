@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Appointments.Services;
 using HCMS4.Modules.Records.Services;
@@ -88,7 +89,7 @@ namespace HCMS4.Modules.Appointments.Controllers
 
             try
             {
-                if (allAppointments.Any())
+                if (allAppointments.Count > 0)
                 {
                     var risk = await _noShowRiskService.CalculateRiskScoresAsync(allAppointments);
                     riskScores = risk.Scores;
@@ -267,7 +268,7 @@ namespace HCMS4.Modules.Appointments.Controllers
                         "AppointmentRescheduled",
                         nameof(Appointment),
                         $"Appointment #{appointment.Id} was rescheduled from {previousDateTime:yyyy-MM-dd HH:mm} to {model.NewAppointmentDateTime:yyyy-MM-dd HH:mm}.",
-                        appointment.Id.ToString(),
+                        appointment.Id.ToString(CultureInfo.InvariantCulture),
                         currentUser?.Id,
                         currentUser?.UserName);
 
@@ -323,7 +324,7 @@ namespace HCMS4.Modules.Appointments.Controllers
                     "AppointmentCanceled",
                     nameof(Appointment),
                     $"Appointment #{appointment.Id} was canceled. Reason: {cancellationReason}",
-                    appointment.Id.ToString(),
+                    appointment.Id.ToString(CultureInfo.InvariantCulture),
                     currentUser?.Id,
                     currentUser?.UserName);
             }
@@ -371,7 +372,7 @@ namespace HCMS4.Modules.Appointments.Controllers
                 "AppointmentReminderSent",
                 nameof(Appointment),
                 $"A reminder was sent for appointment #{appointment.Id}.",
-                appointment.Id.ToString(),
+                appointment.Id.ToString(CultureInfo.InvariantCulture),
                 currentUser?.Id,
                 currentUser?.UserName);
 

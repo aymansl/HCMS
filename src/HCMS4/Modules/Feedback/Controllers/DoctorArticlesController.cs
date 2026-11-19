@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Feedback.Models;
 using HCMS4.Modules.Feedback.Services;
 using HCMS4.Shared.Audit.Services;
@@ -116,7 +117,7 @@ namespace HCMS4.Modules.Feedback.Controllers
         private async Task LogAsync(string action, string description, int articleId)
         {
             var currentUser = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(action, nameof(MedicalArticle), description, articleId.ToString(),
+            await _activityLogService.LogAsync(action, nameof(MedicalArticle), description, articleId.ToString(CultureInfo.InvariantCulture),
                 currentUser?.Id, currentUser?.UserName);
         }
     }

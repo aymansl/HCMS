@@ -52,12 +52,12 @@ namespace HCMS4.Data
         public DbSet<UserNotification> UserNotifications { get; set; }
         public DbSet<SystemActivityLog> SystemActivityLogs { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(builder);
 
             // Each module configures its own entities (Modules/*/Data, Shared/*/Data).
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+            builder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
     }
 }

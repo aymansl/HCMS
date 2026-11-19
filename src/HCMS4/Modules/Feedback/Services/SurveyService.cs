@@ -29,6 +29,8 @@ namespace HCMS4.Modules.Feedback.Services
 
     public class SurveyService : ISurveyService
     {
+        private static readonly char[] LineBreaks = { '\r', '\n' };
+
         private readonly ApplicationDbContext _context;
         private readonly IClinicClock _clock;
 
@@ -65,7 +67,7 @@ namespace HCMS4.Modules.Feedback.Services
             if (!model.Questions.Any(q => !string.IsNullOrWhiteSpace(q.QuestionText)))
                 errors.Add((string.Empty, "You must add at least one question."));
 
-            if (model.TargetAudience == SurveyTargetAudience.SpecificPatients && !model.SpecificPatientIds.Any())
+            if (model.TargetAudience == SurveyTargetAudience.SpecificPatients && model.SpecificPatientIds.Count == 0)
                 errors.Add((string.Empty, "Please select at least one patient for a specific-patient survey."));
 
             return errors;
@@ -103,7 +105,7 @@ namespace HCMS4.Modules.Feedback.Services
                 if (question.QuestionType == SurveyQuestionType.MultipleChoice && !string.IsNullOrWhiteSpace(question.OptionsText))
                 {
                     var options = question.OptionsText
-                        .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Split(LineBreaks, StringSplitOptions.RemoveEmptyEntries)
                         .Select(o => o.Trim())
                         .Where(o => !string.IsNullOrWhiteSpace(o))
                         .Distinct()
@@ -203,7 +205,7 @@ namespace HCMS4.Modules.Feedback.Services
                 .Where(q => q.IsRequired && !HasAnswer(q))
                 .Select(q => $"Please answer question before proceeding: {q.QuestionText}")
                 .ToList();
-            if (missing.Any())
+            if (missing.Count > 0)
                 return ServiceResult<int>.Fail("Some required questions are not answered.", missing);
 
             _context.SurveyAnswers.RemoveRange(
@@ -250,12 +252,15 @@ namespace HCMS4.Modules.Feedback.Services
             else if (model.TargetAudience == SurveyTargetAudience.SpecificCategory &&
                      !string.IsNullOrWhiteSpace(model.TargetCriteria))
             {
-                var criteria = model.TargetCriteria.Trim().ToLower();
+                var criteria = model.TargetCriteria.Trim().ToLowerInvariant();
+                // Translated to SQL LOWER(...) LIKE: EF cannot translate the culture/StringComparison overloads.
+#pragma warning disable CA1304, CA1311, CA1862
                 query = query.Where(p =>
                     (p.ChronicConditions != null && p.ChronicConditions.ToLower().Contains(criteria)) ||
                     (p.Address != null && p.Address.ToLower().Contains(criteria)) ||
                     (p.User.Email != null && p.User.Email.ToLower().Contains(criteria)) ||
                     (p.User.FirstName + " " + p.User.LastName).ToLower().Contains(criteria));
+#pragma warning restore CA1304, CA1311, CA1862
             }
 
             return query.ToListAsync();

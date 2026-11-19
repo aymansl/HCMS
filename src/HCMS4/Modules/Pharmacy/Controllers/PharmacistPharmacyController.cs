@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Shared.Audit.Services;
@@ -429,7 +430,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
                 var viewModel = new CreatePurchaseRequestViewModel { Items = new List<PurchaseRequestItemDto>() };
                 await _purchaseRequestService.FillFormOptionsAsync(viewModel);
 
-                if (!viewModel.AvailableSuppliers.Any())
+                if (viewModel.AvailableSuppliers.Count == 0)
                 {
                     TempData["WarningMessage"] = "No suppliers registered. Please contact the administrator to add suppliers.";
                 }
@@ -513,7 +514,7 @@ namespace HCMS4.Modules.Pharmacy.Controllers
         private async Task LogActivityAsync(string action, string entityName, string description, int entityId)
         {
             var user = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(), user?.Id, user?.UserName);
+            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(CultureInfo.InvariantCulture), user?.Id, user?.UserName);
         }
     }
 }

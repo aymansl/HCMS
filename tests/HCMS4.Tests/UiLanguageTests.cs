@@ -28,7 +28,7 @@ namespace HCMS4.Tests
                 .ToArray();
 
             return Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories)
-                .Where(f => f.EndsWith(".cshtml") || f.EndsWith(".cs") || f.EndsWith(".js"))
+                .Where(f => f.EndsWith(".cshtml", StringComparison.Ordinal) || f.EndsWith(".cs", StringComparison.Ordinal) || f.EndsWith(".js", StringComparison.Ordinal))
                 .Where(f => !skipped.Any(s => f.Contains(s)));
         }
 
@@ -48,7 +48,7 @@ namespace HCMS4.Tests
         public void Views_HaveNoRightToLeftMarkup()
         {
             var offenders = SourceFiles()
-                .Where(f => f.EndsWith(".cshtml"))
+                .Where(f => f.EndsWith(".cshtml", StringComparison.Ordinal))
                 .Where(f => File.ReadAllText(f).Contains("dir=\"rtl\"") || File.ReadAllText(f).Contains("lang=\"ar\""))
                 .Select(f => Path.GetRelativePath(SourceRoot(), f))
                 .ToList();

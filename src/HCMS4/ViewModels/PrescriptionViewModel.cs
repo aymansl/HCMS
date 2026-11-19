@@ -1,5 +1,6 @@
-﻿using HCMS4.ViewModels;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace HCMS4.ViewModels;
 
 public class PrescriptionViewModel
 {
@@ -30,7 +31,7 @@ public class PrescriptionViewModel
     {
         get
         {
-            return Status.ToLower() switch
+            return Status.ToLowerInvariant() switch
             {
                 "pending" => "bg-warning",
                 "completed" => "bg-success",

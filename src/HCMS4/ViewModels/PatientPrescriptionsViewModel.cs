@@ -54,7 +54,7 @@ namespace HCMS4.ViewModels
         {
             get
             {
-                return Status.ToLower() switch
+                return Status.ToLowerInvariant() switch
                 {
                     "pending" => "bg-warning",
                     "completed" => "bg-success",

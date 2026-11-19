@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Shared.Common;
@@ -59,7 +60,7 @@ namespace HCMS4.Modules.Appointments.Services
             var appointmentList = appointmentIds.ToList();
             var run = new ScoringRun();
 
-            if (!appointmentList.Any())
+            if (appointmentList.Count == 0)
                 return new NoShowRiskResult(scores, true, false, null);
 
             try
@@ -130,8 +131,8 @@ namespace HCMS4.Modules.Appointments.Services
                     PatientId = appointment.PatientId,
                     AppointmentID = appointment.Id,
                     Gender = "m",
-                    ScheduledDay = (appointment.CreatedAt ?? ClinicTime.Now).ToString("yyyy-MM-dd HH:mm:ss"),
-                    AppointmentDay = appointment.AppointmentDateTime.ToString("yyyy-MM-dd 00:00:00"),
+                    ScheduledDay = (appointment.CreatedAt ?? ClinicTime.Now).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture),
+                    AppointmentDay = appointment.AppointmentDateTime.ToString("yyyy-MM-dd 00:00:00", CultureInfo.InvariantCulture),
                     Age = CalculateAge(appointment.Patient?.DateOfBirth),
                     Neighbourhood = "clinic",
                     Scholarship = false,

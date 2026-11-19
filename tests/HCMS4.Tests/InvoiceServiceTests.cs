@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Data;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Billing.Models;
@@ -138,7 +139,7 @@ namespace HCMS4.Tests
             var byName = await Service.GetListAsync(new InvoiceListFilter { Search = "Lina" });
             Assert.Equal(other.Id, Assert.Single(byName.Invoices.Items).PatientId);
             var byId = all.Invoices.Items[1].Id;
-            Assert.Equal(byId, Assert.Single((await Service.GetListAsync(new InvoiceListFilter { Search = byId.ToString() })).Invoices.Items).Id);
+            Assert.Equal(byId, Assert.Single((await Service.GetListAsync(new InvoiceListFilter { Search = byId.ToString(CultureInfo.InvariantCulture) })).Invoices.Items).Id);
 
             var paged = await Service.GetListAsync(new InvoiceListFilter { PageSize = 2, Page = 2 });
             Assert.Single(paged.Invoices.Items);

@@ -105,7 +105,7 @@ namespace HCMS4.Tests
 
             var again = await Surveys.SubmitAsync(patient.Id, form);
             Assert.False(again.Success);
-            Assert.True(again.Errors == null || !again.Errors.Any());
+            Assert.True(again.Errors == null || again.Errors.Count == 0);
             Assert.Null(await Surveys.GetResponseFormAsync(assignment.Id, patient.Id));
         }
 

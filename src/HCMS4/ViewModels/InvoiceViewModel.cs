@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Globalization;
+using System.ComponentModel.DataAnnotations;
 
 namespace HCMS4.ViewModels
 {
@@ -10,7 +11,7 @@ namespace HCMS4.ViewModels
         public DateTime InvoiceDate { get; set; }
 
         [Display(Name = "Invoice Number")]
-        public string InvoiceNumber => $"INV-{Id.ToString().PadLeft(6, '0')}";
+        public string InvoiceNumber => $"INV-{Id.ToString(CultureInfo.InvariantCulture).PadLeft(6, '0')}";
 
         [Display(Name = "Consultation Fee")]
         [DisplayFormat(DataFormatString = "{0:C2}")]

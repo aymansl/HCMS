@@ -48,7 +48,7 @@ namespace HCMS4.ViewModels
         public int TotalPrescriptions => Prescriptions.Count;
         public int TotalClinicalNotes => ClinicalNotes.Count;
 
-        public bool HasMedicalHistory => AppointmentHistory.Any() || Prescriptions.Any() || ClinicalNotes.Any();
+        public bool HasMedicalHistory => AppointmentHistory.Count > 0 || Prescriptions.Count > 0 || ClinicalNotes.Count > 0;
     }
 
 

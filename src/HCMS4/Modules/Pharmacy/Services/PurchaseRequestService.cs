@@ -81,7 +81,7 @@ namespace HCMS4.Modules.Pharmacy.Services
 
         public async Task<ServiceResult<PurchaseRequest>> CreateAsync(int pharmacistId, CreatePurchaseRequestViewModel model)
         {
-            if (!model.Items.Any())
+            if (model.Items.Count == 0)
             {
                 return ServiceResult<PurchaseRequest>.Fail("Please add at least one item to the purchase request.");
             }

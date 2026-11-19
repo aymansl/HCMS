@@ -1,5 +1,6 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace HCMS4.ViewModels;
 
 public class ChangePasswordViewModel
 {
@@ -20,4 +21,3 @@ public class ChangePasswordViewModel
     [Compare("NewPassword", ErrorMessage = "Passwords do not match")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
-

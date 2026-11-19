@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Feedback.Models;
 using HCMS4.Modules.Feedback.Services;
 using HCMS4.Shared.Audit.Services;
@@ -78,7 +79,7 @@ namespace HCMS4.Modules.Feedback.Controllers
                 "ComplaintStatusUpdated",
                 nameof(Complaint),
                 $"Complaint {complaint.TrackingNumber} updated to {status}.",
-                complaint.Id.ToString(),
+                complaint.Id.ToString(CultureInfo.InvariantCulture),
                 currentUser?.Id,
                 currentUser?.UserName);
 
@@ -136,7 +137,7 @@ namespace HCMS4.Modules.Feedback.Controllers
                 model.SendImmediately ? "SurveyCreatedAndSent" : "SurveyDraftCreated",
                 nameof(Survey),
                 $"Survey '{survey.Title}' was {(model.SendImmediately ? "created and sent" : "saved as draft")}.",
-                survey.Id.ToString(),
+                survey.Id.ToString(CultureInfo.InvariantCulture),
                 currentUser?.Id,
                 currentUser?.UserName);
 

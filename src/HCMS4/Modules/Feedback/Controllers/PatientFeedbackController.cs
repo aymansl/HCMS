@@ -1,3 +1,4 @@
+using System.Globalization;
 using HCMS4.Modules.Feedback.Models;
 using HCMS4.Modules.Feedback.Services;
 using HCMS4.Shared.Audit.Services;
@@ -224,7 +225,7 @@ namespace HCMS4.Modules.Feedback.Controllers
             var result = await _surveyService.SubmitAsync(patientId.Value, model);
             if (!result.Success)
             {
-                if (result.Errors?.Any() != true)
+                if (result.Errors.Count == 0)
                 {
                     TempData["ErrorMessage"] = result.Message;
                     return RedirectToAction(nameof(Surveys));
@@ -248,7 +249,7 @@ namespace HCMS4.Modules.Feedback.Controllers
         private async Task LogAsync(string action, string entityName, string description, int entityId)
         {
             var currentUser = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(),
+            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(CultureInfo.InvariantCulture),
                 currentUser?.Id, currentUser?.UserName);
         }
     }

@@ -25,7 +25,7 @@ namespace HCMS4.ViewModels
         public int CompletedCount { get; set; }
         public int CanceledCount { get; set; }
 
-        public bool HasAppointments => AllAppointments.Any();
+        public bool HasAppointments => AllAppointments.Count > 0;
         public bool IsFilteredView => SelectedStatus != "all";
 
      
