@@ -25,11 +25,15 @@ start
 |Lab Technician|
 :Enter email and password;
 |System|
-if (Account locked or suspended?) then (yes)
+if (Account locked?) then (yes)
   :Show "account locked" message;
   stop
 endif
 if (Credentials valid?) then (yes)
+  if (Account suspended?) then (yes)
+    :Show "account suspended" message;
+    stop
+  endif
   :Create session;
   :Open lab dashboard;
 else (no)

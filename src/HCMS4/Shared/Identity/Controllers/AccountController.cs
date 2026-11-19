@@ -1,5 +1,6 @@
 ﻿using HCMS4.Modules.Records.Services;
 using HCMS4.Modules.Staff.Services;
+using HCMS4.Shared.Identity.Authorization;
 using HCMS4.Shared.Identity.Models;
 using HCMS4.Shared.Identity.Services;
 using HCMS4.ViewModels;
@@ -66,7 +67,7 @@ namespace HCMS4.Shared.Identity.Controllers
                 var user = await _userManager.FindByEmailAsync(model.Email);
                 if (user == null)
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Invalid email or password.");
                     return View(model);
                 }
 
@@ -110,6 +111,10 @@ namespace HCMS4.Shared.Identity.Controllers
                     {
                         return RedirectToAction("Dashboard", "Pharmacist");
                     }
+                    else if (roles.Contains(Roles.LabTechnician))
+                    {
+                        return RedirectToAction("Dashboard", "Lab");
+                    }
 
                     return RedirectToAction("Index", "Home");
                 }
@@ -123,7 +128,7 @@ namespace HCMS4.Shared.Identity.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Invalid email or password.");
                     return View(model);
                 }
             }

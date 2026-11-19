@@ -2,6 +2,7 @@ using HCMS4.Data;
 using HCMS4.Modules.Appointments;
 using HCMS4.Modules.Billing;
 using HCMS4.Modules.Feedback;
+using HCMS4.Modules.Lab;
 using HCMS4.Modules.Pharmacy;
 using HCMS4.Modules.Portal;
 using HCMS4.Modules.Records;
@@ -63,7 +64,8 @@ builder.Services
     .AddBillingModule()
     .AddFeedbackModule()
     .AddStaffModule()
-    .AddPortalModule();
+    .AddPortalModule()
+    .AddLabModule();
 
 var cultureInfo = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = cultureInfo;

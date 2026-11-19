@@ -85,6 +85,11 @@
                                 </a>
                             </li>
                         <li class="nav-item">
+                            <a asp-controller="Admin" asp-action="LabTechnicians" class="nav-link admin-link">
+                                <i class="bi bi-eyedropper me-1"></i> Lab Technicians
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a asp-controller="Admin" asp-action="ManageAppointments" class="nav-link admin-link">
                                 <i class="bi bi-calendar2-check me-1"></i> Manage Appointements
                             </a>
@@ -139,9 +144,23 @@
                                     <i class="bi bi-person-circle me-1"></i> Profile
                                 </a>
                             </li>
-                            
+
                         }
-                    
+
+                        @if (User.IsInRole("LabTechnician"))
+                        {
+                            <li class="nav-item">
+                                <a asp-controller="Lab" asp-action="Dashboard" class="nav-link pharmacist-link">
+                                    <i class="bi bi-grid me-1"></i> Lab Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a asp-controller="Account" asp-action="Profile" class="nav-link pharmacist-link">
+                                    <i class="bi bi-person-circle me-1"></i> Profile
+                                </a>
+                            </li>
+                        }
+
                     @if (User.IsInRole("Doctor"))
                     {
                         <li class="nav-item">

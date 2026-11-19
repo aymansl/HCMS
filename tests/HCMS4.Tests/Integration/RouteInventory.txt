@@ -13,6 +13,7 @@ ANY /Admin/ExportPharmacyReport
 ANY /Admin/FilteredPharmacyReport
 ANY /Admin/GenerateInvoice
 ANY /Admin/InvoiceDetails
+ANY /Admin/LabTechnicians
 ANY /Admin/ManageAppointments
 ANY /Admin/PatientDetails
 ANY /Admin/Patients
@@ -34,6 +35,7 @@ ANY /Home/About
 ANY /Home/Contact
 ANY /Home/Error
 ANY /Home/Index
+ANY /Lab/Dashboard
 ANY /Patient/BookAppointment
 ANY /Patient/Dashboard
 ANY /Patient/InvoiceDetails
@@ -56,6 +58,7 @@ GET /Account/Profile
 GET /Account/Register
 GET /Admin/ComplaintDetails
 GET /Admin/Complaints
+GET /Admin/CreateLabTechnician
 GET /Admin/CreateSurvey
 GET /Admin/DisablePatient
 GET /Admin/GetDoctorConsultationFee
@@ -88,11 +91,13 @@ POST /Account/EditProfile
 POST /Account/Login
 POST /Account/Logout
 POST /Account/Register
+POST /Admin/ActivateLabTechnician
 POST /Admin/ApproveLeaveRequest
 POST /Admin/ApprovePurchaseRequest
 POST /Admin/BookAppointment
 POST /Admin/CancelAppointment
 POST /Admin/CreateDoctor
+POST /Admin/CreateLabTechnician
 POST /Admin/CreatePharmacist
 POST /Admin/CreateSupplier
 POST /Admin/CreateSurvey
@@ -111,6 +116,7 @@ POST /Admin/RejectLeaveRequest
 POST /Admin/RejectPurchaseRequest
 POST /Admin/RescheduleAppointment
 POST /Admin/SendReminder
+POST /Admin/SuspendLabTechnician
 POST /Admin/UpdateComplaintStatus
 POST /Admin/UpdatePaymentStatus
 POST /Admin/UpdateSpecializationFee

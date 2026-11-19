@@ -42,6 +42,7 @@ namespace HCMS4.Shared.Identity.Authorization
                 },
                 [Roles.LabTechnician] = new[]
                 {
+                    Permissions.Portal.LabDashboard,
                     Permissions.Lab.ReceiveRequest,
                     Permissions.Lab.ManageTests,
                     Permissions.Lab.EnterResults,

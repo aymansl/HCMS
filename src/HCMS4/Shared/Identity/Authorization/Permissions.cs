@@ -12,6 +12,7 @@ namespace HCMS4.Shared.Identity.Authorization
             public const string DoctorDashboard = "Portal.DoctorDashboard";
             public const string PatientDashboard = "Portal.PatientDashboard";
             public const string PharmacistDashboard = "Portal.PharmacistDashboard";
+            public const string LabDashboard = "Portal.LabDashboard";
         }
 
         public static class Staff

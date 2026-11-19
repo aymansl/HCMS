@@ -52,6 +52,10 @@ namespace HCMS4.Tests.Integration
             new object[] { "Admin", "/Admin/ComplaintDetails/{complaintId}" },
             new object[] { "Admin", "/Admin/Surveys" },
             new object[] { "Admin", "/Admin/CreateSurvey" },
+            new object[] { "Admin", "/Admin/LabTechnicians" },
+            new object[] { "Admin", "/Admin/CreateLabTechnician" },
+            // Lab technician
+            new object[] { "LabTechnician", "/Lab/Dashboard" },
             // Doctor
             new object[] { "Doctor", "/Doctor/Dashboard" },
             new object[] { "Doctor", "/Doctor/ViewAppointments" },
@@ -120,7 +124,7 @@ namespace HCMS4.Tests.Integration
                 if (_ids != null)
                     return _ids;
 
-                var ids = new Dictionary<string, string> { ["AdminUserId"] = "smoke-admin" };
+                var ids = new Dictionary<string, string> { ["AdminUserId"] = "smoke-admin", ["LabTechnicianUserId"] = "smoke-lab" };
                 await _factory.WithDbAsync(async db =>
                 {
                     var (doctorUser, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(db);

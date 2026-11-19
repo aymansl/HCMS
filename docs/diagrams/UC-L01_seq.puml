@@ -26,16 +26,26 @@ actor "Lab Technician" as U
 participant ":LoginView" as V
 participant ":AccountController" as C
 participant ":SignInManager" as S
+participant ":IAccountStatusCheck" as AS
 database "HCMS Database" as DB
 U -> V : open login page
 U -> V : enter email, password
 V -> C : Login(model)
-C -> S : PasswordSignInAsync(email, pwd)
+C -> S : CheckPasswordSignInAsync(user, pwd, lockoutOnFailure)
 S -> DB : check user, password, lockout
 DB --> S : user
-alt success and role = LabTechnician
+alt password valid
   S --> C : Succeeded
-  C --> V : redirect to Lab/Dashboard
+  C -> AS : IsSuspendedAsync(userId)
+  AS -> DB : LabTechnician.IsActive
+  alt suspended
+    AS --> C : true
+    C --> V : "account suspended" (no session)
+  else active
+    AS --> C : false
+    C -> S : SignInAsync(user)
+    C --> V : redirect to Lab/Dashboard
+  end
 else invalid credentials
   S --> C : Failed
   C --> V : "invalid email or password"
