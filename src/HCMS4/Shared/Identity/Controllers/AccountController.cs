@@ -1,6 +1,7 @@
 ﻿using HCMS4.Modules.Records.Services;
 using HCMS4.Modules.Staff.Services;
 using HCMS4.Shared.Identity.Models;
+using HCMS4.Shared.Identity.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -15,6 +16,7 @@ namespace HCMS4.Shared.Identity.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IPatientService _patientService;
         private readonly IStaffService _staffService;
+        private readonly IEnumerable<IAccountStatusCheck> _accountStatusChecks;
         private readonly ILogger<AccountController> _logger;
 
         // Patient and doctor details belong to the Records and Staff modules; the account pages use their services.
@@ -23,12 +25,14 @@ namespace HCMS4.Shared.Identity.Controllers
             SignInManager<ApplicationUser> signInManager,
             IPatientService patientService,
             IStaffService staffService,
+            IEnumerable<IAccountStatusCheck> accountStatusChecks,
             ILogger<AccountController> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _patientService = patientService;
             _staffService = staffService;
+            _accountStatusChecks = accountStatusChecks;
             _logger = logger;
         }
 
@@ -67,14 +71,20 @@ namespace HCMS4.Shared.Identity.Controllers
                 }
 
                 
-                var result = await _signInManager.PasswordSignInAsync(
-                    user.UserName ?? model.Email,
-                    model.Password,
-                    model.RememberMe,
-                    lockoutOnFailure: true);
+                // Verify the password (and lockout) first, then refuse suspended accounts before any
+                // session cookie is issued.
+                var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
+
+                if (result.Succeeded && await IsSuspendedAsync(user.Id))
+                {
+                    _logger.LogWarning("Sign-in refused for suspended account {UserId}.", user.Id);
+                    ModelState.AddModelError(string.Empty, AccountStatusMessages.Suspended);
+                    return View(model);
+                }
 
                 if (result.Succeeded)
                 {
+                    await _signInManager.SignInAsync(user, model.RememberMe);
                     _logger.LogInformation("User logged in.");
 
                    
@@ -121,7 +131,19 @@ namespace HCMS4.Shared.Identity.Controllers
             return View(model);
         }
 
-        
+        private async Task<bool> IsSuspendedAsync(string userId)
+        {
+            foreach (var check in _accountStatusChecks)
+            {
+                if (await check.IsSuspendedAsync(userId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         [AllowAnonymous]
         [HttpGet]
         public IActionResult Register()

@@ -9,6 +9,7 @@ namespace HCMS4.Modules.Staff
             services.AddScoped<ILeaveService, LeaveService>();
             services.AddScoped<IStaffService, StaffService>();
             services.AddScoped<HCMS4.Shared.Identity.Services.IDoctorLookup, DoctorLookup>();
+            services.AddScoped<HCMS4.Shared.Identity.Services.IAccountStatusCheck, PharmacistAccountStatusCheck>();
             return services;
         }
     }

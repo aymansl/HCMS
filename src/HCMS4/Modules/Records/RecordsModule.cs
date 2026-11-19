@@ -9,6 +9,7 @@ namespace HCMS4.Modules.Records
             services.AddScoped<IPatientService, PatientService>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<HCMS4.Shared.Identity.Services.IPatientLookup, PatientLookup>();
+            services.AddScoped<HCMS4.Shared.Identity.Services.IAccountStatusCheck, PatientAccountStatusCheck>();
             return services;
         }
     }
