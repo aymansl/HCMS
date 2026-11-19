@@ -1,5 +1,6 @@
 using HCMS4.Data;
 using HCMS4.Shared.Identity.Models;
+using HCMS4.Shared.Identity.Services;
 using Microsoft.AspNetCore.Identity;
 
 namespace HCMS4.Shared.Identity
@@ -30,6 +31,9 @@ namespace HCMS4.Shared.Identity
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
                 options.SlidingExpiration = true;
             });
+
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             return services;
         }

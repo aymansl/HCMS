@@ -27,6 +27,11 @@ builder.Services.AddControllersWithViews(options =>
 {
     // Validate the antiforgery token on every unsafe request (POST, PUT, DELETE, ...).
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+})
+.AddRazorOptions(options =>
+{
+    // Module controllers find their views in /Modules/{Module}/Views.
+    options.ViewLocationExpanders.Add(new ModuleViewLocationExpander());
 });
 
 

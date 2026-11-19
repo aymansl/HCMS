@@ -1,0 +1,4 @@
+@{
+    // Same layout choice as Views/_ViewStart.cshtml.
+    Layout = User.Identity?.IsAuthenticated == true ? "_LayoutAuth" : "_Layout";
+}
