@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Appointments.Services;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Records.Models;
@@ -23,7 +24,7 @@ namespace HCMS4.Tests
             {
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Now.AddDays(1),
+                AppointmentDateTime = ClinicTime.Now.AddDays(1),
                 Status = AppointmentStatus.Scheduled
             };
 
@@ -45,7 +46,7 @@ namespace HCMS4.Tests
             var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(context);
             var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(context);
 
-            var appointmentTime = DateTime.Now.AddDays(1).AddHours(10);
+            var appointmentTime = ClinicTime.Now.AddDays(1).AddHours(10);
 
             var existingAppointment = new Appointment
             {
@@ -89,7 +90,7 @@ namespace HCMS4.Tests
                 Id = appointmentId,
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Now.AddDays(2),
+                AppointmentDateTime = ClinicTime.Now.AddDays(2),
                 Status = AppointmentStatus.Scheduled
             };
             context.Appointments.Add(appointment);
@@ -121,7 +122,7 @@ namespace HCMS4.Tests
                 Id = appointmentId,
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Now.AddHours(12),
+                AppointmentDateTime = ClinicTime.Now.AddHours(12),
                 Status = AppointmentStatus.Scheduled
             };
             context.Appointments.Add(appointment);
@@ -151,7 +152,7 @@ namespace HCMS4.Tests
                 Id = appointmentId,
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Now.AddDays(2),
+                AppointmentDateTime = ClinicTime.Now.AddDays(2),
                 Status = AppointmentStatus.Canceled
             };
             context.Appointments.Add(appointment);
@@ -181,14 +182,14 @@ namespace HCMS4.Tests
                 Id = appointmentId,
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Now.AddDays(1),
+                AppointmentDateTime = ClinicTime.Now.AddDays(1),
                 Status = AppointmentStatus.Scheduled
             };
             context.Appointments.Add(appointment);
             await context.SaveChangesAsync();
 
             var service = new AppointmentService(context, NullLogger<AppointmentService>.Instance);
-            var newDateTime = DateTime.Now.AddDays(3);
+            var newDateTime = ClinicTime.Now.AddDays(3);
 
             // Act
             var result = await service.RescheduleAsync(appointmentId, newDateTime);
@@ -212,7 +213,7 @@ namespace HCMS4.Tests
                 Id = 6105,
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Today.AddHours(10),
+                AppointmentDateTime = ClinicTime.Today.AddHours(10),
                 Status = AppointmentStatus.Scheduled
             };
             var tomorrowAppointment = new Appointment
@@ -220,7 +221,7 @@ namespace HCMS4.Tests
                 Id = 6106,
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Today.AddDays(1),
+                AppointmentDateTime = ClinicTime.Today.AddDays(1),
                 Status = AppointmentStatus.Scheduled
             };
             var completedAppointment = new Appointment
@@ -228,7 +229,7 @@ namespace HCMS4.Tests
                 Id = 6107,
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Today.AddHours(9),
+                AppointmentDateTime = ClinicTime.Today.AddHours(9),
                 Status = AppointmentStatus.Completed
             };
 
@@ -253,7 +254,7 @@ namespace HCMS4.Tests
             var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(context);
             var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(context);
 
-            var appointmentTime = DateTime.Now.AddDays(1).AddHours(10);
+            var appointmentTime = ClinicTime.Now.AddDays(1).AddHours(10);
             var existingAppointment = new Appointment
             {
                 PatientId = patient.Id,
@@ -281,7 +282,7 @@ namespace HCMS4.Tests
             var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(context);
             var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(context);
 
-            var appointmentTime = DateTime.Now.AddDays(1).AddHours(10);
+            var appointmentTime = ClinicTime.Now.AddDays(1).AddHours(10);
             var existingAppointment = new Appointment
             {
                 PatientId = patient.Id,

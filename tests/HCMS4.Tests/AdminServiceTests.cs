@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Records.Models;
@@ -81,7 +82,7 @@ namespace HCMS4.Tests
                 PharmacistId = pharmacist.Id,
                 SupplierId = supplier.Id,
                 Status = PurchaseRequestStatus.Pending,
-                RequestDate = DateTime.Now
+                RequestDate = ClinicTime.Now
             };
             context.PurchaseRequests.Add(purchaseRequest);
             await context.SaveChangesAsync();
@@ -160,7 +161,7 @@ namespace HCMS4.Tests
                 Id = 7201,
                 PatientId = patient.Id,
                 PharmacistId = pharmacist.Id,
-                InvoiceDate = DateTime.Today,
+                InvoiceDate = ClinicTime.Today,
                 ConsultationFee = 100,
                 MedicationTotal = 50,
                 TotalAmount = 150,
@@ -171,7 +172,7 @@ namespace HCMS4.Tests
                 Id = 7202,
                 PatientId = patient.Id,
                 PharmacistId = pharmacist.Id,
-                InvoiceDate = DateTime.Today,
+                InvoiceDate = ClinicTime.Today,
                 ConsultationFee = 100,
                 MedicationTotal = 75,
                 TotalAmount = 175,
@@ -183,7 +184,7 @@ namespace HCMS4.Tests
 
             // Act
             var todayInvoices = await context.Invoices
-                .Where(i => i.InvoiceDate.Date == DateTime.Today)
+                .Where(i => i.InvoiceDate.Date == ClinicTime.Today)
                 .ToListAsync();
 
             var totalAmount = todayInvoices.Sum(i => i.TotalAmount);
@@ -208,7 +209,7 @@ namespace HCMS4.Tests
                 Id = invoiceId,
                 PatientId = patient.Id,
                 PharmacistId = pharmacist.Id,
-                InvoiceDate = DateTime.Now,
+                InvoiceDate = ClinicTime.Now,
                 TotalAmount = 100,
                 PaymentStatus = PaymentStatus.Pending
             };
@@ -218,7 +219,7 @@ namespace HCMS4.Tests
             // Act
             invoice.PaymentStatus = PaymentStatus.Paid;
             invoice.AmountPaid = 100;
-            invoice.PaymentDate = DateTime.Now;
+            invoice.PaymentDate = ClinicTime.Now;
             context.Invoices.Update(invoice);
             await context.SaveChangesAsync();
 
@@ -242,7 +243,7 @@ namespace HCMS4.Tests
                 Id = invoiceId,
                 PatientId = patient.Id,
                 PharmacistId = pharmacist.Id,
-                InvoiceDate = DateTime.Now,
+                InvoiceDate = ClinicTime.Now,
                 TotalAmount = 100,
                 PaymentStatus = PaymentStatus.Paid,
                 AmountPaid = 100
@@ -272,7 +273,7 @@ namespace HCMS4.Tests
                 Name = "Ibuprofen",
                 Price = 15.00m,
                 Quantity = 50,
-                ExpiryDate = DateTime.Now.AddMonths(6)
+                ExpiryDate = ClinicTime.Now.AddMonths(6)
             };
             context.Drugs.Add(drug2);
 
@@ -283,7 +284,7 @@ namespace HCMS4.Tests
                 PharmacistId = pharmacist.Id,
                 SupplierId = supplier.Id,
                 Status = PurchaseRequestStatus.Pending,
-                RequestDate = DateTime.Now
+                RequestDate = ClinicTime.Now
             };
             context.PurchaseRequests.Add(purchaseRequest);
 

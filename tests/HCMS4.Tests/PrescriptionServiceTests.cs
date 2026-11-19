@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Records.Models;
@@ -110,7 +111,7 @@ namespace HCMS4.Tests
                 Name = "Expired Drug",
                 Price = 10.00m,
                 Quantity = 100,
-                ExpiryDate = DateTime.Now.AddDays(-1)
+                ExpiryDate = ClinicTime.Now.AddDays(-1)
             };
             context.Drugs.Add(expiredDrug);
             await context.SaveChangesAsync();

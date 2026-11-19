@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
@@ -45,7 +46,7 @@ namespace HCMS4.Tests
                 Id = id,
                 UserId = user.Id,
                 User = user,
-                DateOfBirth = DateTime.Now.AddYears(-30)
+                DateOfBirth = ClinicTime.Now.AddYears(-30)
             };
 
             context.Users.Add(user);
@@ -130,7 +131,7 @@ namespace HCMS4.Tests
                 Name = "Amoxicillin",
                 Price = 25.00m,
                 Quantity = 100,
-                ExpiryDate = DateTime.Now.AddMonths(12)
+                ExpiryDate = ClinicTime.Now.AddMonths(12)
             };
 
             context.Drugs.Add(drug);

@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
@@ -125,7 +126,7 @@ namespace HCMS4.Tests.Integration
                 {
                     PatientId = patient.Id,
                     DoctorId = doctor.Id,
-                    AppointmentDateTime = DateTime.UtcNow.AddDays(3),
+                    AppointmentDateTime = ClinicTime.Now.AddDays(3),
                     Status = AppointmentStatus.Scheduled,
                     ConsultationFee = 100
                 };

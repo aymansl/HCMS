@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Shared.Reporting.Services;
 using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Pharmacy.Models;
@@ -41,7 +42,7 @@ namespace HCMS4.Tests
                 Pharmacist = pharmacist,
                 PrescriptionId = 1100,
                 Prescription = prescription,
-                InvoiceDate = DateTime.Today.AddHours(10),
+                InvoiceDate = ClinicTime.Today.AddHours(10),
                 TotalAmount = 100,
                 PaymentStatus = PaymentStatus.Paid
             };
@@ -54,7 +55,7 @@ namespace HCMS4.Tests
                 Pharmacist = pharmacist,
                 PrescriptionId = 1100,
                 Prescription = prescription,
-                InvoiceDate = DateTime.Today.AddHours(14),
+                InvoiceDate = ClinicTime.Today.AddHours(14),
                 TotalAmount = 200,
                 PaymentStatus = PaymentStatus.Pending
             };
@@ -64,7 +65,7 @@ namespace HCMS4.Tests
             var service = new DailyReportService(context, NullLogger<DailyReportService>.Instance);
 
             // Act
-            var result = await service.GetDailyReportAsync(DateTime.Today);
+            var result = await service.GetDailyReportAsync(ClinicTime.Today);
 
             // Assert
             Assert.True(result.HasInvoices);
@@ -81,7 +82,7 @@ namespace HCMS4.Tests
             var service = new DailyReportService(context, NullLogger<DailyReportService>.Instance);
 
             // Act
-            var result = await service.GetDailyReportAsync(DateTime.Today);
+            var result = await service.GetDailyReportAsync(ClinicTime.Today);
 
             // Assert
             Assert.False(result.HasInvoices);
@@ -118,7 +119,7 @@ namespace HCMS4.Tests
                 Pharmacist = pharmacist,
                 PrescriptionId = 2100,
                 Prescription = prescription,
-                InvoiceDate = DateTime.Now,
+                InvoiceDate = ClinicTime.Now,
                 TotalAmount = 100,
                 PaymentStatus = PaymentStatus.Paid
             };
@@ -131,7 +132,7 @@ namespace HCMS4.Tests
                 Pharmacist = pharmacist,
                 PrescriptionId = 2100,
                 Prescription = prescription,
-                InvoiceDate = DateTime.Now,
+                InvoiceDate = ClinicTime.Now,
                 TotalAmount = 200,
                 PaymentStatus = PaymentStatus.Pending
             };
@@ -181,7 +182,7 @@ namespace HCMS4.Tests
                 Pharmacist = pharmacist,
                 PrescriptionId = 3100,
                 Prescription = prescription,
-                InvoiceDate = DateTime.Today.AddHours(10),
+                InvoiceDate = ClinicTime.Today.AddHours(10),
                 TotalAmount = 150,
                 PaymentStatus = PaymentStatus.Paid
             };
@@ -191,12 +192,12 @@ namespace HCMS4.Tests
             var service = new DailyReportService(context, NullLogger<DailyReportService>.Instance);
 
             // Act
-            var result = await service.GenerateDailyReportAsync(DateTime.Today);
+            var result = await service.GenerateDailyReportAsync(ClinicTime.Today);
 
             // Assert
             Assert.True(result);
             var report = await context.DailyReports
-                .FirstOrDefaultAsync(r => r.ReportDate.Date == DateTime.Today);
+                .FirstOrDefaultAsync(r => r.ReportDate.Date == ClinicTime.Today);
             Assert.NotNull(report);
             Assert.Equal(1, report.TotalInvoices);
             Assert.Equal(150, report.TotalAmount);
@@ -211,10 +212,10 @@ namespace HCMS4.Tests
             var existingReport = new DailyReport
             {
                 Id = 1,
-                ReportDate = DateTime.Today,
+                ReportDate = ClinicTime.Today,
                 TotalInvoices = 1,
                 TotalAmount = 100,
-                GeneratedAt = DateTime.Now
+                GeneratedAt = ClinicTime.Now
             };
             context.DailyReports.Add(existingReport);
             await context.SaveChangesAsync();
@@ -222,12 +223,12 @@ namespace HCMS4.Tests
             var service = new DailyReportService(context, NullLogger<DailyReportService>.Instance);
 
             // Act
-            var result = await service.GenerateDailyReportAsync(DateTime.Today);
+            var result = await service.GenerateDailyReportAsync(ClinicTime.Today);
 
             // Assert
             Assert.True(result);
             var reportCount = await context.DailyReports
-                .Where(r => r.ReportDate.Date == DateTime.Today)
+                .Where(r => r.ReportDate.Date == ClinicTime.Today)
                 .CountAsync();
             Assert.Equal(1, reportCount);
         }

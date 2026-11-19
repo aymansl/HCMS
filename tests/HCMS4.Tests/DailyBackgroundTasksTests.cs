@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Appointments.Services;
 using HCMS4.Shared.Reporting.Services;
 using HCMS4.Modules.Appointments.Models;
@@ -30,8 +31,8 @@ namespace HCMS4.Tests
                 var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
                 var (_, doctor, _) = await TestDbContextFactory.CreateTestDoctorAsync(db);
                 var (_, patient) = await TestDbContextFactory.CreateTestPatientAsync(db);
-                var past = new Appointment { PatientId = patient.Id, DoctorId = doctor.Id, AppointmentDateTime = DateTime.Now.AddDays(-2), Status = AppointmentStatus.Scheduled };
-                var future = new Appointment { PatientId = patient.Id, DoctorId = doctor.Id, AppointmentDateTime = DateTime.Now.AddDays(2), Status = AppointmentStatus.Scheduled };
+                var past = new Appointment { PatientId = patient.Id, DoctorId = doctor.Id, AppointmentDateTime = ClinicTime.Now.AddDays(-2), Status = AppointmentStatus.Scheduled };
+                var future = new Appointment { PatientId = patient.Id, DoctorId = doctor.Id, AppointmentDateTime = ClinicTime.Now.AddDays(2), Status = AppointmentStatus.Scheduled };
                 db.Appointments.AddRange(past, future);
                 await db.SaveChangesAsync();
                 pastId = past.Id;

@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Appointments.Services;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Records.Models;
@@ -56,7 +57,7 @@ namespace HCMS4.Tests
                 {
                     PatientId = patient.Id,
                     DoctorId = doctor.Id,
-                    AppointmentDateTime = DateTime.UtcNow.AddDays(i + 1),
+                    AppointmentDateTime = ClinicTime.Now.AddDays(i + 1),
                     Status = AppointmentStatus.Scheduled
                 };
                 context.Appointments.Add(appointment);

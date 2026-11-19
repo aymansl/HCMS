@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Modules.Records.Models;
 using Xunit;
@@ -16,7 +17,7 @@ namespace HCMS4.Tests
                 Name = "New Drug",
                 Price = 25.00m,
                 Quantity = 100,
-                ExpiryDate = DateTime.Now.AddMonths(12)
+                ExpiryDate = ClinicTime.Now.AddMonths(12)
             };
 
             context.Drugs.Add(drug);
@@ -96,21 +97,21 @@ namespace HCMS4.Tests
                 Name = "Expired Drug",
                 Price = 10.00m,
                 Quantity = 50,
-                ExpiryDate = DateTime.Now.AddDays(-5)
+                ExpiryDate = ClinicTime.Now.AddDays(-5)
             };
             var validDrug = new Drug
             {
                 Name = "Valid Drug",
                 Price = 20.00m,
                 Quantity = 100,
-                ExpiryDate = DateTime.Now.AddMonths(6)
+                ExpiryDate = ClinicTime.Now.AddMonths(6)
             };
             var expiringSoonDrug = new Drug
             {
                 Name = "Expiring Soon Drug",
                 Price = 15.00m,
                 Quantity = 75,
-                ExpiryDate = DateTime.Now.AddDays(20)
+                ExpiryDate = ClinicTime.Now.AddDays(20)
             };
 
             context.Drugs.AddRange(expiredDrug, validDrug, expiringSoonDrug);
@@ -118,11 +119,11 @@ namespace HCMS4.Tests
 
             // Act
             var expiredDrugs = await context.Drugs
-                .Where(d => d.ExpiryDate <= DateTime.Now)
+                .Where(d => d.ExpiryDate <= ClinicTime.Now)
                 .ToListAsync();
 
             var expiringSoonDrugs = await context.Drugs
-                .Where(d => d.ExpiryDate > DateTime.Now && d.ExpiryDate <= DateTime.Now.AddDays(30))
+                .Where(d => d.ExpiryDate > ClinicTime.Now && d.ExpiryDate <= ClinicTime.Now.AddDays(30))
                 .ToListAsync();
 
             // Assert
@@ -139,17 +140,17 @@ namespace HCMS4.Tests
             var expiredDrug = new Drug
             {
                 Name = "Expired",
-                ExpiryDate = DateTime.Now.AddDays(-1)
+                ExpiryDate = ClinicTime.Now.AddDays(-1)
             };
             var expiringSoonDrug = new Drug
             {
                 Name = "ExpiringSoon",
-                ExpiryDate = DateTime.Now.AddDays(20)
+                ExpiryDate = ClinicTime.Now.AddDays(20)
             };
             var validDrug = new Drug
             {
                 Name = "Valid",
-                ExpiryDate = DateTime.Now.AddMonths(6)
+                ExpiryDate = ClinicTime.Now.AddMonths(6)
             };
 
             // Act & Assert
@@ -168,14 +169,14 @@ namespace HCMS4.Tests
                 Name = "Low Stock",
                 Price = 10.00m,
                 Quantity = 5,
-                ExpiryDate = DateTime.Now.AddMonths(6)
+                ExpiryDate = ClinicTime.Now.AddMonths(6)
             };
             var normalStockDrug = new Drug
             {
                 Name = "Normal Stock",
                 Price = 20.00m,
                 Quantity = 50,
-                ExpiryDate = DateTime.Now.AddMonths(6)
+                ExpiryDate = ClinicTime.Now.AddMonths(6)
             };
 
             context.Drugs.AddRange(lowStockDrug, normalStockDrug);
@@ -201,7 +202,7 @@ namespace HCMS4.Tests
                 Name = "Test Drug",
                 Price = 10.00m,
                 Quantity = -5,
-                ExpiryDate = DateTime.Now.AddMonths(6)
+                ExpiryDate = ClinicTime.Now.AddMonths(6)
             };
 
             // Act
@@ -220,7 +221,7 @@ namespace HCMS4.Tests
                 Name = "Test Drug",
                 Price = 10.00m,
                 Quantity = 10,
-                ExpiryDate = DateTime.Now.AddDays(-1)
+                ExpiryDate = ClinicTime.Now.AddDays(-1)
             };
 
             // Act

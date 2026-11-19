@@ -6,7 +6,7 @@ namespace HCMS4.Tests
     public class DrugExpiryThresholdTests
     {
         private static string StatusInDays(int days) =>
-            new Drug { Name = "X", ExpiryDate = DateTime.Now.AddDays(days).AddHours(1) }.ExpiryStatus;
+            new Drug { Name = "X", ExpiryDate = ClinicTime.Now.AddDays(days).AddHours(1) }.ExpiryStatus;
 
         [Fact]
         public void ExpiryStatus_UsesBusinessRuleBoundaries()

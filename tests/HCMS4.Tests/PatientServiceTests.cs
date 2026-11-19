@@ -62,7 +62,7 @@ namespace HCMS4.Tests
                     Id = i + 1,
                     UserId = user.Id,
                     User = user,
-                    DateOfBirth = DateTime.Now.AddYears(-30)
+                    DateOfBirth = ClinicTime.Now.AddYears(-30)
                 };
                 context.Users.Add(user);
                 context.Patients.Add(patient);
@@ -133,7 +133,7 @@ namespace HCMS4.Tests
                 Id = 1,
                 PatientId = patient.Id,
                 DoctorId = doctor.Id,
-                AppointmentDateTime = DateTime.Now.AddDays(1),
+                AppointmentDateTime = ClinicTime.Now.AddDays(1),
                 Status = AppointmentStatus.Scheduled
             };
             context.Appointments.Add(appointment);
