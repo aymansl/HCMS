@@ -1,5 +1,6 @@
 ﻿using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Identity.Authorization;
 using HCMS4.Shared.Identity.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -21,8 +22,9 @@ namespace HCMS4.Shared.Identity.Services
             var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<AdminSeeder>>();
 
-            string[] roleNames = { "Admin", "Doctor", "Patient", "Pharmacist" };
-            foreach (var roleName in roleNames)
+            // All seven roles, including LabTechnician, Radiologist and EmergencySupervisor (S2).
+            // Permissions are not stored: they come from RolePermissions.
+            foreach (var roleName in Roles.All)
             {
                 if (!await roleManager.RoleExistsAsync(roleName))
                 {

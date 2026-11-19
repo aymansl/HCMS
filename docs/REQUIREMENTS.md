@@ -97,7 +97,7 @@ Increment → requirements: 1 → S2 · 2 → L1–L6 · 3 → L7–L11 · 4 →
 
 ### Planned migrations
 
-- `Inc1_S2_NewRoles` — 3 new roles + permissions (seed data)
+- ~~`Inc1_S2_NewRoles`~~ — not needed: the 3 new roles are created by `AdminSeeder` at start-up, and permissions are defined in code (`Shared/Identity/Authorization/RolePermissions.cs`), not stored in the database (decided in cleanup Phase 5).
 - `Inc2_L_LabRequests` — LabTest, LabRequest, LabRequestItem, LabAppointment
 - `Inc3_L_LabResults` — LabResult, LabNote, IsCritical
 - `Inc4_R_RadiologyScheduling` — ImagingType, Device, ImagingRequest, ImagingSession (+ overlap index)

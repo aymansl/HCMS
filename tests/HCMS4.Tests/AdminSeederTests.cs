@@ -63,6 +63,27 @@ namespace HCMS4.Tests
         }
 
         [Fact]
+        public async Task SeedAdminUser_CreatesAllSevenRoles_IncludingTheNewOnes()
+        {
+            using var provider = BuildServices(new Dictionary<string, string?>
+            {
+                ["AdminSettings:Email"] = "admin@test.local",
+                ["AdminSettings:Password"] = "Test@12345"
+            }, Guid.NewGuid().ToString());
+
+            await AdminSeeder.SeedAdminUser(provider);
+            await AdminSeeder.SeedAdminUser(provider); // idempotent
+
+            using var scope = provider.CreateScope();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var roles = roleManager.Roles.Select(r => r.Name).OrderBy(n => n).ToList();
+            Assert.Equal(HCMS4.Shared.Identity.Authorization.Roles.All.OrderBy(n => n), roles);
+            Assert.Contains("LabTechnician", roles);
+            Assert.Contains("Radiologist", roles);
+            Assert.Contains("EmergencySupervisor", roles);
+        }
+
+        [Fact]
         public async Task SeedAdminUser_RunTwice_DoesNotDuplicateAdmin()
         {
             using var provider = BuildServices(new Dictionary<string, string?>
