@@ -25,6 +25,10 @@ namespace HCMS4.Modules.Feedback.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(vr => vr.CreatedAt).HasDefaultValueSql(ClinicTime.SqlNow);
+
+            // One rating per visit; ratings are 1 to 5 stars.
+            builder.HasIndex(vr => vr.AppointmentId).IsUnique();
+            builder.ToTable(t => t.HasCheckConstraint("CK_VisitRatings_Rating", "[Rating] BETWEEN 1 AND 5"));
         }
     }
 }

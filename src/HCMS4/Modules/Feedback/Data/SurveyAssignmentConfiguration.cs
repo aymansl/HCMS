@@ -1,3 +1,4 @@
+using HCMS4.Shared.Common;
 using HCMS4.Modules.Feedback.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -20,6 +21,8 @@ namespace HCMS4.Modules.Feedback.Data
 
             // A patient is assigned to a survey at most once.
             builder.HasIndex(sa => new { sa.SurveyId, sa.PatientId }).IsUnique();
+
+            builder.Property(sa => sa.AssignedAt).HasDefaultValueSql(ClinicTime.SqlNow);
         }
     }
 }

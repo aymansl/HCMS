@@ -18,6 +18,8 @@ namespace HCMS4.Modules.Pharmacy.Data
                 .WithMany(p => p.PrescriptionItems)
                 .HasForeignKey(pi => pi.PrescriptionId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            builder.ToTable(t => t.HasCheckConstraint("CK_PrescriptionItems_Quantity", "[Quantity] > 0"));
         }
     }
 }

@@ -8,6 +8,10 @@ namespace HCMS4.Modules.Staff.Data
     {
         public void Configure(EntityTypeBuilder<Specialization> builder)
         {
+            builder.Property(s => s.ConsultationFee).HasPrecision(18, 2);
+            builder.HasIndex(s => s.Name).IsUnique();
+            builder.ToTable(t => t.HasCheckConstraint("CK_Specializations_ConsultationFee", "[ConsultationFee] >= 0"));
+
             builder.HasData(
                 new Specialization { Id = 1, Name = "Cardiology", ConsultationFee = 150, IsActive = true, Description = "قلبية" },
                 new Specialization { Id = 2, Name = "Dermatology", ConsultationFee = 120, IsActive = true, Description = "جلدية" },

@@ -25,6 +25,8 @@ namespace HCMS4.Modules.Pharmacy.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.Property(p => p.PrescriptionDate).HasDefaultValueSql(ClinicTime.SqlNow);
+
+            builder.Property(p => p.MedicationTotal).HasPrecision(18, 2);
         }
     }
 }

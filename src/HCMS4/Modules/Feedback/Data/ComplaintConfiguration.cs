@@ -15,6 +15,10 @@ namespace HCMS4.Modules.Feedback.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Property(c => c.SubmissionDate).HasDefaultValueSql(ClinicTime.SqlNow);
+
+            // "CMP-yyyyMMdd-XXXXXX" (19 characters); a bounded length allows the unique index.
+            builder.Property(c => c.TrackingNumber).HasMaxLength(32);
+            builder.HasIndex(c => c.TrackingNumber).IsUnique();
         }
     }
 }

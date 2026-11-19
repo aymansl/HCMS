@@ -25,6 +25,17 @@ namespace HCMS4.Modules.Billing.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.Property(i => i.InvoiceDate).HasDefaultValueSql(ClinicTime.SqlNow);
+
+            builder.Property(i => i.ConsultationFee).HasPrecision(18, 2);
+            builder.Property(i => i.MedicationTotal).HasPrecision(18, 2);
+            builder.Property(i => i.TotalAmount).HasPrecision(18, 2);
+            builder.Property(i => i.AmountPaid).HasPrecision(18, 2);
+            builder.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_Invoices_Amounts",
+                    "[ConsultationFee] >= 0 AND [MedicationTotal] >= 0 AND [TotalAmount] >= 0");
+                t.HasCheckConstraint("CK_Invoices_AmountPaid", "[AmountPaid] IS NULL OR [AmountPaid] >= 0");
+            });
         }
     }
 }

@@ -15,6 +15,7 @@ namespace HCMS4.Modules.Feedback.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.Property(s => s.CreatedAt).HasDefaultValueSql(ClinicTime.SqlNow);
+            builder.Property(s => s.UpdatedAt).HasDefaultValueSql(ClinicTime.SqlNow);
         }
     }
 }

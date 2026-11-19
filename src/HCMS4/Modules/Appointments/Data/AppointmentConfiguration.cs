@@ -20,6 +20,9 @@ namespace HCMS4.Modules.Appointments.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.Property(a => a.CreatedAt).HasDefaultValueSql(ClinicTime.SqlNow);
+
+            builder.Property(a => a.ConsultationFee).HasPrecision(18, 2);
+            builder.ToTable(t => t.HasCheckConstraint("CK_Appointments_ConsultationFee", "[ConsultationFee] >= 0"));
         }
     }
 }

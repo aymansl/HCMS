@@ -14,6 +14,7 @@ namespace HCMS4.Modules.Staff.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             builder.Property(d => d.AverageRating).HasColumnType("decimal(3,2)");
+            builder.ToTable(t => t.HasCheckConstraint("CK_Doctors_AverageRating", "[AverageRating] BETWEEN 0 AND 5"));
         }
     }
 }
