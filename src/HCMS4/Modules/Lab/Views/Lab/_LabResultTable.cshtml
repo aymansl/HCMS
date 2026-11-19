@@ -1,0 +1,46 @@
+@model HCMS4.Modules.Lab.Models.LabRequest
+@* The issued results of a request, with abnormal and critical values marked (UC-L10, shared by lab, doctor and patient pages). *@
+
+<div class="table-responsive">
+    <table class="table align-middle" id="lab-result-table">
+        <thead class="table-light">
+            <tr>
+                <th>Test</th>
+                <th class="text-end">Result</th>
+                <th>Unit</th>
+                <th>Reference Range</th>
+                <th>Flag</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items.OrderBy(i => i.LabTest.Name))
+            {
+                var result = item.Result;
+                <tr class="@(result?.IsCritical == true ? "table-danger" : result?.IsAbnormal == true ? "table-warning" : "")">
+                    <td><strong>@item.LabTest.Name</strong></td>
+                    <td class="text-end fw-semibold">@(result?.DisplayValue ?? "-")</td>
+                    <td>@item.LabTest.Unit</td>
+                    <td>@item.LabTest.ReferenceRange</td>
+                    <td>
+                        @if (result?.IsCritical == true)
+                        {
+                            <span class="badge bg-danger">Critical</span>
+                        }
+                        else if (result?.IsAbnormal == true)
+                        {
+                            <span class="badge bg-warning text-dark">Abnormal</span>
+                        }
+                        else if (result != null && result.NumericValue.HasValue)
+                        {
+                            <span class="badge bg-success">Normal</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+@if (Model.ResultIssuedAt.HasValue)
+{
+    <p class="text-muted small mb-0">Issued on @Model.ResultIssuedAt.Value.ToString("yyyy-MM-dd HH:mm")</p>
+}

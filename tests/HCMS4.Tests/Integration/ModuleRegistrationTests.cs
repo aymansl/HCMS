@@ -53,6 +53,7 @@ namespace HCMS4.Tests.Integration
         [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabTestService))]
         [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabRequestService))]
         [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabAppointmentService))]
+        [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabResultService))]
         [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabTestUsage))]
         public void ModuleService_IsRegistered(Type serviceType)
         {

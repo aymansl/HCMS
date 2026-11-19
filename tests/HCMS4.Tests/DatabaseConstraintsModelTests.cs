@@ -74,6 +74,8 @@ namespace HCMS4.Tests
         [InlineData(typeof(HCMS4.Modules.Lab.Models.LabRequest), "CK_LabRequests_CancelReason")]
         [InlineData(typeof(HCMS4.Modules.Lab.Models.LabAppointment), "CK_LabAppointments_Status")]
         [InlineData(typeof(HCMS4.Modules.Lab.Models.LabAppointment), "CK_LabAppointments_SlotStart")]
+        [InlineData(typeof(HCMS4.Modules.Lab.Models.LabTest), "CK_LabTests_CriticalLimits")]
+        [InlineData(typeof(HCMS4.Modules.Lab.Models.LabResult), "CK_LabResults_Value")]
         [InlineData(typeof(HCMS4.Modules.Lab.Models.LabRequestItem), "CK_LabRequestItems_Price")]
         public void CheckConstraint_IsDefined(Type entity, string name)
         {

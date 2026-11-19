@@ -1,0 +1,109 @@
+@model HCMS4.Modules.Lab.ViewModels.LabResultEntryViewModel
+@using HCMS4.Modules.Lab.Models
+
+@{
+    ViewData["Title"] = $"Results – Request #{Model.Request.Id}";
+    Layout = "_LayoutAuth";
+    var request = Model.Request;
+    var canEnter = request.Status is LabRequestStatus.Received or LabRequestStatus.InProgress;
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">Results – Request #@request.Id <partial name="_LabRequestStatus" model="request.Status" /></h1>
+            <p class="text-muted mb-0">
+                @request.Patient.User.FullName · Dr. @request.Doctor.User.FullName
+            </p>
+        </div>
+        <a asp-action="RequestDetails" asp-route-id="@request.Id" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Request
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" role="alert"><i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" role="alert" id="results-error"><i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]</div>
+    }
+
+    @if (request.Status == LabRequestStatus.Cancelled)
+    {
+        <div class="alert alert-secondary" id="results-blocked">This request was cancelled; results cannot be entered.</div>
+    }
+    else if (request.Status == LabRequestStatus.ResultIssued)
+    {
+        <div class="card dashboard-card">
+            <div class="card-body"><partial name="_LabResultTable" model="request" /></div>
+        </div>
+    }
+    else if (!canEnter)
+    {
+        <div class="alert alert-warning" id="results-blocked">Confirm receipt of the request before entering results.</div>
+    }
+    else
+    {
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <form asp-action="EnterResults" asp-route-id="@request.Id" method="post" id="results-form">
+                    <table class="table align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Test</th>
+                                <th style="width: 220px">Result</th>
+                                <th>Unit</th>
+                                <th>Reference Range</th>
+                                <th>Critical</th>
+                                <th>Flag</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.Rows)
+                            {
+                                <tr>
+                                    <td><strong>@row.Test.Name</strong></td>
+                                    <td>
+                                        @if (row.IsQualitative)
+                                        {
+                                            <input name="values[@row.ItemId]" value="@row.Value" class="form-control" maxlength="200" placeholder="e.g. Negative" />
+                                        }
+                                        else
+                                        {
+                                            <input name="values[@row.ItemId]" value="@row.Value" class="form-control" type="number" step="any" inputmode="decimal" />
+                                        }
+                                    </td>
+                                    <td>@row.Test.Unit</td>
+                                    <td>@row.Test.ReferenceRange</td>
+                                    <td>@row.Test.CriticalLimits</td>
+                                    <td>
+                                        @if (row.IsCritical)
+                                        {
+                                            <span class="badge bg-danger">Critical</span>
+                                        }
+                                        else if (row.IsAbnormal)
+                                        {
+                                            <span class="badge bg-warning text-dark">Abnormal</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <p class="text-muted small">Save to check the values against the reference ranges. Issue when every test has a value.</p>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="submit" name="issue" value="false" class="btn btn-outline-primary">
+                            <i class="bi bi-save me-1"></i>Save
+                        </button>
+                        <button type="submit" name="issue" value="true" class="btn btn-success"
+                                onclick="return confirm('Issue the result? The doctor and the patient will be notified.');">
+                            <i class="bi bi-send-check me-1"></i>Issue Result
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+</div>

@@ -21,6 +21,8 @@ namespace HCMS4.Modules.Lab.Data
             builder.Property(r => r.CancelReason).HasMaxLength(NoteMaxLength);
             builder.Property(r => r.CancellationNote).HasMaxLength(NoteMaxLength);
             builder.Property(r => r.CancellationNoteBy).HasMaxLength(450);
+            builder.Property(r => r.ResultIssuedBy).HasMaxLength(450);
+            builder.Property(r => r.CriticalAcknowledgedBy).HasMaxLength(450);
             builder.Property(r => r.StatusChangedBy).HasMaxLength(450);
             builder.Property(r => r.ReceivedBy).HasMaxLength(450);
 
@@ -49,6 +51,8 @@ namespace HCMS4.Modules.Lab.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasIndex(i => new { i.LabRequestId, i.LabTestId }).IsUnique();
+            builder.HasOne(i => i.Result).WithOne(r => r.LabRequestItem)
+                .HasForeignKey<LabResult>(r => r.LabRequestItemId).OnDelete(DeleteBehavior.Cascade);
             builder.Property(i => i.Price).HasPrecision(18, 2);
 
             builder.ToTable(t => t.HasCheckConstraint("CK_LabRequestItems_Price", "[Price] >= 0"));

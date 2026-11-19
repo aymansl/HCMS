@@ -6,6 +6,7 @@ namespace HCMS4.Modules.Lab.ViewModels
     public class LabTestFormViewModel : IValidatableObject
     {
         public const string RangeError = "The minimum reference value cannot be greater than the maximum.";
+        public const string CriticalError = "Critical limits must lie outside the reference range (critical min at or below the reference min, critical max at or above the reference max).";
 
         public int Id { get; set; }
 
@@ -24,6 +25,12 @@ namespace HCMS4.Modules.Lab.ViewModels
         [Display(Name = "Reference Max")]
         public decimal? ReferenceMax { get; set; }
 
+        [Display(Name = "Critical Min")]
+        public decimal? CriticalMin { get; set; }
+
+        [Display(Name = "Critical Max")]
+        public decimal? CriticalMax { get; set; }
+
         [Required(ErrorMessage = "Price is required")]
         [Range(0, 100_000_000, ErrorMessage = "The price cannot be negative.")]
         public decimal? Price { get; set; }
@@ -37,6 +44,20 @@ namespace HCMS4.Modules.Lab.ViewModels
             {
                 yield return new ValidationResult(RangeError, new[] { nameof(ReferenceMin), nameof(ReferenceMax) });
             }
+
+            if (!CriticalLimitsAreValid())
+            {
+                yield return new ValidationResult(CriticalError, new[] { nameof(CriticalMin), nameof(CriticalMax) });
+            }
+        }
+
+        public bool CriticalLimitsAreValid()
+        {
+            if (CriticalMin.HasValue && ReferenceMin.HasValue && CriticalMin > ReferenceMin)
+                return false;
+            if (CriticalMax.HasValue && ReferenceMax.HasValue && CriticalMax < ReferenceMax)
+                return false;
+            return !(CriticalMin.HasValue && CriticalMax.HasValue && CriticalMin >= CriticalMax);
         }
     }
 }

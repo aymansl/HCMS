@@ -15,6 +15,8 @@ namespace HCMS4.Modules.Lab.Data
             builder.Property(t => t.Unit).IsRequired().HasMaxLength(30);
             builder.Property(t => t.ReferenceMin).HasPrecision(18, 4);
             builder.Property(t => t.ReferenceMax).HasPrecision(18, 4);
+            builder.Property(t => t.CriticalMin).HasPrecision(18, 4);
+            builder.Property(t => t.CriticalMax).HasPrecision(18, 4);
             builder.Property(t => t.Price).HasPrecision(18, 2);
 
             builder.Property(t => t.CreatedAt).HasDefaultValueSql(ClinicTime.SqlNow);
@@ -25,6 +27,10 @@ namespace HCMS4.Modules.Lab.Data
                 t.HasCheckConstraint("CK_LabTests_Price", "[Price] >= 0");
                 t.HasCheckConstraint("CK_LabTests_ReferenceRange",
                     "[ReferenceMin] IS NULL OR [ReferenceMax] IS NULL OR [ReferenceMin] <= [ReferenceMax]");
+                t.HasCheckConstraint("CK_LabTests_CriticalLimits",
+                    "([CriticalMin] IS NULL OR [ReferenceMin] IS NULL OR [CriticalMin] <= [ReferenceMin]) AND " +
+                    "([CriticalMax] IS NULL OR [ReferenceMax] IS NULL OR [CriticalMax] >= [ReferenceMax]) AND " +
+                    "([CriticalMin] IS NULL OR [CriticalMax] IS NULL OR [CriticalMin] < [CriticalMax])");
             });
         }
     }

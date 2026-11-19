@@ -57,6 +57,15 @@ namespace HCMS4.Modules.Lab.Models
         public DateTime? CancellationNoteAt { get; set; }
         public string? CancellationNoteBy { get; set; }
 
+        /// <summary>When and by whom the result was issued (UC-L10).</summary>
+        public DateTime? ResultIssuedAt { get; set; }
+        public string? ResultIssuedBy { get; set; }
+
+        /// <summary>At least one value is critical; the doctor must acknowledge it.</summary>
+        public bool HasCriticalResult { get; set; }
+        public DateTime? CriticalAcknowledgedAt { get; set; }
+        public string? CriticalAcknowledgedBy { get; set; }
+
         public ICollection<LabRequestItem> Items { get; set; } = new List<LabRequestItem>();
     }
 
@@ -72,5 +81,7 @@ namespace HCMS4.Modules.Lab.Models
         public LabTest LabTest { get; set; } = null!;
 
         public decimal Price { get; set; }
+
+        public LabResult? Result { get; set; }
     }
 }

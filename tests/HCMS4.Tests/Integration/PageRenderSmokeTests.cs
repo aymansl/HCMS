@@ -63,6 +63,12 @@ namespace HCMS4.Tests.Integration
             new object[] { "LabTechnician", "/Lab/RequestDetails/{labRequestId}" },
             new object[] { "LabTechnician", "/Lab/Requests" },
             new object[] { "LabTechnician", "/Lab/Schedule" },
+            new object[] { "LabTechnician", "/Lab/EnterResults/{labRequestId}" },
+            new object[] { "LabTechnician", "/Lab/EnterResults/{receivedLabRequestId}" },
+            new object[] { "LabTechnician", "/Lab/EnterResults/{issuedLabRequestId}" },
+            new object[] { "LabTechnician", "/Lab/RequestDetails/{issuedLabRequestId}" },
+            new object[] { "Doctor", "/Doctor/LabResult/{issuedLabRequestId}" },
+            new object[] { "Patient", "/Patient/LabResult/{issuedLabRequestId}" },
             new object[] { "LabTechnician", "/Lab/Schedule?date=2026-11-21" },
             new object[] { "LabTechnician", "/Lab/Requests?Status=Requested&Date=2026-11-19&PatientName=test" },
             // Doctor
@@ -173,7 +179,13 @@ namespace HCMS4.Tests.Integration
                     var labRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
                     var returnedLabRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Status = LabRequestStatus.ReturnedToDoctor, ReturnNote = "Missing info", Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
                     var cancelledLabRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Status = LabRequestStatus.Cancelled, CancelledAt = now, CancelReason = "Not needed", Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
-                    db.LabRequests.AddRange(labRequest, returnedLabRequest, cancelledLabRequest);
+                    var receivedLabRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Status = LabRequestStatus.Received, Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
+                    var issuedLabRequest = new LabRequest
+                    {
+                        PatientId = patient.Id, DoctorId = doctor.Id, Status = LabRequestStatus.ResultIssued, ResultIssuedAt = now, HasCriticalResult = true,
+                        Items = { new LabRequestItem { LabTest = labTest, Price = 5000, Result = new LabResult { NumericValue = 30, IsAbnormal = true, IsCritical = true } } }
+                    };
+                    db.LabRequests.AddRange(labRequest, returnedLabRequest, cancelledLabRequest, receivedLabRequest, issuedLabRequest);
                     await db.SaveChangesAsync();
 
                     ids["DoctorUserId"] = doctorUser.Id;
@@ -194,6 +206,8 @@ namespace HCMS4.Tests.Integration
                     ids["labRequestId"] = labRequest.Id.ToString(CultureInfo.InvariantCulture);
                     ids["returnedLabRequestId"] = returnedLabRequest.Id.ToString(CultureInfo.InvariantCulture);
                     ids["cancelledLabRequestId"] = cancelledLabRequest.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["receivedLabRequestId"] = receivedLabRequest.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["issuedLabRequestId"] = issuedLabRequest.Id.ToString(CultureInfo.InvariantCulture);
                 });
 
                 _ids = ids;

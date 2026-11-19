@@ -32,4 +32,19 @@
         <span asp-validation-for="Price" class="text-danger"></span>
     </div>
 </div>
-<p class="text-muted small">Leave both reference values empty for a qualitative test.</p>
+<div class="row mb-3">
+    <div class="col-md-4">
+        <label asp-for="CriticalMin" class="form-label"></label>
+        <input asp-for="CriticalMin" class="form-control" type="number" step="any" />
+        <span asp-validation-for="CriticalMin" class="text-danger"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="CriticalMax" class="form-label"></label>
+        <input asp-for="CriticalMax" class="form-control" type="number" step="any" />
+        <span asp-validation-for="CriticalMax" class="text-danger"></span>
+    </div>
+</div>
+<p class="text-muted small">
+    Leave all reference and critical values empty for a qualitative test (its result is text).
+    A result at or beyond a critical limit sends an urgent alert to the doctor.
+</p>

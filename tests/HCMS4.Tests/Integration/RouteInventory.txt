@@ -29,6 +29,7 @@ ANY /Admin/ViewInvoice
 ANY /Doctor/DailyVisitingPatientsReport
 ANY /Doctor/Dashboard
 ANY /Doctor/LabRequests
+ANY /Doctor/LabResult
 ANY /Doctor/Profile
 ANY /Doctor/ViewAppointments
 ANY /Doctor/ViewReports
@@ -47,6 +48,7 @@ ANY /Patient/Dashboard
 ANY /Patient/InvoiceDetails
 ANY /Patient/InvoiceHistory
 ANY /Patient/LabRequests
+ANY /Patient/LabResult
 ANY /Patient/PrescriptionDetails
 ANY /Patient/Prescriptions
 ANY /Patient/ViewAppointmentHistory
@@ -88,6 +90,7 @@ GET /Doctor/RequestLeave
 GET /Doctor/RescheduleAppointment
 GET /Lab/CreateTest
 GET /Lab/EditTest
+GET /Lab/EnterResults
 GET /Patient/BookLabAppointment
 GET /Patient/Complaints
 GET /Patient/CreateComplaint
@@ -133,6 +136,7 @@ POST /Admin/SuspendLabTechnician
 POST /Admin/UpdateComplaintStatus
 POST /Admin/UpdatePaymentStatus
 POST /Admin/UpdateSpecializationFee
+POST /Doctor/AcknowledgeCriticalResult
 POST /Doctor/CancelLabRequest
 POST /Doctor/CreateClinicalNote
 POST /Doctor/CreateLabRequest
@@ -149,6 +153,7 @@ POST /Lab/AddCancellationNote
 POST /Lab/CreateTest
 POST /Lab/DeleteTest
 POST /Lab/EditTest
+POST /Lab/EnterResults
 POST /Lab/ReceiveRequest
 POST /Lab/ReturnRequest
 POST /Notifications/MarkAllAsRead

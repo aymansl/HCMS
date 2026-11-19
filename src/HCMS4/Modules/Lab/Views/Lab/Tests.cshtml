@@ -47,6 +47,7 @@
                                 <th>Test</th>
                                 <th>Unit</th>
                                 <th>Reference Range</th>
+                                <th>Critical</th>
                                 <th class="text-end">Price</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -59,6 +60,7 @@
                                     <td><strong>@test.Name</strong></td>
                                     <td>@test.Unit</td>
                                     <td>@test.ReferenceRange</td>
+                                    <td>@test.CriticalLimits</td>
                                     <td class="text-end">@test.Price.ToString("N2")</td>
                                     <td>
                                         @if (test.IsActive)

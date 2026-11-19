@@ -34,6 +34,7 @@ namespace HCMS4.Shared.Identity.Authorization
                     Permissions.Notifications.View,
                     Permissions.Portal.PatientDashboard,
                     Permissions.Lab.BookAppointment,
+                    Permissions.Lab.ViewOwnResults,
                     Permissions.Appointments.Book,
                     Permissions.Pharmacy.ViewOwnPrescriptions,
                     Permissions.Billing.ViewOwnInvoices,

@@ -26,7 +26,8 @@ if (Request cancelled?) then (yes)
   stop
 else (no)
 endif
-:Compare with reference ranges;
+:Compare with reference ranges and critical limits;
+:Save values (Received -> InProgress on the first save);
 |Lab Technician|
 :Approve result;
 |System|
@@ -39,12 +40,13 @@ endif
 if (Critical value?) then (yes)
   :Mark critical;
   :Send urgent alert to doctor;
+  |Doctor|
+  :Acknowledge critical result;
+  |System|
+  :Log acknowledgement time and doctor;
 else (no)
-endif
-fork
   :Alert doctor;
-fork again
-  :Alert patient;
-end fork
+endif
+:Alert patient;
 stop
 @enduml

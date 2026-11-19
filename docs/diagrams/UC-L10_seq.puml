@@ -23,25 +23,35 @@ skinparam ActorFontSize 15
 skinparam DatabaseFontSize 15
 hide footbox
 actor "Lab Technician" as U
-participant ":ResultEntryView" as V
+actor Doctor as D
 participant ":LabResultController" as C
+participant ":DoctorLabResultsController" as DC
 participant ":LabResultService" as S
+participant ":INotificationService" as N
 database "HCMS Database" as DB
-participant ":NotificationHub" as H
-U -> V : enter values and approve
-V -> C : Issue(requestId, values)
-C -> S : IssueAsync(requestId, values)
+U -> C : EnterResults(id, values, issue = false)
+C -> S : SaveAsync(id, userId, values, issue: false)
+S -> S : compare with reference ranges and critical limits
+S -> DB : UPSERT LabResult; Received -> InProgress (first save)
+U -> C : EnterResults(id, values, issue = true)
+C -> S : SaveAsync(id, userId, values, issue: true)
 S -> DB : get request status
-alt status Received / InProgress and values complete
-  S -> S : compare with reference ranges
-  S -> DB : INSERT result, status = ResultIssued
-  par
-    S ->> H : NotifyDoctor(requestId, isCritical)
+alt status Received / InProgress and every test has a value
+  S -> DB : UPDATE status = ResultIssued, ResultIssuedAt, HasCriticalResult
+  alt critical value
+    S -> N : CreateForUserAsync(doctor, "CRITICAL lab result")
   else
-    S ->> H : NotifyPatient(requestId)
+    S -> N : CreateForUserAsync(doctor, "Lab result issued")
   end
-  C --> V : result issued
-else cancelled or incomplete
-  C --> V : error
+  S -> N : CreateForUserAsync(patient, "Your lab result is ready")
+  C --> U : result issued
+else cancelled, issued already, or a value missing
+  C --> U : error (nothing saved)
 end
+opt critical value
+  D -> DC : AcknowledgeCriticalResult(id)
+  DC -> S : AcknowledgeCriticalAsync(doctorId, id)
+  S -> DB : UPDATE CriticalAcknowledgedAt, CriticalAcknowledgedBy
+end
+note over N : Notifications are shown on refresh;\nSignalR comes with S3 (Increment 6).
 @enduml

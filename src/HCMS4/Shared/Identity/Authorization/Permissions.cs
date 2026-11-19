@@ -77,6 +77,8 @@ namespace HCMS4.Shared.Identity.Authorization
             public const string CreateRequest = "Lab.CreateRequest";
             /// <summary>A patient books the sample-collection time of their lab request.</summary>
             public const string BookAppointment = "Lab.BookAppointment";
+            /// <summary>A patient reads their own issued lab results.</summary>
+            public const string ViewOwnResults = "Lab.ViewOwnResults";
             public const string ReceiveRequest = "Lab.ReceiveRequest";
             public const string ManageTests = "Lab.ManageTests";
             public const string EnterResults = "Lab.EnterResults";

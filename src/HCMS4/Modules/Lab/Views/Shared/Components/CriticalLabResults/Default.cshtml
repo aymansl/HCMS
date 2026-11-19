@@ -1,0 +1,17 @@
+@model List<HCMS4.Modules.Lab.Models.LabRequest>
+
+@if (Model.Count > 0)
+{
+    <div class="alert alert-danger mb-4" id="critical-lab-results">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-octagon-fill me-2"></i>Critical lab results to acknowledge (@Model.Count)</h5>
+        <ul class="mb-0">
+            @foreach (var request in Model)
+            {
+                <li>
+                    <a href="/Doctor/LabResult/@request.Id" class="alert-link">Request #@request.Id – @request.Patient.User.FullName</a>
+                    <span class="small">· issued @request.ResultIssuedAt?.ToString("yyyy-MM-dd HH:mm")</span>
+                </li>
+            }
+        </ul>
+    </div>
+}

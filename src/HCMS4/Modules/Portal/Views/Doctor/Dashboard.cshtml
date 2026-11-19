@@ -30,6 +30,8 @@
         <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
     }
 
+    @await Component.InvokeAsync("CriticalLabResults")
+
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card dashboard-card h-100">

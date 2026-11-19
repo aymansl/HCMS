@@ -56,6 +56,8 @@ namespace HCMS4.Modules.Lab.Controllers
                 Unit = test.Unit,
                 ReferenceMin = test.ReferenceMin,
                 ReferenceMax = test.ReferenceMax,
+                CriticalMin = test.CriticalMin,
+                CriticalMax = test.CriticalMax,
                 Price = test.Price,
                 IsActive = test.IsActive
             });

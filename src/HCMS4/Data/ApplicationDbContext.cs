@@ -36,6 +36,7 @@ namespace HCMS4.Data
         public DbSet<HCMS4.Modules.Lab.Models.LabRequest> LabRequests { get; set; }
         public DbSet<HCMS4.Modules.Lab.Models.LabRequestItem> LabRequestItems { get; set; }
         public DbSet<HCMS4.Modules.Lab.Models.LabAppointment> LabAppointments { get; set; }
+        public DbSet<HCMS4.Modules.Lab.Models.LabResult> LabResults { get; set; }
         public DbSet<DailyReport> DailyReports { get; set; }
         public DbSet<PurchaseRequest> PurchaseRequests { get; set; }
         public DbSet<PurchaseRequestItem> PurchaseRequestItems { get; set; }

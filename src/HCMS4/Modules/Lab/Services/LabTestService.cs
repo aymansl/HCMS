@@ -63,6 +63,9 @@ namespace HCMS4.Modules.Lab.Services
             if (model.ReferenceMin.HasValue && model.ReferenceMax.HasValue && model.ReferenceMin > model.ReferenceMax)
                 return ServiceResult<LabTest>.Fail(LabTestFormViewModel.RangeError);
 
+            if (!model.CriticalLimitsAreValid())
+                return ServiceResult<LabTest>.Fail(LabTestFormViewModel.CriticalError);
+
             // Case-insensitive, whatever the database collation. EF translates ToUpper() to SQL UPPER(),
             // so the culture overloads the analyzers ask for cannot be used here.
             var upper = name.ToUpperInvariant();
@@ -92,6 +95,8 @@ namespace HCMS4.Modules.Lab.Services
             test.Unit = unit;
             test.ReferenceMin = model.ReferenceMin;
             test.ReferenceMax = model.ReferenceMax;
+            test.CriticalMin = model.CriticalMin;
+            test.CriticalMax = model.CriticalMax;
             test.Price = model.Price.Value;
             test.UpdatedAt = now;
 

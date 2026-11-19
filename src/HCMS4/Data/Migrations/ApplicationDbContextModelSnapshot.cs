@@ -581,8 +581,18 @@ namespace HCMS4.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<DateTime?>("CriticalAcknowledgedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CriticalAcknowledgedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("DoctorId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("HasCriticalResult")
+                        .HasColumnType("bit");
 
                     b.Property<int>("PatientId")
                         .HasColumnType("int");
@@ -598,6 +608,13 @@ namespace HCMS4.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)");
+
+                    b.Property<DateTime?>("ResultIssuedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResultIssuedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("ReturnNote")
                         .HasMaxLength(500)
@@ -667,6 +684,51 @@ namespace HCMS4.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EnteredAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)");
+
+                    b.Property<string>("EnteredBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsAbnormal")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsCritical")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LabRequestItemId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("NumericValue")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("TextValue")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabRequestItemId")
+                        .IsUnique();
+
+                    b.ToTable("LabResults", t =>
+                        {
+                            t.HasCheckConstraint("CK_LabResults_Value", "[NumericValue] IS NOT NULL OR [TextValue] IS NOT NULL");
+                        });
+                });
+
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabTechnician", b =>
                 {
                     b.Property<int>("Id")
@@ -719,6 +781,14 @@ namespace HCMS4.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)");
 
+                    b.Property<decimal?>("CriticalMax")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("CriticalMin")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -756,6 +826,8 @@ namespace HCMS4.Data.Migrations
 
                     b.ToTable("LabTests", t =>
                         {
+                            t.HasCheckConstraint("CK_LabTests_CriticalLimits", "([CriticalMin] IS NULL OR [ReferenceMin] IS NULL OR [CriticalMin] <= [ReferenceMin]) AND ([CriticalMax] IS NULL OR [ReferenceMax] IS NULL OR [CriticalMax] >= [ReferenceMax]) AND ([CriticalMin] IS NULL OR [CriticalMax] IS NULL OR [CriticalMin] < [CriticalMax])");
+
                             t.HasCheckConstraint("CK_LabTests_Price", "[Price] >= 0");
 
                             t.HasCheckConstraint("CK_LabTests_ReferenceRange", "[ReferenceMin] IS NULL OR [ReferenceMax] IS NULL OR [ReferenceMin] <= [ReferenceMax]");
@@ -2109,6 +2181,17 @@ namespace HCMS4.Data.Migrations
                     b.Navigation("LabTest");
                 });
 
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabResult", b =>
+                {
+                    b.HasOne("HCMS4.Modules.Lab.Models.LabRequestItem", "LabRequestItem")
+                        .WithOne("Result")
+                        .HasForeignKey("HCMS4.Modules.Lab.Models.LabResult", "LabRequestItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LabRequestItem");
+                });
+
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabTechnician", b =>
                 {
                     b.HasOne("HCMS4.Shared.Identity.Models.ApplicationUser", "User")
@@ -2439,6 +2522,11 @@ namespace HCMS4.Data.Migrations
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequestItem", b =>
+                {
+                    b.Navigation("Result");
                 });
 
             modelBuilder.Entity("HCMS4.Modules.Pharmacy.Models.Drug", b =>
