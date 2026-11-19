@@ -18,6 +18,9 @@ namespace HCMS4.Modules.Lab.Data
             builder.Property(r => r.Status).HasConversion<string>().HasMaxLength(20);
             builder.Property(r => r.ClinicalNotes).HasMaxLength(NoteMaxLength);
             builder.Property(r => r.ReturnNote).HasMaxLength(NoteMaxLength);
+            builder.Property(r => r.CancelReason).HasMaxLength(NoteMaxLength);
+            builder.Property(r => r.CancellationNote).HasMaxLength(NoteMaxLength);
+            builder.Property(r => r.CancellationNoteBy).HasMaxLength(450);
             builder.Property(r => r.StatusChangedBy).HasMaxLength(450);
             builder.Property(r => r.ReceivedBy).HasMaxLength(450);
 
@@ -27,7 +30,12 @@ namespace HCMS4.Modules.Lab.Data
             builder.HasIndex(r => new { r.Status, r.RequestedAt });
 
             var statuses = string.Join(", ", Enum.GetNames<LabRequestStatus>().Select(s => $"'{s}'"));
-            builder.ToTable(t => t.HasCheckConstraint("CK_LabRequests_Status", $"[Status] IN ({statuses})"));
+            builder.ToTable(t =>
+            {
+                t.HasCheckConstraint("CK_LabRequests_Status", $"[Status] IN ({statuses})");
+                t.HasCheckConstraint("CK_LabRequests_CancelReason",
+                    $"[Status] <> '{nameof(LabRequestStatus.Cancelled)}' OR [CancelReason] IS NOT NULL");
+            });
         }
     }
 

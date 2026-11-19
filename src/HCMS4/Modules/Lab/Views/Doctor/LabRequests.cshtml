@@ -74,12 +74,26 @@
                                         {
                                             <div class="text-danger small">@request.ReturnNote</div>
                                         }
+                                        @if (request.Status == LabRequestStatus.Cancelled)
+                                        {
+                                            <div class="text-muted small">@request.CancelReason</div>
+                                            @if (request.CancellationNote != null)
+                                            {
+                                                <div class="text-muted small">Lab: @request.CancellationNote</div>
+                                            }
+                                        }
                                     </td>
                                     <td>
                                         @if (request.Status == LabRequestStatus.ReturnedToDoctor)
                                         {
                                             <a asp-action="EditLabRequest" asp-route-id="@request.Id" class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-pencil"></i> Edit and Resend
+                                            </a>
+                                        }
+                                        @if (request.Status is not (LabRequestStatus.Cancelled or LabRequestStatus.ResultIssued))
+                                        {
+                                            <a asp-action="CancelLabRequest" asp-route-id="@request.Id" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-x-circle"></i> Cancel
                                             </a>
                                         }
                                     </td>

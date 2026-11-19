@@ -49,6 +49,18 @@ namespace HCMS4.Modules.Lab.Services
 
         /// <summary>The technician returns an incomplete request to the doctor with a note.</summary>
         Task<ServiceResult> ReturnToDoctorAsync(int id, string userId, string note);
+
+        /// <summary>One of the doctor's requests with its patient and tests, or null.</summary>
+        Task<LabRequest?> GetForDoctorByIdAsync(int doctorId, int id);
+
+        /// <summary>
+        /// The doctor cancels the request with a reason until its result is issued (UC-L04);
+        /// the time and reason are recorded and the lab is notified.
+        /// </summary>
+        Task<ServiceResult> CancelAsync(int doctorId, int id, string reason);
+
+        /// <summary>The technician's one note on a cancelled request, e.g. "sample taken" (UC-L04 alternative flow).</summary>
+        Task<ServiceResult> AddCancellationNoteAsync(int id, string userId, string note);
     }
 
     public class LabRequestService : ILabRequestService
@@ -56,6 +68,8 @@ namespace HCMS4.Modules.Lab.Services
         public const string PatientNotFoundError = "The lab request was rejected: the patient record was not found.";
         public const string NoAccessError = "You do not have access to this patient's record.";
         public const string InactiveTestError = "One or more selected tests are not available.";
+        public const string ResultIssuedError = "The result of this request has already been issued, so it cannot be cancelled.";
+        public const string CancelReasonRequired = "Write the reason for the cancellation.";
 
         private readonly ApplicationDbContext _context;
         private readonly IMedicalRecordService _records;
@@ -301,6 +315,61 @@ namespace HCMS4.Modules.Lab.Services
                 NotificationType.LabRequest, DoctorLink(id), nameof(LabRequest), id);
 
             return ServiceResult.Ok($"Lab request #{id} was returned to the doctor.");
+        }
+
+        public Task<LabRequest?> GetForDoctorByIdAsync(int doctorId, int id) =>
+            WithDetails().FirstOrDefaultAsync(r => r.Id == id && r.DoctorId == doctorId);
+
+        public async Task<ServiceResult> CancelAsync(int doctorId, int id, string reason)
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+                return ServiceResult.Fail(CancelReasonRequired);
+
+            var request = await _context.LabRequests.Include(r => r.Doctor)
+                .FirstOrDefaultAsync(r => r.Id == id && r.DoctorId == doctorId);
+            if (request == null)
+                return ServiceResult.Fail("Lab request not found.");
+
+            // Exception flow: the result is already issued — refuse and tell the doctor.
+            if (request.Status == LabRequestStatus.ResultIssued)
+                return ServiceResult.Fail(ResultIssuedError);
+
+            var transition = LabRequestWorkflow.Machine.Transition(request, LabRequestStatus.Cancelled, request.Doctor.UserId, _clock);
+            if (!transition.Success)
+                return ServiceResult.Fail($"Lab request #{id} cannot be cancelled: its status is {request.Status}.");
+
+            request.CancelledAt = transition.Data.ChangedAt;
+            request.CancelReason = reason.Trim();
+            await _context.SaveChangesAsync();
+
+            var patientName = await PatientNameAsync(request.PatientId);
+            await _notifications.CreateForRoleAsync(Roles.LabTechnician, "Lab request cancelled",
+                $"The doctor cancelled lab request #{id} for {patientName}: {request.CancelReason}",
+                NotificationType.LabRequest, LabLink(id), nameof(LabRequest), id);
+
+            return ServiceResult.Ok($"Lab request #{id} was cancelled and the lab was notified.");
+        }
+
+        public async Task<ServiceResult> AddCancellationNoteAsync(int id, string userId, string note)
+        {
+            if (string.IsNullOrWhiteSpace(note))
+                return ServiceResult.Fail("Write the note.");
+
+            var request = await _context.LabRequests.FirstOrDefaultAsync(r => r.Id == id);
+            if (request == null)
+                return ServiceResult.Fail("Lab request not found.");
+
+            if (request.Status != LabRequestStatus.Cancelled)
+                return ServiceResult.Fail("A cancellation note can only be added to a cancelled request.");
+
+            if (request.CancellationNote != null)
+                return ServiceResult.Fail("This cancelled request already has a note.");
+
+            request.CancellationNote = note.Trim();
+            request.CancellationNoteAt = _clock.Now;
+            request.CancellationNoteBy = userId;
+            await _context.SaveChangesAsync();
+            return ServiceResult.Ok($"The note was saved on lab request #{id}.");
         }
     }
 

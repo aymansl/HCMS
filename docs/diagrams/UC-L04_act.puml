@@ -33,7 +33,10 @@ endif
 |Lab Technician|
 :See cancellation;
 if (Sample already taken?) then (yes)
-  :Add note "sample taken - cancelled";
+  :Add cancellation note "sample taken - request cancelled";
+  |System|
+  :Save note with time and author;
+  |Lab Technician|
 else (no)
 endif
 :Stop work on request;

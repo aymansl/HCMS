@@ -510,6 +510,24 @@ namespace HCMS4.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("CancellationNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("CancellationNoteAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CancellationNoteBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ClinicalNotes")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -563,6 +581,8 @@ namespace HCMS4.Data.Migrations
 
                     b.ToTable("LabRequests", t =>
                         {
+                            t.HasCheckConstraint("CK_LabRequests_CancelReason", "[Status] <> 'Cancelled' OR [CancelReason] IS NOT NULL");
+
                             t.HasCheckConstraint("CK_LabRequests_Status", "[Status] IN ('Requested', 'Received', 'InProgress', 'ResultIssued', 'Cancelled', 'ReturnedToDoctor')");
                         });
                 });

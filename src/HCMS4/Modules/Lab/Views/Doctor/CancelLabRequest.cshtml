@@ -1,0 +1,53 @@
+@model HCMS4.Modules.Lab.ViewModels.CancelLabRequestViewModel
+
+@{
+    ViewData["Title"] = "Cancel Lab Request";
+    Layout = "_LayoutAuth";
+    var request = Model.Request!;
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">Cancel Lab Request #@request.Id</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a asp-action="LabRequests" asp-route-patientId="@request.PatientId">Lab Requests</a></li>
+                    <li class="breadcrumb-item active">Cancel</li>
+                </ol>
+            </nav>
+        </div>
+        <a asp-action="LabRequests" asp-route-patientId="@request.PatientId" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Lab Requests
+        </a>
+    </div>
+
+    <div class="card dashboard-card">
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Patient</dt>
+                <dd class="col-sm-9">@request.Patient.User.FullName</dd>
+                <dt class="col-sm-3">Tests</dt>
+                <dd class="col-sm-9">@string.Join(", ", request.Items.Select(i => i.LabTest.Name).Order())</dd>
+                <dt class="col-sm-3">Requested</dt>
+                <dd class="col-sm-9">@request.RequestedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+                <dt class="col-sm-3">Status</dt>
+                <dd class="col-sm-9"><partial name="~/Modules/Lab/Views/Lab/_LabRequestStatus.cshtml" model="request.Status" /></dd>
+            </dl>
+
+            <form asp-action="CancelLabRequest" asp-route-id="@request.Id" method="post">
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+                <div class="mb-3">
+                    <label asp-for="Reason" class="form-label">Reason *</label>
+                    <textarea asp-for="Reason" class="form-control" rows="3" maxlength="500"></textarea>
+                    <span asp-validation-for="Reason" class="text-danger"></span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a asp-action="LabRequests" asp-route-patientId="@request.PatientId" class="btn btn-outline-secondary">Back</a>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-x-circle me-1"></i>Cancel Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

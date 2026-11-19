@@ -75,6 +75,8 @@ namespace HCMS4.Tests.Integration
             new object[] { "Doctor", "/Doctor/LabRequests?patientId={patientId}" },
             new object[] { "Doctor", "/Doctor/CreateLabRequest?patientId={patientId}" },
             new object[] { "Doctor", "/Doctor/EditLabRequest/{returnedLabRequestId}" },
+            new object[] { "Doctor", "/Doctor/CancelLabRequest/{labRequestId}" },
+            new object[] { "LabTechnician", "/Lab/RequestDetails/{cancelledLabRequestId}" },
             new object[] { "Doctor", "/Doctor/ReissueRequests" },
             new object[] { "Doctor", "/Doctor/DoctorReviewRequests" },
             new object[] { "Doctor", "/Doctor/MedicalArticles" },
@@ -166,7 +168,8 @@ namespace HCMS4.Tests.Integration
                     var labTest = new LabTest { Name = "CBC-SMOKE", Unit = "10^9/L", ReferenceMin = 4, ReferenceMax = 11, Price = 5000 };
                     var labRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
                     var returnedLabRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Status = LabRequestStatus.ReturnedToDoctor, ReturnNote = "Missing info", Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
-                    db.LabRequests.AddRange(labRequest, returnedLabRequest);
+                    var cancelledLabRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Status = LabRequestStatus.Cancelled, CancelledAt = now, CancelReason = "Not needed", Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
+                    db.LabRequests.AddRange(labRequest, returnedLabRequest, cancelledLabRequest);
                     await db.SaveChangesAsync();
 
                     ids["DoctorUserId"] = doctorUser.Id;
@@ -186,6 +189,7 @@ namespace HCMS4.Tests.Integration
                     ids["labTestId"] = labTest.Id.ToString(CultureInfo.InvariantCulture);
                     ids["labRequestId"] = labRequest.Id.ToString(CultureInfo.InvariantCulture);
                     ids["returnedLabRequestId"] = returnedLabRequest.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["cancelledLabRequestId"] = cancelledLabRequest.Id.ToString(CultureInfo.InvariantCulture);
                 });
 
                 _ids = ids;

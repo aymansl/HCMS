@@ -45,6 +45,18 @@ namespace HCMS4.Modules.Lab.Models
         public DateTime? ReturnedAt { get; set; }
         public string? ReturnNote { get; set; }
 
+        /// <summary>When and why the doctor cancelled the request (UC-L04); the doctor is in StatusChangedBy.</summary>
+        public DateTime? CancelledAt { get; set; }
+        public string? CancelReason { get; set; }
+
+        /// <summary>
+        /// The technician's one note on a cancelled request, e.g. "sample taken" (UC-L04 alternative flow).
+        /// Kept apart from the general lab notes (UC-L07), which a cancelled request does not accept.
+        /// </summary>
+        public string? CancellationNote { get; set; }
+        public DateTime? CancellationNoteAt { get; set; }
+        public string? CancellationNoteBy { get; set; }
+
         public ICollection<LabRequestItem> Items { get; set; } = new List<LabRequestItem>();
     }
 

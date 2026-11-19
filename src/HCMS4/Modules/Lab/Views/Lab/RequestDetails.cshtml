@@ -90,6 +90,41 @@
         </div>
     </div>
 
+    @if (Model.Status == LabRequestStatus.Cancelled)
+    {
+        <div class="alert alert-secondary mt-3" id="request-cancelled">
+            <h5 class="alert-heading"><i class="bi bi-x-octagon me-2"></i>Cancelled by the doctor</h5>
+            <p class="mb-1">On @Model.CancelledAt?.ToString("yyyy-MM-dd HH:mm"): @Model.CancelReason</p>
+            <p class="mb-0 small">Stop work on this request.</p>
+        </div>
+        @if (Model.CancellationNote != null)
+        {
+            <div class="card dashboard-card" id="request-cancellation-note">
+                <div class="card-body">
+                    <h6 class="text-muted">Lab note</h6>
+                    <p class="mb-0">@Model.CancellationNote <span class="text-muted small">· @Model.CancellationNoteAt?.ToString("yyyy-MM-dd HH:mm")</span></p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="card dashboard-card">
+                <div class="card-body">
+                    <h6>Add a note (for example, if the sample was already taken)</h6>
+                    <form asp-action="AddCancellationNote" asp-route-id="@Model.Id" method="post">
+                        <div class="input-group">
+                            <input name="Note" class="form-control" maxlength="500" required
+                                   value="Sample taken – request cancelled" />
+                            <button type="submit" class="btn btn-outline-secondary">
+                                <i class="bi bi-journal-plus me-1"></i>Add Note
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+
     @if (Model.Status == LabRequestStatus.Requested)
     {
         <div class="card dashboard-card mt-3">

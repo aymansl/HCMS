@@ -71,6 +71,7 @@ GET /Admin/RegisterDoctorLeave
 GET /Admin/Surveys
 GET /Admin/UpdatePaymentStatus
 GET /ComplaintAttachments/Download
+GET /Doctor/CancelLabRequest
 GET /Doctor/CreateClinicalNote
 GET /Doctor/CreateLabRequest
 GET /Doctor/CreateMedicalArticle
@@ -128,6 +129,7 @@ POST /Admin/SuspendLabTechnician
 POST /Admin/UpdateComplaintStatus
 POST /Admin/UpdatePaymentStatus
 POST /Admin/UpdateSpecializationFee
+POST /Doctor/CancelLabRequest
 POST /Doctor/CreateClinicalNote
 POST /Doctor/CreateLabRequest
 POST /Doctor/CreateMedicalArticle
@@ -139,6 +141,7 @@ POST /Doctor/RescheduleAppointment
 POST /Doctor/RespondToReviewRequest
 POST /Doctor/ReviewReissueRequest
 POST /Doctor/SendReminder
+POST /Lab/AddCancellationNote
 POST /Lab/CreateTest
 POST /Lab/DeleteTest
 POST /Lab/EditTest

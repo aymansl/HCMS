@@ -530,6 +530,159 @@ namespace HCMS4.Tests
             Assert.True(new LabRequestFilter { PatientName = "  " }.IsEmpty);
         }
 
+        // ---- UC-L04: cancellation from the doctor ----
+
+        [Fact]
+        public async Task TC_L4_01_CancelAReceivedRequest_SetsCancelled_WithTimeAndReason_AndNotifiesTheLab()
+        {
+            var request = await CreateAsync(_cbc.Id);
+            await Service.ReceiveAsync(request.Id, TechnicianUserId);
+            _db.ChangeTracker.Clear();
+            _time.Advance(TimeSpan.FromMinutes(30));
+
+            var result = await Service.CancelAsync(_doctor.Id, request.Id, "  Patient was transferred. ");
+
+            Assert.True(result.Success, result.Message);
+            var saved = await ReloadAsync(request.Id);
+            Assert.Equal(LabRequestStatus.Cancelled, saved.Status);
+            Assert.Equal(_clock.Now, saved.CancelledAt);
+            Assert.Equal("Patient was transferred.", saved.CancelReason);
+            Assert.Equal(_doctorUser.Id, saved.StatusChangedBy);
+            var notes = await NotificationsForAsync(TechnicianUserId);
+            var cancelled = Assert.Single(notes, n => n.Title == "Lab request cancelled");
+            Assert.Contains("Patient was transferred.", cancelled.Message);
+            Assert.Equal($"/Lab/RequestDetails/{request.Id}", cancelled.LinkUrl);
+        }
+
+        [Theory]
+        [InlineData(LabRequestStatus.Requested)]
+        [InlineData(LabRequestStatus.InProgress)]
+        [InlineData(LabRequestStatus.ReturnedToDoctor)]
+        public async Task Cancel_IsAllowedUntilTheResultIsIssued(LabRequestStatus status)
+        {
+            var request = await AddRequestAsync(status, _clock.Now);
+
+            Assert.True((await Service.CancelAsync(_doctor.Id, request.Id, "Not needed")).Success);
+            Assert.Equal(LabRequestStatus.Cancelled, (await ReloadAsync(request.Id)).Status);
+        }
+
+        [Fact]
+        public async Task TC_L4_02_CancelAfterTheResultIsIssued_IsRefused_AndNothingChanges()
+        {
+            var request = await AddRequestAsync(LabRequestStatus.ResultIssued, _clock.Now);
+
+            var result = await Service.CancelAsync(_doctor.Id, request.Id, "Too late");
+
+            Assert.False(result.Success);
+            Assert.Equal(LabRequestService.ResultIssuedError, result.Message);
+            var saved = await ReloadAsync(request.Id);
+            Assert.Equal(LabRequestStatus.ResultIssued, saved.Status);
+            Assert.Null(saved.CancelledAt);
+            Assert.Empty(await NotificationsForAsync(TechnicianUserId));
+        }
+
+        [Theory]
+        [InlineData(LabRequestStatus.InProgress)]
+        [InlineData(LabRequestStatus.ResultIssued)]
+        [InlineData(LabRequestStatus.Received)]
+        public void TC_L4_03_ACancelledRequest_CannotMoveToResultWork(LabRequestStatus to)
+        {
+            Assert.False(LabRequestWorkflow.Machine.CanTransition(LabRequestStatus.Cancelled, to));
+            Assert.True(LabRequestWorkflow.Machine.IsTerminal(LabRequestStatus.Cancelled));
+        }
+
+        [Fact]
+        public async Task TC_L4_03_ACancelledRequest_CannotBeReceivedOrReturned()
+        {
+            var request = await CreateAsync(_cbc.Id);
+            await Service.CancelAsync(_doctor.Id, request.Id, "Not needed");
+
+            Assert.False((await Service.ReceiveAsync(request.Id, TechnicianUserId)).Success);
+            Assert.False((await Service.ReturnToDoctorAsync(request.Id, TechnicianUserId, "Note")).Success);
+        }
+
+        [Fact]
+        public async Task Cancel_Twice_IsRefused()
+        {
+            var request = await CreateAsync(_cbc.Id);
+            await Service.CancelAsync(_doctor.Id, request.Id, "First");
+
+            var again = await Service.CancelAsync(_doctor.Id, request.Id, "Second");
+
+            Assert.False(again.Success);
+            Assert.Equal("First", (await ReloadAsync(request.Id)).CancelReason);
+        }
+
+        [Fact]
+        public async Task Cancel_WithoutAReason_IsRefused()
+        {
+            var request = await CreateAsync(_cbc.Id);
+
+            var result = await Service.CancelAsync(_doctor.Id, request.Id, "   ");
+
+            Assert.False(result.Success);
+            Assert.Equal(LabRequestService.CancelReasonRequired, result.Message);
+            Assert.Equal(LabRequestStatus.Requested, (await ReloadAsync(request.Id)).Status);
+        }
+
+        [Fact]
+        public async Task Cancel_AnotherDoctorsRequest_IsNotFound()
+        {
+            var request = await CreateAsync(_cbc.Id);
+
+            Assert.False((await Service.CancelAsync(_doctor.Id + 1, request.Id, "Reason")).Success);
+            Assert.Null(await Service.GetForDoctorByIdAsync(_doctor.Id + 1, request.Id));
+            Assert.NotNull(await Service.GetForDoctorByIdAsync(_doctor.Id, request.Id));
+        }
+
+        [Fact]
+        public async Task CancelledRequest_LeavesTheIncomingList()
+        {
+            var request = await CreateAsync(_cbc.Id);
+            await Service.CancelAsync(_doctor.Id, request.Id, "Not needed");
+
+            Assert.Empty(await Service.GetIncomingAsync(new LabRequestFilter()));
+            Assert.Equal(0, await Service.CountNewAsync());
+        }
+
+        [Fact]
+        public async Task AlternativeFlow_CancellationNote_IsSaved_WithTimeAndAuthor()
+        {
+            var request = await CreateAsync(_cbc.Id);
+            await Service.CancelAsync(_doctor.Id, request.Id, "Not needed");
+            _time.Advance(TimeSpan.FromMinutes(5));
+
+            var result = await Service.AddCancellationNoteAsync(request.Id, TechnicianUserId, " Sample taken - request cancelled ");
+
+            Assert.True(result.Success, result.Message);
+            var saved = await ReloadAsync(request.Id);
+            Assert.Equal("Sample taken - request cancelled", saved.CancellationNote);
+            Assert.Equal(_clock.Now, saved.CancellationNoteAt);
+            Assert.Equal(TechnicianUserId, saved.CancellationNoteBy);
+        }
+
+        [Fact]
+        public async Task CancellationNote_OnARequestThatIsNotCancelled_IsRefused()
+        {
+            var request = await CreateAsync(_cbc.Id);
+
+            Assert.False((await Service.AddCancellationNoteAsync(request.Id, TechnicianUserId, "Note")).Success);
+            Assert.Null((await ReloadAsync(request.Id)).CancellationNote);
+        }
+
+        [Fact]
+        public async Task CancellationNote_IsWrittenOnce_AndNeedsText()
+        {
+            var request = await CreateAsync(_cbc.Id);
+            await Service.CancelAsync(_doctor.Id, request.Id, "Not needed");
+
+            Assert.False((await Service.AddCancellationNoteAsync(request.Id, TechnicianUserId, "  ")).Success);
+            Assert.True((await Service.AddCancellationNoteAsync(request.Id, TechnicianUserId, "First")).Success);
+            Assert.False((await Service.AddCancellationNoteAsync(request.Id, TechnicianUserId, "Second")).Success);
+            Assert.Equal("First", (await ReloadAsync(request.Id)).CancellationNote);
+            Assert.False((await Service.AddCancellationNoteAsync(999, TechnicianUserId, "Note")).Success);
+        }
+
         // ---- The state machine ----
 
         [Theory]
@@ -541,6 +694,11 @@ namespace HCMS4.Tests
         [InlineData(LabRequestStatus.Received, LabRequestStatus.ReturnedToDoctor, false)]
         [InlineData(LabRequestStatus.ReturnedToDoctor, LabRequestStatus.Received, false)]
         [InlineData(LabRequestStatus.Requested, LabRequestStatus.ResultIssued, false)]
+        [InlineData(LabRequestStatus.Requested, LabRequestStatus.Cancelled, true)]
+        [InlineData(LabRequestStatus.Received, LabRequestStatus.Cancelled, true)]
+        [InlineData(LabRequestStatus.InProgress, LabRequestStatus.Cancelled, true)]
+        [InlineData(LabRequestStatus.ReturnedToDoctor, LabRequestStatus.Cancelled, true)]
+        [InlineData(LabRequestStatus.ResultIssued, LabRequestStatus.Cancelled, false)]
         public void Workflow_AllowsOnlyTheAgreedTransitions(LabRequestStatus from, LabRequestStatus to, bool allowed)
         {
             Assert.Equal(allowed, LabRequestWorkflow.Machine.CanTransition(from, to));

@@ -90,6 +90,51 @@ namespace HCMS4.Modules.Lab.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> CancelLabRequest(int id)
+        {
+            var doctorId = await GetCurrentDoctorIdAsync();
+            if (!doctorId.HasValue)
+                return RedirectToAction("Login", "Account");
+
+            var request = await _requestService.GetForDoctorByIdAsync(doctorId.Value, id);
+            if (request == null)
+                return NotFound();
+
+            return View(new CancelLabRequestViewModel { Request = request });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelLabRequest(int id, CancelLabRequestViewModel model)
+        {
+            var doctorId = await GetCurrentDoctorIdAsync();
+            if (!doctorId.HasValue)
+                return RedirectToAction("Login", "Account");
+
+            var request = await _requestService.GetForDoctorByIdAsync(doctorId.Value, id);
+            if (request == null)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                model.Request = request;
+                return View(model);
+            }
+
+            var result = await _requestService.CancelAsync(doctorId.Value, id, model.Reason);
+            if (!result.Success)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+                model.Request = request;
+                return View(model);
+            }
+
+            _logger.LogInformation("Lab request {RequestId} cancelled by doctor {DoctorId}", id, doctorId);
+            TempData["SuccessMessage"] = result.Message;
+            return RedirectToAction(nameof(LabRequests), new { patientId = request.PatientId });
+        }
+
+        [HttpGet]
         public async Task<IActionResult> EditLabRequest(int id)
         {
             var doctorId = await GetCurrentDoctorIdAsync();

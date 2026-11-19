@@ -40,6 +40,25 @@ namespace HCMS4.Modules.Lab.ViewModels
         public string Note { get; set; } = string.Empty;
     }
 
+    /// <summary>The doctor's cancel form (UC-L04).</summary>
+    public class CancelLabRequestViewModel
+    {
+        [Required(ErrorMessage = "Write the reason for the cancellation.")]
+        [StringLength(500)]
+        public string Reason { get; set; } = string.Empty;
+
+        // Display only.
+        public LabRequest? Request { get; set; }
+    }
+
+    /// <summary>The technician's note on a cancelled request (UC-L04 alternative flow).</summary>
+    public class CancellationNoteViewModel
+    {
+        [Required(ErrorMessage = "Write the note.")]
+        [StringLength(500)]
+        public string Note { get; set; } = string.Empty;
+    }
+
     /// <summary>The lab's incoming requests page (UC-L02).</summary>
     public class LabIncomingRequestsViewModel
     {

@@ -51,6 +51,21 @@ namespace HCMS4.Modules.Lab.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddCancellationNote(int id, CancellationNoteViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Write the note.";
+                return RedirectToAction(nameof(RequestDetails), new { id });
+            }
+
+            var result = await _requestService.AddCancellationNoteAsync(id, CurrentUserId ?? string.Empty, model.Note);
+            TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
+            return RedirectToAction(nameof(RequestDetails), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReturnRequest(int id, ReturnLabRequestViewModel model)
         {
             if (!ModelState.IsValid)
