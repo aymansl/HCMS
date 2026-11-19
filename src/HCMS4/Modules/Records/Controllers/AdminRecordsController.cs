@@ -1,75 +1,32 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Appointments.Services;
 using HCMS4.Modules.Billing.Models;
-using HCMS4.Modules.Feedback.Models;
-using HCMS4.Modules.Pharmacy.Models;
-using HCMS4.Modules.Pharmacy.Services;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Records.Services;
-using HCMS4.Modules.Staff.Models;
-using HCMS4.Modules.Staff.Services;
-using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
-using HCMS4.Shared.Identity.Models;
-using HCMS4.Shared.Notifications.Models;
-using HCMS4.Shared.Notifications.Services;
-using HCMS4.Shared.Reporting.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using static HCMS4.ViewModels.GenerateInvoiceViewModel;
-using System.Security.Claims;
 
 namespace HCMS4.Modules.Records.Controllers
 {
     // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
     [Authorize(Roles = "Admin")]
     [ControllerName("Admin")]
-    public class AdminRecordsController : BaseController
+    public class AdminRecordsController : HcmsControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IDailyReportService _reportService;
         private readonly IPatientService _patientService;
         private readonly IAppointmentService _appointmentService;
-        private readonly IPrescriptionService _prescriptionService;
-        private readonly ApplicationDbContext _adminContext;
-        private readonly INoShowRiskService _noShowRiskService;
-        private readonly ILeaveService _leaveService;
-        private readonly INotificationService _notificationService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ILogger<AdminRecordsController> _logger;
 
         public AdminRecordsController(
-            UserManager<ApplicationUser> userManager,
-            ApplicationDbContext context,
-            SignInManager<ApplicationUser> signInManager,
-            ILogger<AdminRecordsController> logger,
-            IDailyReportService reportService,
             IPatientService patientService,
             IAppointmentService appointmentService,
-            IPrescriptionService prescriptionService,
-            INoShowRiskService noShowRiskService,
-            ILeaveService leaveService,
-            INotificationService notificationService,
-            IActivityLogService activityLogService)
-            : base(context, logger)
+            ILogger<AdminRecordsController> logger)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _reportService = reportService;
             _patientService = patientService;
             _appointmentService = appointmentService;
-            _prescriptionService = prescriptionService;
-            _adminContext = context;
-            _noShowRiskService = noShowRiskService;
-            _leaveService = leaveService;
-            _notificationService = notificationService;
-            _activityLogService = activityLogService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Patients(int page = 1, int pageSize = 20)
@@ -84,9 +41,7 @@ namespace HCMS4.Modules.Records.Controllers
 
                 var result = await _patientService.GetAllAsync(pagination);
 
-                var totalScheduledAppointments = await _context.Appointments
-                    .Where(a => a.Status == AppointmentStatus.Scheduled)
-                    .CountAsync();
+                var totalScheduledAppointments = await _appointmentService.CountByStatusAsync(AppointmentStatus.Scheduled);
 
                 var totalPrescriptions = result.Items.Sum(p => p.Prescriptions?.Count ?? 0);
                 var pendingInvoicesCount = result.Items
@@ -169,14 +124,10 @@ namespace HCMS4.Modules.Records.Controllers
             return View(patient);
         }
 
-        private bool PatientExists(int id) => _context.Patients.Any(e => e.Id == id);
-
         [HttpGet]
-        public IActionResult DisablePatient(int id)
+        public async Task<IActionResult> DisablePatient(int id)
         {
-            var patient = _context.Patients
-                .Include(p => p.User)
-                .FirstOrDefault(p => p.Id == id);
+            var patient = await _patientService.GetByIdAsync(id);
 
             if (patient == null)
             {

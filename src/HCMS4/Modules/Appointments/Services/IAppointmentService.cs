@@ -21,5 +21,7 @@ namespace HCMS4.Modules.Appointments.Services
 
         /// <summary>Consultation fee of the doctor's specialization; 0 when the doctor or specialization is unknown.</summary>
         Task<decimal> GetConsultationFeeAsync(int doctorId);
+
+        Task<int> CountByStatusAsync(AppointmentStatus status);
     }
 }

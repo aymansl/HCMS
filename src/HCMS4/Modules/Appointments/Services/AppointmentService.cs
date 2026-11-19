@@ -319,6 +319,9 @@ namespace HCMS4.Modules.Appointments.Services
             return !await query.AnyAsync();
         }
 
+        public Task<int> CountByStatusAsync(AppointmentStatus status) =>
+            _context.Appointments.CountAsync(a => a.Status == status);
+
         public async Task<decimal> GetConsultationFeeAsync(int doctorId)
         {
             var fee = await _context.Doctors
