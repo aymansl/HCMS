@@ -24,6 +24,35 @@ namespace HCMS4.Modules.Records.Services
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
+        public Task<Patient?> GetByUserIdAsync(string userId) =>
+            _context.Patients.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId);
+
+        public async Task<Patient> CreateForUserAsync(string userId, DateTime? dateOfBirth, string? chronicConditions)
+        {
+            var patient = new Patient
+            {
+                UserId = userId,
+                DateOfBirth = dateOfBirth,
+                ChronicConditions = chronicConditions
+            };
+            _context.Patients.Add(patient);
+            await _context.SaveChangesAsync();
+            return patient;
+        }
+
+        public async Task<bool> UpdateOwnDetailsAsync(string userId, DateTime? dateOfBirth, string? address, string? emergencyContact)
+        {
+            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+            if (patient == null)
+                return false;
+
+            patient.DateOfBirth = dateOfBirth;
+            patient.Address = address;
+            patient.EmergencyContact = emergencyContact;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
         public Task<List<Patient>> GetAllWithUserAsync() =>
             _context.Patients.AsNoTracking().Include(p => p.User).ToListAsync();
 

@@ -1,12 +1,10 @@
-﻿using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Staff.Models;
+﻿using HCMS4.Modules.Records.Services;
+using HCMS4.Modules.Staff.Services;
 using HCMS4.Shared.Identity.Models;
-using Microsoft.AspNetCore.Authorization;
-using HCMS4.Data;
 using HCMS4.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCMS4.Shared.Identity.Controllers
 {
@@ -15,18 +13,22 @@ namespace HCMS4.Shared.Identity.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly ApplicationDbContext _context;
+        private readonly IPatientService _patientService;
+        private readonly IStaffService _staffService;
         private readonly ILogger<AccountController> _logger;
 
+        // Patient and doctor details belong to the Records and Staff modules; the account pages use their services.
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            ApplicationDbContext context,
+            IPatientService patientService,
+            IStaffService staffService,
             ILogger<AccountController> logger)
         {
             _userManager = userManager;
             _signInManager = signInManager;
-            _context = context;
+            _patientService = patientService;
+            _staffService = staffService;
             _logger = logger;
         }
 
@@ -151,17 +153,7 @@ namespace HCMS4.Shared.Identity.Controllers
                     
                     await _userManager.AddToRoleAsync(user, "Patient");
 
-                    var patient = new Patient
-                    {
-                        UserId = user.Id,
-                        User = user,
-                        DateOfBirth = model.DateOfBirth,
-                        Address = null,
-                        EmergencyContact = null,
-                        ChronicConditions = model.ChronicConditions, 
-                    };
-                    _context.Patients.Add(patient);
-                    await _context.SaveChangesAsync();
+                    await _patientService.CreateForUserAsync(user.Id, model.DateOfBirth, model.ChronicConditions);
 
                     await _signInManager.SignInAsync(user, isPersistent: false);
 
@@ -206,6 +198,8 @@ namespace HCMS4.Shared.Identity.Controllers
             }
 
             var roles = await _userManager.GetRolesAsync(user);
+            var doctor = await _staffService.GetDoctorByUserIdAsync(user.Id);
+            var patient = await _patientService.GetByUserIdAsync(user.Id);
 
             var profile = new ProfileViewModel
             {
@@ -215,16 +209,12 @@ namespace HCMS4.Shared.Identity.Controllers
                 LastName = user.LastName,
                 PhoneNumber = user.PhoneNumber,
                 Roles = roles.ToList(),
-                HasDoctorProfile = await _context.Doctors.AnyAsync(d => d.UserId == user.Id),
-                HasPatientProfile = await _context.Patients.AnyAsync(p => p.UserId == user.Id)
+                HasDoctorProfile = doctor != null,
+                HasPatientProfile = patient != null
             };
 
-            
             if (roles.Contains("Doctor"))
             {
-                var doctor = await _context.Doctors
-                    .FirstOrDefaultAsync(d => d.UserId == user.Id);
-
                 if (doctor != null)
                 {
                     profile.Specialization = doctor.SpecializationName;
@@ -235,9 +225,6 @@ namespace HCMS4.Shared.Identity.Controllers
 
             if (roles.Contains("Patient"))
             {
-                var patient = await _context.Patients
-                    .FirstOrDefaultAsync(p => p.UserId == user.Id);
-
                 if (patient != null)
                 {
                     profile.DateOfBirth = patient.DateOfBirth;
@@ -270,9 +257,7 @@ namespace HCMS4.Shared.Identity.Controllers
            
             if (User.IsInRole("Doctor"))
             {
-                var doctor = await _context.Doctors
-                    .Include(d => d.Specialization)
-                    .FirstOrDefaultAsync(d => d.UserId == user.Id);
+                var doctor = await _staffService.GetDoctorByUserIdAsync(user.Id);
 
                 if (doctor != null)
                 {
@@ -285,8 +270,7 @@ namespace HCMS4.Shared.Identity.Controllers
 
             if (User.IsInRole("Patient"))
             {
-                var patient = await _context.Patients
-                    .FirstOrDefaultAsync(p => p.UserId == user.Id);
+                var patient = await _patientService.GetByUserIdAsync(user.Id);
 
                 if (patient != null)
                 {
@@ -325,36 +309,15 @@ namespace HCMS4.Shared.Identity.Controllers
                         
                         if (User.IsInRole("Doctor"))
                         {
-                            var doctor = await _context.Doctors
-                                .FirstOrDefaultAsync(d => d.UserId == user.Id);
-
-                            if (doctor != null)
-                            {
-                                doctor.SpecializationId = model.SpecializationId;
-                                doctor.Qualifications = model.Qualifications;
-                                doctor.ContactInfo = model.ContactInfo;
-
-                                _context.Doctors.Update(doctor);
-                            }
+                            await _staffService.UpdateOwnDoctorDetailsAsync(
+                                user.Id, model.SpecializationId, model.Qualifications, model.ContactInfo);
                         }
 
-                        
                         if (User.IsInRole("Patient"))
                         {
-                            var patient = await _context.Patients
-                                .FirstOrDefaultAsync(p => p.UserId == user.Id);
-
-                            if (patient != null)
-                            {
-                                patient.DateOfBirth = model.DateOfBirth;
-                                patient.Address = model.Address;
-                                patient.EmergencyContact = model.EmergencyContact;
-
-                                _context.Patients.Update(patient);
-                            }
+                            await _patientService.UpdateOwnDetailsAsync(
+                                user.Id, model.DateOfBirth, model.Address, model.EmergencyContact);
                         }
-
-                        await _context.SaveChangesAsync();
 
                         TempData["SuccessMessage"] = "Profile updated successfully!";
                         return RedirectToAction("Profile");

@@ -26,6 +26,10 @@ namespace HCMS4.Modules.Staff.Services
         Task<Doctor?> GetDoctorProfileAsync(int doctorId);
         /// <summary>Doctors marked available and not on approved leave on <paramref name="date"/>, with user and specialization.</summary>
         Task<List<Doctor>> GetBookableDoctorsAsync(DateTime date);
+        /// <summary>The doctor record of a user, with specialization; null when the user is not a doctor.</summary>
+        Task<Doctor?> GetDoctorByUserIdAsync(string userId);
+        /// <summary>Updates the details a doctor edits on their own profile; false when the user has no doctor record.</summary>
+        Task<bool> UpdateOwnDoctorDetailsAsync(string userId, int? specializationId, string? qualifications, string? contactInfo);
 
         Task<List<Pharmacist>> GetPharmacistsAsync();
         Task<PharmacistEditViewModel?> GetPharmacistForEditAsync(int id);
@@ -236,6 +240,24 @@ namespace HCMS4.Modules.Staff.Services
                 .Include(d => d.Specialization)
                 .Where(d => d.IsAvailable && !doctorsOnLeave.Contains(d.Id))
                 .ToListAsync();
+        }
+
+        public Task<Doctor?> GetDoctorByUserIdAsync(string userId) =>
+            _context.Doctors.AsNoTracking()
+                .Include(d => d.Specialization)
+                .FirstOrDefaultAsync(d => d.UserId == userId);
+
+        public async Task<bool> UpdateOwnDoctorDetailsAsync(string userId, int? specializationId, string? qualifications, string? contactInfo)
+        {
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == userId);
+            if (doctor == null)
+                return false;
+
+            doctor.SpecializationId = specializationId;
+            doctor.Qualifications = qualifications;
+            doctor.ContactInfo = contactInfo;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
         public Task<List<Pharmacist>> GetPharmacistsAsync() =>

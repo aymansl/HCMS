@@ -9,6 +9,11 @@ namespace HCMS4.Modules.Records.Services
         Task<PaginatedResult<Patient>> GetAllAsync(PaginationParams pagination);
         /// <summary>All patients with their user, for selection lists.</summary>
         Task<List<Patient>> GetAllWithUserAsync();
+        Task<Patient?> GetByUserIdAsync(string userId);
+        /// <summary>Creates the patient record of a newly registered user.</summary>
+        Task<Patient> CreateForUserAsync(string userId, DateTime? dateOfBirth, string? chronicConditions);
+        /// <summary>Updates the details a patient edits on their own profile; false when the user has no patient record.</summary>
+        Task<bool> UpdateOwnDetailsAsync(string userId, DateTime? dateOfBirth, string? address, string? emergencyContact);
         Task<ServiceResult> UpdateAsync(int id, Patient patient);
         Task<ServiceResult> DeleteAsync(int id);
         Task<bool> HasRelatedRecordsAsync(int id);

@@ -11,6 +11,8 @@ namespace HCMS4.Modules.Feedback.Services
     {
         Task<bool> CanPublishAsync(int doctorId);
         Task<List<MedicalArticle>> GetForDoctorAsync(int doctorId);
+        /// <summary>The newest published articles of all doctors, with the author.</summary>
+        Task<List<MedicalArticle>> GetPublishedAsync(int count);
         Task<ServiceResult<MedicalArticle>> CreateAsync(int doctorId, MedicalArticleEditorViewModel model, bool publishNow);
         Task<ServiceResult<MedicalArticle>> PublishAsync(int doctorId, int articleId);
     }
@@ -35,6 +37,15 @@ namespace HCMS4.Modules.Feedback.Services
             _context.MedicalArticles.AsNoTracking()
                 .Where(a => a.DoctorId == doctorId)
                 .OrderByDescending(a => a.UpdatedAt)
+                .ToListAsync();
+
+        public Task<List<MedicalArticle>> GetPublishedAsync(int count) =>
+            _context.MedicalArticles.AsNoTracking()
+                .Include(a => a.Doctor)
+                    .ThenInclude(d => d.User)
+                .Where(a => a.Status == ArticleStatus.Published)
+                .OrderByDescending(a => a.PublishedAt ?? a.CreatedAt)
+                .Take(count)
                 .ToListAsync();
 
         public async Task<ServiceResult<MedicalArticle>> CreateAsync(int doctorId, MedicalArticleEditorViewModel model, bool publishNow)
