@@ -1,15 +1,11 @@
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Staff.Models;
-using HCMS4.Shared.Identity.Models;
 using HCMS4.Data;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using HCMS4.Shared.Common;
 
 namespace HCMS4.Controllers
 {
-    public abstract class BaseController : Controller
+    // Transitional: still exposes the DbContext while Phase 5 moves the remaining queries into module services.
+    // The "current user" helpers now live in HcmsControllerBase.
+    public abstract class BaseController : HcmsControllerBase
     {
         protected readonly ApplicationDbContext _context;
         protected readonly ILogger _logger;
@@ -18,40 +14,6 @@ namespace HCMS4.Controllers
         {
             _context = context;
             _logger = logger;
-        }
-
-        protected async Task<int?> GetCurrentPatientIdAsync()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return null;
-
-            var patient = await _context.Patients
-                .FirstOrDefaultAsync(p => p.UserId == userId);
-
-            return patient?.Id;
-        }
-
-        protected async Task<int?> GetCurrentDoctorIdAsync()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return null;
-
-            var doctor = await _context.Doctors
-                .FirstOrDefaultAsync(d => d.UserId == userId);
-
-            return doctor?.Id;
-        }
-
-        protected async Task<ApplicationUser?> GetCurrentUserAsync()
-        {
-            var userName = User.Identity?.Name;
-            if (string.IsNullOrEmpty(userName))
-                return null;
-
-            return await _context.Users
-                .FirstOrDefaultAsync(u => u.UserName == userName || u.Email == userName);
         }
     }
 }
