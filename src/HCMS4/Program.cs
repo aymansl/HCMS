@@ -9,6 +9,7 @@ using HCMS4.Modules.Staff;
 using HCMS4.Shared.Audit;
 using HCMS4.Shared.Common;
 using HCMS4.Shared.Identity;
+using HCMS4.Shared.Identity.Authorization;
 using HCMS4.Shared.Identity.Services;
 using HCMS4.Shared.Notifications;
 using HCMS4.Shared.Reporting;
@@ -47,19 +48,8 @@ builder.Services.AddSession(options =>
 builder.Services.AddHcmsIdentity();
 
 
-builder.Services.AddAuthorization(options =>
-{
-    // Every endpoint requires a signed-in user unless it is marked [AllowAnonymous].
-    options.FallbackPolicy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
-
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("DoctorOnly", policy => policy.RequireRole("Doctor"));
-    options.AddPolicy("PatientOnly", policy => policy.RequireRole("Patient"));
-    options.AddPolicy("AdminOrDoctor", policy =>
-        policy.RequireRole("Admin", "Doctor"));
-});
+// Permission-based policies (Shared/Identity/Authorization) plus the authenticated-user fallback.
+builder.Services.AddHcmsAuthorization();
 
 // Shared services, then one registration call per module.
 builder.Services

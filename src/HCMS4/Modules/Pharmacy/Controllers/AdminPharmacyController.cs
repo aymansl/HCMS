@@ -4,11 +4,12 @@ using HCMS4.Shared.Common;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Pharmacy.Controllers
 {
     // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.Pharmacy.Oversee)]
     [ControllerName("Admin")]
     public class AdminPharmacyController : HcmsControllerBase
     {

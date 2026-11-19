@@ -4,11 +4,12 @@ using HCMS4.Shared.Notifications.Services;
 using HCMS4.Shared.Reporting.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Portal.Controllers
 {
     // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.Portal.AdminDashboard)]
     [ControllerName("Admin")]
     public class AdminPortalController : HcmsControllerBase
     {

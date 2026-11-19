@@ -3,11 +3,12 @@ using HCMS4.Shared.Common;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Portal.Controllers
 {
     // Part of the former DoctorController; [ControllerName] keeps the /Doctor/... URLs.
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Policy = Permissions.Portal.DoctorDashboard)]
     [ControllerName("Doctor")]
     public class DoctorPortalController : HcmsControllerBase
     {

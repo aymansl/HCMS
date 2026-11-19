@@ -7,11 +7,12 @@ using HCMS4.Shared.Common;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Appointments.Controllers
 {
     // Part of the former PatientController; [ControllerName] keeps the /Patient/... URLs.
-    [Authorize(Roles = "Patient")]
+    [Authorize(Policy = Permissions.Appointments.Book)]
     [ControllerName("Patient")]
     public class PatientAppointmentsController : HcmsControllerBase
     {
@@ -38,7 +39,6 @@ namespace HCMS4.Modules.Appointments.Controllers
             _logger = logger;
         }
 
-        [Authorize(Roles = "Patient")]
         public async Task<IActionResult> BookAppointment()
         {
             try
@@ -73,7 +73,6 @@ namespace HCMS4.Modules.Appointments.Controllers
             }
         }
 
-        [Authorize(Roles = "Patient")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> BookAppointment(BookAppointmentViewModel model)
@@ -171,7 +170,6 @@ namespace HCMS4.Modules.Appointments.Controllers
             return Ok(await _appointmentService.GetConsultationFeeAsync(doctorId));
         }
 
-        [Authorize(Roles = "Patient")]
         public async Task<IActionResult> ViewAppointmentHistory()
         {
             try

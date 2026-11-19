@@ -7,11 +7,12 @@ using HCMS4.Shared.Common;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Records.Controllers
 {
     // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.Records.ManagePatients)]
     [ControllerName("Admin")]
     public class AdminRecordsController : HcmsControllerBase
     {

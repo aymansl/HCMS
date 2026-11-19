@@ -1,6 +1,7 @@
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
+using HCMS4.Shared.Identity.Authorization;
 using System.Net;
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
@@ -59,7 +60,8 @@ namespace HCMS4.Tests.Integration
             {
                 var classAttribute = controller.GetCustomAttribute<AuthorizeAttribute>();
                 Assert.NotNull(classAttribute);
-                Assert.Equal("Admin", classAttribute!.Roles);
+                // Permission policy held by the Admin role only.
+                Assert.Equal(new[] { Roles.Admin }, RolePermissions.RolesWith(classAttribute!.Policy!));
 
                 var actions = controller
                     .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
@@ -69,8 +71,7 @@ namespace HCMS4.Tests.Integration
                 foreach (var action in actions)
                 {
                     Assert.Null(action.GetCustomAttribute<AllowAnonymousAttribute>());
-                    var roles = action.GetCustomAttributes<AuthorizeAttribute>().Select(a => a.Roles ?? string.Empty);
-                    Assert.DoesNotContain(roles, r => r.Contains("Doctor", StringComparison.Ordinal));
+                    Assert.Empty(action.GetCustomAttributes<AuthorizeAttribute>());
                 }
             }
         }

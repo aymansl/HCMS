@@ -3,11 +3,12 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Feedback.Controllers
 {
     /// <summary>Serves complaint attachments, which are stored outside wwwroot (issue #29).</summary>
-    [Authorize(Roles = "Admin,Patient")]
+    [Authorize(Policy = Permissions.Feedback.ViewComplaintAttachments)]
     public class ComplaintAttachmentsController : Controller
     {
         private readonly IComplaintAttachmentService _attachmentService;

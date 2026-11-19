@@ -7,11 +7,12 @@ using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Pharmacy.Controllers
 {
     // Part of the former PharmacistController; [ControllerName] keeps the /Pharmacist/... URLs.
-    [Authorize(Roles = "Pharmacist")]
+    [Authorize(Policy = Permissions.Pharmacy.Dispense)]
     [ControllerName("Pharmacist")]
     public class PharmacistPharmacyController : HcmsControllerBase
     {

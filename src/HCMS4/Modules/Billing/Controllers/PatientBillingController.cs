@@ -4,11 +4,12 @@ using HCMS4.Shared.Common;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Billing.Controllers
 {
     // Part of the former PatientController; [ControllerName] keeps the /Patient/... URLs.
-    [Authorize(Roles = "Patient")]
+    [Authorize(Policy = Permissions.Billing.ViewOwnInvoices)]
     [ControllerName("Patient")]
     public class PatientBillingController : HcmsControllerBase
     {

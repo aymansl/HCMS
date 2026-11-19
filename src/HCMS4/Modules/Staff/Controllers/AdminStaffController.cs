@@ -5,11 +5,12 @@ using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Staff.Controllers
 {
     // Admin pages for doctors, pharmacists, fees and leaves; [ControllerName] keeps the /Admin/... URLs.
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.Staff.Manage)]
     [ControllerName("Admin")]
     public class AdminStaffController : HcmsControllerBase
     {

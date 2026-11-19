@@ -7,11 +7,12 @@ using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Feedback.Controllers
 {
     // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = Permissions.Feedback.Manage)]
     [ControllerName("Admin")]
     public class AdminFeedbackController : HcmsControllerBase
     {

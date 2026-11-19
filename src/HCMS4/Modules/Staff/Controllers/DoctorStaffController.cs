@@ -4,11 +4,12 @@ using HCMS4.Shared.Common;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using HCMS4.Shared.Identity.Authorization;
 
 namespace HCMS4.Modules.Staff.Controllers
 {
     // The doctor's own profile and leave requests; [ControllerName] keeps the /Doctor/... URLs.
-    [Authorize(Roles = "Doctor")]
+    [Authorize(Policy = Permissions.Staff.OwnProfile)]
     [ControllerName("Doctor")]
     public class DoctorStaffController : HcmsControllerBase
     {
