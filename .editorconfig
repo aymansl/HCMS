@@ -87,3 +87,22 @@ dotnet_naming_rule.types_pascal.severity = suggestion
 # Generated code (EF migrations) is not analysed for style
 [**/Migrations/*.cs]
 generated_code = true
+
+# ----- Analyzer exceptions (cleanup Phase 6) -----
+# Every rule switched off here has a reason. All other analyzer warnings are errors
+# (TreatWarningsAsErrors in Directory.Build.props).
+[*.cs]
+# CA1848 / CA1873: LoggerMessage delegates are a micro-optimisation for hot logging paths.
+# The app logs at request level only; converting 200 call sites adds code without a functional gain.
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA1873.severity = none
+# CA1716: parameter names such as "date" clash with Visual Basic keywords. The code is C# only.
+dotnet_diagnostic.CA1716.severity = none
+
+# CA1000: ServiceResult<T>.Ok / Fail are intentional static factory methods.
+[src/HCMS4/Shared/Common/ServiceResult.cs]
+dotnet_diagnostic.CA1000.severity = none
+
+# CA1707: test names use the Method_Scenario_Result convention.
+[tests/**.cs]
+dotnet_diagnostic.CA1707.severity = none
