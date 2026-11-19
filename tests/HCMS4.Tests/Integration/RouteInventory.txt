@@ -46,9 +46,7 @@ ANY /Pharmacist/CreatePurchaseRequest
 ANY /Pharmacist/Dashboard
 ANY /Pharmacist/Drugs
 ANY /Pharmacist/EditDrug
-ANY /Pharmacist/EditProfile
 ANY /Pharmacist/Prescriptions
-ANY /Pharmacist/Profile
 ANY /Pharmacist/PurchaseRequestDetails
 ANY /Pharmacist/PurchaseRequests
 GET /Account/AccessDenied
@@ -137,7 +135,6 @@ POST /Pharmacist/CreatePurchaseRequest
 POST /Pharmacist/DeleteDrug
 POST /Pharmacist/DispensePrescription
 POST /Pharmacist/EditDrug
-POST /Pharmacist/EditProfile
 POST /Pharmacist/HoldPrescription
 POST /Pharmacist/MarkPrescriptionCompleted
 POST /Pharmacist/RequestDoctorReview
