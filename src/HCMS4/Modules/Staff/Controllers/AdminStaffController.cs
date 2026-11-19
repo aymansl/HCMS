@@ -1,88 +1,46 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
-using HCMS4.Modules.Appointments.Models;
-using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Billing.Models;
-using HCMS4.Modules.Feedback.Models;
-using HCMS4.Modules.Pharmacy.Models;
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Records.Services;
 using HCMS4.Modules.Staff.Models;
 using HCMS4.Modules.Staff.Services;
-using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
-using HCMS4.Shared.Identity.Models;
-using HCMS4.Shared.Notifications.Models;
-using HCMS4.Shared.Notifications.Services;
-using HCMS4.Shared.Reporting.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using static HCMS4.ViewModels.GenerateInvoiceViewModel;
-using System.Security.Claims;
 
 namespace HCMS4.Modules.Staff.Controllers
 {
-    // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
+    // Admin pages for doctors, pharmacists, fees and leaves; [ControllerName] keeps the /Admin/... URLs.
     [Authorize(Roles = "Admin")]
     [ControllerName("Admin")]
-    public class AdminStaffController : BaseController
+    public class AdminStaffController : HcmsControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IDailyReportService _reportService;
-        private readonly IPatientService _patientService;
-        private readonly IAppointmentService _appointmentService;
-        private readonly IPrescriptionService _prescriptionService;
-        private readonly ApplicationDbContext _adminContext;
-        private readonly INoShowRiskService _noShowRiskService;
+        private readonly IStaffService _staffService;
         private readonly ILeaveService _leaveService;
-        private readonly INotificationService _notificationService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly IClinicClock _clock;
+        private readonly ILogger<AdminStaffController> _logger;
 
-        public AdminStaffController(
-            UserManager<ApplicationUser> userManager,
-            ApplicationDbContext context,
-            SignInManager<ApplicationUser> signInManager,
-            ILogger<AdminStaffController> logger,
-            IDailyReportService reportService,
-            IPatientService patientService,
-            IAppointmentService appointmentService,
-            IPrescriptionService prescriptionService,
-            INoShowRiskService noShowRiskService,
-            ILeaveService leaveService,
-            INotificationService notificationService,
-            IActivityLogService activityLogService)
-            : base(context, logger)
+        public AdminStaffController(IStaffService staffService, ILeaveService leaveService, IClinicClock clock,
+            ILogger<AdminStaffController> logger)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _reportService = reportService;
-            _patientService = patientService;
-            _appointmentService = appointmentService;
-            _prescriptionService = prescriptionService;
-            _adminContext = context;
-            _noShowRiskService = noShowRiskService;
+            _staffService = staffService;
             _leaveService = leaveService;
-            _notificationService = notificationService;
-            _activityLogService = activityLogService;
+            _clock = clock;
+            _logger = logger;
         }
 
-        public async Task<IActionResult> CreateDoctor()
+        private async Task LoadSpecializationsAsync()
         {
-            ViewBag.Specializations = await _context.Specializations
-                .Where(s => s.IsActive)
+            ViewBag.Specializations = (await _staffService.GetActiveSpecializationsAsync())
                 .Select(s => new SelectListItem
                 {
                     Value = s.Id.ToString(),
                     Text = $"{s.Name} - {s.ConsultationFee:C2}"
                 })
-                .ToListAsync();
+                .ToList();
+        }
 
+        public async Task<IActionResult> CreateDoctor()
+        {
+            await LoadSpecializationsAsync();
             return View();
         }
 
@@ -94,40 +52,16 @@ namespace HCMS4.Modules.Staff.Controllers
             {
                 try
                 {
-                    var user = new ApplicationUser
+                    var result = await _staffService.CreateDoctorAsync(model);
+                    if (result.Success)
                     {
-                        UserName = model.Email,
-                        Email = model.Email,
-                        FirstName = model.FirstName,
-                        LastName = model.LastName
-                    };
-
-                    var userResult = await _userManager.CreateAsync(user, model.Password);
-
-                    if (userResult.Succeeded)
-                    {
-                        await _userManager.AddToRoleAsync(user, "Doctor");
-
-                        var doctor = new Doctor
-                        {
-                            UserId = user.Id,
-                            User = user,
-                            SpecializationId = model.SpecializationId.Value,
-                            Qualifications = model.Qualifications,
-                            ContactInfo = model.ContactInfo
-                        };
-
-                        _context.Doctors.Add(doctor);
-                        await _context.SaveChangesAsync();
-
-                        _logger.LogInformation("Doctor account created successfully: {Email}", model.Email);
-                        TempData["SuccessMessage"] = $"Doctor account for {model.FirstName} {model.LastName} created successfully!";
+                        TempData["SuccessMessage"] = result.Message;
                         return RedirectToAction("Doctors", "Admin");
                     }
 
-                    foreach (var error in userResult.Errors)
+                    foreach (var error in result.Errors)
                     {
-                        ModelState.AddModelError(string.Empty, error.Description);
+                        ModelState.AddModelError(string.Empty, error);
                     }
                 }
                 catch (Exception ex)
@@ -137,114 +71,25 @@ namespace HCMS4.Modules.Staff.Controllers
                 }
             }
 
-            ViewBag.Specializations = await _context.Specializations
-                .Where(s => s.IsActive)
-                .Select(s => new SelectListItem
-                {
-                    Value = s.Id.ToString(),
-                    Text = $"{s.Name} - {s.ConsultationFee:C2}"
-                })
-                .ToListAsync();
-
+            await LoadSpecializationsAsync();
             return View(model);
         }
 
         public async Task<IActionResult> Doctors()
         {
-            var doctors = await _context.Doctors
-                .Include(d => d.User)
-                .Include(d => d.Specialization)
-                .ToListAsync();
-
-            return View(doctors);
+            return View(await _staffService.GetDoctorsAsync());
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(string id)
         {
-            if (string.IsNullOrEmpty(id))
-            {
-                TempData["ErrorMessage"] = "User ID is required.";
-                return RedirectToAction("Doctors");
-            }
-
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
-            {
-                TempData["ErrorMessage"] = "User not found.";
-                return RedirectToAction("Doctors");
-            }
-
-            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (user.Id == currentUserId)
-            {
-                TempData["ErrorMessage"] = "You cannot delete your own account.";
-                return RedirectToAction("Doctors");
-            }
-
             try
             {
-                using var transaction = await _context.Database.BeginTransactionAsync();
-
-                var doctor = await _context.Doctors
-                    .Include(d => d.User)
-                    .FirstOrDefaultAsync(d => d.UserId == id);
-                string doctorName = doctor?.FullName ?? "Unknown";
-
-                if (doctor != null)
-                {
-                    var doctorAppointments = await _context.Appointments
-                        .Where(a => a.DoctorId == doctor.Id)
-                        .ToListAsync();
-                    _context.Appointments.RemoveRange(doctorAppointments);
-
-                    var doctorPrescriptions = await _context.Prescriptions
-                        .Where(p => p.DoctorId == doctor.Id)
-                        .ToListAsync();
-                    _context.Prescriptions.RemoveRange(doctorPrescriptions);
-
-                    _context.Doctors.Remove(doctor);
-                }
-
-                var patient = await _context.Patients.FirstOrDefaultAsync(p => p.UserId == id);
-                if (patient != null)
-                {
-                    var patientAppointments = await _context.Appointments
-                        .Where(a => a.PatientId == patient.Id)
-                        .ToListAsync();
-                    _context.Appointments.RemoveRange(patientAppointments);
-
-                    var patientPrescriptions = await _context.Prescriptions
-                        .Where(p => p.PatientId == patient.Id)
-                        .ToListAsync();
-                    _context.Prescriptions.RemoveRange(patientPrescriptions);
-
-                    var patientInvoices = await _context.Invoices
-                        .Where(i => i.PatientId == patient.Id)
-                        .ToListAsync();
-                    _context.Invoices.RemoveRange(patientInvoices);
-
-                    _context.Patients.Remove(patient);
-                }
-
-                await _context.SaveChangesAsync();
-                var result = await _userManager.DeleteAsync(user);
-
-                if (result.Succeeded)
-                {
-                    await transaction.CommitAsync();
-                    TempData["SuccessMessage"] = doctor != null
-                        ? $"Doctor '{doctorName}' deleted successfully."
-                        : "User deleted successfully.";
-                }
-                else
-                {
-                    await transaction.RollbackAsync();
-                    TempData["ErrorMessage"] = "Error deleting user account.";
-                }
+                var result = await _staffService.DeleteUserAsync(id, CurrentUserId);
+                TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
             }
-            catch (DbUpdateException ex)
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
             {
                 _logger.LogError(ex, "Database error deleting user {UserId}", id);
                 TempData["ErrorMessage"] = "Cannot delete user. There might be related records that need to be deleted first.";
@@ -271,40 +116,17 @@ namespace HCMS4.Modules.Staff.Controllers
             {
                 try
                 {
-                    var user = new ApplicationUser
+                    var result = await _staffService.CreatePharmacistAsync(model);
+                    if (result.Success)
                     {
-                        UserName = model.Email,
-                        Email = model.Email,
-                        FirstName = model.FirstName,
-                        LastName = model.LastName
-                    };
-
-                    var userResult = await _userManager.CreateAsync(user, model.Password);
-
-                    if (userResult.Succeeded)
-                    {
-                        await _userManager.AddToRoleAsync(user, "Pharmacist");
-
-                        var pharmacist = new Pharmacist
-                        {
-                            UserId = user.Id,
-                            Qualifications = model.Qualifications,
-                            ContactInfo = model.ContactInfo,
-                            Shift = model.Shift,
-                            CreatedAt = ClinicTime.Now,
-                            IsActive = true
-                        };
-
-                        _context.Pharmacists.Add(pharmacist);
-                        await _context.SaveChangesAsync();
-
-                        _logger.LogInformation("Pharmacist account created successfully: {Email}", model.Email);
-                        TempData["SuccessMessage"] = $"Pharmacist account for {model.FirstName} {model.LastName} created successfully!";
+                        TempData["SuccessMessage"] = result.Message;
                         return RedirectToAction("Pharmacists", "Admin");
                     }
 
-                    foreach (var error in userResult.Errors)
-                        ModelState.AddModelError(string.Empty, error.Description);
+                    foreach (var error in result.Errors)
+                    {
+                        ModelState.AddModelError(string.Empty, error);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -318,12 +140,7 @@ namespace HCMS4.Modules.Staff.Controllers
 
         public async Task<IActionResult> Pharmacists()
         {
-            var pharmacists = await _context.Pharmacists
-                .Include(p => p.User)
-                .OrderBy(p => p.User != null ? p.User.FirstName : "")
-                .ToListAsync();
-
-            return View(pharmacists);
+            return View(await _staffService.GetPharmacistsAsync());
         }
 
         public async Task<IActionResult> EditPharmacist(int? id)
@@ -331,27 +148,8 @@ namespace HCMS4.Modules.Staff.Controllers
             if (id == null)
                 return NotFound();
 
-            var pharmacist = await _context.Pharmacists
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (pharmacist == null)
-                return NotFound();
-
-            var viewModel = new PharmacistEditViewModel
-            {
-                Id = pharmacist.Id,
-                FirstName = pharmacist.User?.FirstName ?? "",
-                LastName = pharmacist.User?.LastName ?? "",
-                Email = pharmacist.User?.Email ?? "",
-                PhoneNumber = pharmacist.User?.PhoneNumber,
-                Qualifications = pharmacist.Qualifications,
-                ContactInfo = pharmacist.ContactInfo,
-                Shift = pharmacist.Shift,
-                IsActive = pharmacist.IsActive
-            };
-
-            return View(viewModel);
+            var viewModel = await _staffService.GetPharmacistForEditAsync(id.Value);
+            return viewModel == null ? NotFound() : View(viewModel);
         }
 
         [HttpPost]
@@ -365,29 +163,11 @@ namespace HCMS4.Modules.Staff.Controllers
             {
                 try
                 {
-                    var pharmacist = await _context.Pharmacists
-                        .Include(p => p.User)
-                        .FirstOrDefaultAsync(p => p.Id == id);
-
-                    if (pharmacist == null)
+                    var result = await _staffService.UpdatePharmacistAsync(model);
+                    if (!result.Success)
                         return NotFound();
 
-                    pharmacist.User.FirstName = model.FirstName;
-                    pharmacist.User.LastName = model.LastName;
-                    pharmacist.User.Email = model.Email;
-                    pharmacist.User.UserName = model.Email;
-                    pharmacist.User.PhoneNumber = model.PhoneNumber;
-
-                    pharmacist.Qualifications = model.Qualifications;
-                    pharmacist.ContactInfo = model.ContactInfo;
-                    pharmacist.Shift = model.Shift;
-                    pharmacist.IsActive = model.IsActive;
-
-                    await _userManager.UpdateAsync(pharmacist.User);
-                    _context.Pharmacists.Update(pharmacist);
-                    await _context.SaveChangesAsync();
-
-                    TempData["SuccessMessage"] = $"Pharmacist {model.FirstName} {model.LastName} updated successfully!";
+                    TempData["SuccessMessage"] = result.Message;
                     return RedirectToAction(nameof(Pharmacists));
                 }
                 catch (Exception ex)
@@ -406,32 +186,8 @@ namespace HCMS4.Modules.Staff.Controllers
         {
             try
             {
-                var pharmacist = await _context.Pharmacists
-                    .Include(p => p.User)
-                    .FirstOrDefaultAsync(p => p.Id == id);
-
-                if (pharmacist == null)
-                {
-                    TempData["ErrorMessage"] = "Pharmacist not found.";
-                    return RedirectToAction(nameof(Pharmacists));
-                }
-
-                var currentUserEmail = User.Identity?.Name;
-                if (pharmacist.User?.Email == currentUserEmail)
-                {
-                    TempData["ErrorMessage"] = "You cannot delete your own account.";
-                    return RedirectToAction(nameof(Pharmacists));
-                }
-
-                var userId = pharmacist.UserId;
-                _context.Pharmacists.Remove(pharmacist);
-                await _context.SaveChangesAsync();
-
-                var user = await _userManager.FindByIdAsync(userId);
-                if (user != null)
-                    await _userManager.DeleteAsync(user);
-
-                TempData["SuccessMessage"] = $"Pharmacist {pharmacist.User?.FullName} deleted successfully!";
+                var result = await _staffService.DeletePharmacistAsync(id, User.Identity?.Name);
+                TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
             }
             catch (Exception ex)
             {
@@ -446,11 +202,7 @@ namespace HCMS4.Modules.Staff.Controllers
         {
             try
             {
-                var specializations = await _context.Specializations
-                    .OrderBy(s => s.Name)
-                    .ToListAsync();
-
-                return View(specializations);
+                return View(await _staffService.GetSpecializationsAsync());
             }
             catch (Exception ex)
             {
@@ -466,25 +218,8 @@ namespace HCMS4.Modules.Staff.Controllers
         {
             try
             {
-                if (consultationFee <= 0)
-                {
-                    TempData["ErrorMessage"] = "Please enter a valid price greater than zero.";
-                    return RedirectToAction(nameof(PriceList));
-                }
-
-                var specialization = await _context.Specializations.FindAsync(id);
-                if (specialization == null)
-                    return NotFound();
-
-                var oldFee = specialization.ConsultationFee;
-                specialization.ConsultationFee = consultationFee;
-
-                _context.Specializations.Update(specialization);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Specialization {SpecName} fee updated from {OldFee} to {NewFee} by admin {User}",
-                    specialization.Name, oldFee, consultationFee, User.Identity?.Name);
-                TempData["SuccessMessage"] = $"Consultation fee for '{specialization.Name}' updated successfully!";
+                var result = await _staffService.UpdateSpecializationFeeAsync(id, consultationFee);
+                TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
             }
             catch (Exception ex)
             {
@@ -496,25 +231,16 @@ namespace HCMS4.Modules.Staff.Controllers
         }
 
         [HttpGet]
-        public IActionResult RegisterDoctorLeave(int id)
+        public async Task<IActionResult> RegisterDoctorLeave(int id)
         {
-            var doctor = _context.Doctors
-                .Include(d => d.User)
-                .FirstOrDefault(d => d.Id == id);
-
+            var doctor = await _staffService.GetDoctorAsync(id);
             if (doctor == null)
             {
                 TempData["ErrorMessage"] = "Doctor not found.";
                 return RedirectToAction("Doctors");
             }
 
-            var viewModel = new RegisterDoctorLeaveViewModel
-            {
-                DoctorId = doctor.Id,
-                DoctorName = doctor.FullName
-            };
-
-            return View(viewModel);
+            return View(new RegisterDoctorLeaveViewModel { DoctorId = doctor.Id, DoctorName = doctor.FullName });
         }
 
         [HttpPost]
@@ -529,20 +255,14 @@ namespace HCMS4.Modules.Staff.Controllers
                     return View(model);
                 }
 
-                var existingAppointments = await _context.Appointments
-                    .Where(a => a.DoctorId == model.DoctorId &&
-                               a.AppointmentDateTime.Date >= model.StartDate &&
-                               a.AppointmentDateTime.Date <= model.EndDate &&
-                               a.Status == AppointmentStatus.Scheduled)
-                    .CountAsync();
-
+                var existingAppointments = await _staffService.CountScheduledAppointmentsAsync(model.DoctorId, model.StartDate, model.EndDate);
                 if (existingAppointments > 0)
                 {
                     ViewBag.WarningMessage = $"Doctor has {existingAppointments} future appointment(s) during this period.";
                     ViewBag.ShowWarning = true;
                 }
 
-                var leave = new DoctorLeave
+                var result = await _leaveService.RegisterDoctorLeaveAsync(new DoctorLeave
                 {
                     DoctorId = model.DoctorId,
                     StartDate = model.StartDate,
@@ -550,11 +270,9 @@ namespace HCMS4.Modules.Staff.Controllers
                     LeaveType = model.LeaveType,
                     Notes = model.Notes,
                     Status = LeaveStatus.Approved,
-                    CreatedAt = ClinicTime.Now,
+                    CreatedAt = _clock.Now,
                     CreatedBy = User.Identity?.Name
-                };
-
-                var result = await _leaveService.RegisterDoctorLeaveAsync(leave);
+                });
 
                 if (result.Success)
                 {
@@ -570,47 +288,12 @@ namespace HCMS4.Modules.Staff.Controllers
 
         public async Task<IActionResult> ViewDoctorLeaves(int id)
         {
-            var doctor = await _context.Doctors
-                .Include(d => d.User)
-                .Include(d => d.DoctorLeaves)
-                .FirstOrDefaultAsync(d => d.Id == id);
-
-            if (doctor == null)
+            var viewModel = await _staffService.GetDoctorLeavesAsync(id);
+            if (viewModel == null)
             {
                 TempData["ErrorMessage"] = "Doctor not found.";
                 return RedirectToAction("Doctors");
             }
-
-            var pendingRequests = await _context.LeaveRequests
-                .Where(lr => lr.DoctorId == id)
-                .OrderByDescending(lr => lr.CreatedAt)
-                .ToListAsync();
-
-            var viewModel = new DoctorLeaveViewModel
-            {
-                DoctorId = doctor.Id,
-                DoctorName = doctor.FullName,
-                ApprovedLeaves = doctor.DoctorLeaves.Select(dl => new DoctorLeaveItem
-                {
-                    Id = dl.Id,
-                    StartDate = dl.StartDate,
-                    EndDate = dl.EndDate,
-                    LeaveType = dl.LeaveType.ToString(),
-                    Notes = dl.Notes,
-                    Status = dl.Status
-                }).ToList(),
-                LeaveRequests = pendingRequests.Select(lr => new LeaveRequestViewModel
-                {
-                    Id = lr.Id,
-                    StartDate = lr.StartDate,
-                    EndDate = lr.EndDate,
-                    LeaveType = lr.LeaveType,
-                    Reason = lr.Reason,
-                    RejectionReason = lr.RejectionReason,
-                    Status = lr.Status,
-                    CreatedAt = lr.CreatedAt
-                }).ToList()
-            };
 
             return View(viewModel);
         }

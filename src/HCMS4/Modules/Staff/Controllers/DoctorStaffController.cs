@@ -1,54 +1,29 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
-using HCMS4.Modules.Appointments.Models;
-using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Billing.Models;
-using HCMS4.Modules.Feedback.Models;
-using HCMS4.Modules.Pharmacy.Models;
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Models;
 using HCMS4.Modules.Staff.Models;
 using HCMS4.Modules.Staff.Services;
-using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
-using HCMS4.Shared.Notifications.Models;
-using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCMS4.Modules.Staff.Controllers
 {
-    // Part of the former DoctorController; [ControllerName] keeps the /Doctor/... URLs.
+    // The doctor's own profile and leave requests; [ControllerName] keeps the /Doctor/... URLs.
     [Authorize(Roles = "Doctor")]
     [ControllerName("Doctor")]
-    public class DoctorStaffController : BaseController
+    public class DoctorStaffController : HcmsControllerBase
     {
-        private readonly IAppointmentService _appointmentService;
-        private readonly IPrescriptionService _prescriptionService;
+        private readonly IStaffService _staffService;
         private readonly ILeaveService _leaveService;
-        private readonly INoShowRiskService _noShowRiskService;
-        private readonly INotificationService _notificationService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly IClinicClock _clock;
+        private readonly ILogger<DoctorStaffController> _logger;
 
-        public DoctorStaffController(
-            ApplicationDbContext context,
-            ILogger<DoctorStaffController> logger,
-            IAppointmentService appointmentService,
-            IPrescriptionService prescriptionService,
-            ILeaveService leaveService,
-            INoShowRiskService noShowRiskService,
-            INotificationService notificationService,
-            IActivityLogService activityLogService)
-            : base(context, logger)
+        public DoctorStaffController(IStaffService staffService, ILeaveService leaveService, IClinicClock clock,
+            ILogger<DoctorStaffController> logger)
         {
-            _appointmentService = appointmentService;
-            _prescriptionService = prescriptionService;
+            _staffService = staffService;
             _leaveService = leaveService;
-            _noShowRiskService = noShowRiskService;
-            _notificationService = notificationService;
-            _activityLogService = activityLogService;
+            _clock = clock;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Profile()
@@ -59,11 +34,7 @@ namespace HCMS4.Modules.Staff.Controllers
                 if (!doctorId.HasValue)
                     return RedirectToAction("Login", "Account");
 
-                var doctor = await _context.Doctors
-                    .Include(d => d.User)
-                    .Include(d => d.Specialization)
-                    .FirstOrDefaultAsync(d => d.Id == doctorId.Value);
-
+                var doctor = await _staffService.GetDoctorProfileAsync(doctorId.Value);
                 if (doctor == null)
                 {
                     TempData["ErrorMessage"] = "Doctor profile not found.";
@@ -112,12 +83,11 @@ namespace HCMS4.Modules.Staff.Controllers
         [HttpGet]
         public IActionResult RequestLeave()
         {
-            var viewModel = new LeaveRequestViewModel
+            return View(new LeaveRequestViewModel
             {
-                StartDate = ClinicTime.Today.AddDays(1),
-                EndDate = ClinicTime.Today.AddDays(2)
-            };
-            return View(viewModel);
+                StartDate = _clock.Today.AddDays(1),
+                EndDate = _clock.Today.AddDays(2)
+            });
         }
 
         [HttpPost]
@@ -130,7 +100,7 @@ namespace HCMS4.Modules.Staff.Controllers
                 if (!doctorId.HasValue)
                     return RedirectToAction("Login", "Account");
 
-                if (model.StartDate < ClinicTime.Today)
+                if (model.StartDate < _clock.Today)
                 {
                     ModelState.AddModelError("StartDate", "Cannot request leave for a past date.");
                     return View(model);
@@ -142,18 +112,16 @@ namespace HCMS4.Modules.Staff.Controllers
                     return View(model);
                 }
 
-                var request = new LeaveRequest
+                await _leaveService.CreateLeaveRequestAsync(new LeaveRequest
                 {
                     DoctorId = doctorId.Value,
                     StartDate = model.StartDate,
                     EndDate = model.EndDate,
                     LeaveType = model.LeaveType,
                     Reason = model.Reason,
-                    CreatedAt = ClinicTime.Now,
+                    CreatedAt = _clock.Now,
                     Status = LeaveStatus.Pending
-                };
-
-                await _leaveService.CreateLeaveRequestAsync(request);
+                });
 
                 TempData["SuccessMessage"] = "Leave request submitted successfully.";
                 return RedirectToAction("Profile");
