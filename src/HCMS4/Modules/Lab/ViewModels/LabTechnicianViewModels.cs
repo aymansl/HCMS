@@ -46,6 +46,9 @@ namespace HCMS4.Modules.Lab.ViewModels
         public int NewRequestCount { get; set; }
         public List<HCMS4.Modules.Lab.Models.LabRequest> NewRequests { get; set; } = new();
 
+        /// <summary>Sample-collection bookings today (UC-L05).</summary>
+        public int TodayAppointmentCount { get; set; }
+
         /// <summary>Active tests in the catalogue (UC-L06).</summary>
         public int ActiveTestCount { get; set; }
 

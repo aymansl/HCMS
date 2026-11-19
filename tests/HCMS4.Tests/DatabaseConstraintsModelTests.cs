@@ -72,10 +72,24 @@ namespace HCMS4.Tests
         [InlineData(typeof(HCMS4.Modules.Lab.Models.LabTest), "CK_LabTests_ReferenceRange")]
         [InlineData(typeof(HCMS4.Modules.Lab.Models.LabRequest), "CK_LabRequests_Status")]
         [InlineData(typeof(HCMS4.Modules.Lab.Models.LabRequest), "CK_LabRequests_CancelReason")]
+        [InlineData(typeof(HCMS4.Modules.Lab.Models.LabAppointment), "CK_LabAppointments_Status")]
+        [InlineData(typeof(HCMS4.Modules.Lab.Models.LabAppointment), "CK_LabAppointments_SlotStart")]
         [InlineData(typeof(HCMS4.Modules.Lab.Models.LabRequestItem), "CK_LabRequestItems_Price")]
         public void CheckConstraint_IsDefined(Type entity, string name)
         {
             Assert.Contains(Model.FindEntityType(entity)!.GetCheckConstraints(), c => c.Name == name);
+        }
+
+        [Theory]
+        [InlineData(nameof(HCMS4.Modules.Lab.Models.LabAppointment.SlotStart), "IX_LabAppointments_SlotStart_Booked")]
+        [InlineData(nameof(HCMS4.Modules.Lab.Models.LabAppointment.LabRequestId), "IX_LabAppointments_LabRequestId_Booked")]
+        public void LabAppointment_ActiveBookings_AreUnique(string property, string indexName)
+        {
+            var index = Assert.Single(Model.FindEntityType(typeof(HCMS4.Modules.Lab.Models.LabAppointment))!.GetIndexes(),
+                i => i.Properties.Single().Name == property);
+            Assert.True(index.IsUnique);
+            Assert.Equal(indexName, index.GetDatabaseName());
+            Assert.Equal("[Status] = 'Booked'", index.GetFilter());
         }
 
         [Theory]

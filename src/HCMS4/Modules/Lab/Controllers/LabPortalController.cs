@@ -17,12 +17,17 @@ namespace HCMS4.Modules.Lab.Controllers
         private readonly ILabTestService _testService;
         private readonly ILabRequestService _requestService;
         private readonly INotificationService _notificationService;
+        private readonly ILabAppointmentService _appointmentService;
+        private readonly IClinicClock _clock;
 
         public const int RecentNotificationCount = 8;
 
         public LabPortalController(ILabTechnicianService technicianService, ILabTestService testService,
-            ILabRequestService requestService, INotificationService notificationService)
+            ILabRequestService requestService, INotificationService notificationService,
+            ILabAppointmentService appointmentService, IClinicClock clock)
         {
+            _appointmentService = appointmentService;
+            _clock = clock;
             _technicianService = technicianService;
             _testService = testService;
             _requestService = requestService;
@@ -40,6 +45,7 @@ namespace HCMS4.Modules.Lab.Controllers
                 ActiveTestCount = await _testService.CountActiveAsync(),
                 NewRequestCount = await _requestService.CountNewAsync(),
                 NewRequests = await _requestService.GetNewForLabAsync(),
+                TodayAppointmentCount = (await _appointmentService.GetScheduleAsync(DateOnly.FromDateTime(_clock.Today))).Count,
                 RecentNotifications = await _notificationService.GetRecentForUserAsync(CurrentUserId ?? string.Empty, RecentNotificationCount)
             });
         }

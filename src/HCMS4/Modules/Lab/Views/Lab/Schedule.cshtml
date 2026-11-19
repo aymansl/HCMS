@@ -1,0 +1,82 @@
+@model HCMS4.Modules.Lab.ViewModels.LabScheduleViewModel
+
+@{
+    ViewData["Title"] = "Lab Schedule";
+    Layout = "_LayoutAuth";
+    var isWorkingDay = HCMS4.Modules.Lab.Models.LabSchedule.IsWorkingDay(Model.Date);
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3"><i class="bi bi-calendar-check me-2"></i>Lab Schedule</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Schedule</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <a asp-action="Schedule" asp-route-date="@Model.Date.AddDays(-1).ToString("yyyy-MM-dd")" class="btn btn-outline-secondary" title="Previous day">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            <form asp-action="Schedule" method="get" class="d-flex gap-2">
+                <input type="date" name="date" class="form-control" value="@Model.Date.ToString("yyyy-MM-dd")" />
+                <button type="submit" class="btn btn-primary">Show</button>
+            </form>
+            <a asp-action="Schedule" asp-route-date="@Model.Date.AddDays(1).ToString("yyyy-MM-dd")" class="btn btn-outline-secondary" title="Next day">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="card dashboard-card">
+        <div class="card-header">
+            <h5 class="mb-0" id="lab-schedule-date">@Model.Date.ToString("dddd, yyyy-MM-dd")</h5>
+        </div>
+        <div class="card-body">
+            @if (!isWorkingDay)
+            {
+                <p class="text-muted mb-0">The lab does not collect samples on Fridays.</p>
+            }
+            else if (Model.Appointments.Count == 0)
+            {
+                <p class="text-muted mb-0" id="lab-schedule-empty">No sample collections are booked for this day.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="lab-schedule">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Time</th>
+                                <th>Patient</th>
+                                <th>Request</th>
+                                <th>Tests</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var appointment in Model.Appointments)
+                            {
+                                var request = appointment.LabRequest;
+                                <tr>
+                                    <td><strong>@appointment.SlotStart.ToString("HH:mm")</strong></td>
+                                    <td>@request.Patient.User.FullName</td>
+                                    <td>#@request.Id</td>
+                                    <td>@string.Join(", ", request.Items.Select(i => i.LabTest.Name).Order())</td>
+                                    <td><partial name="_LabRequestStatus" model="request.Status" /></td>
+                                    <td>
+                                        <a asp-action="RequestDetails" asp-route-id="@request.Id" class="btn btn-sm btn-outline-primary">Open</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -340,6 +340,16 @@ namespace HCMS4.Modules.Lab.Services
 
             request.CancelledAt = transition.Data.ChangedAt;
             request.CancelReason = reason.Trim();
+
+            // The request's sample-collection slot (UC-L05) becomes free again.
+            var bookings = await _context.LabAppointments
+                .Where(a => a.LabRequestId == id && a.Status == LabAppointmentStatus.Booked).ToListAsync();
+            foreach (var booking in bookings)
+            {
+                booking.Status = LabAppointmentStatus.Cancelled;
+                booking.UpdatedAt = transition.Data.ChangedAt;
+            }
+
             await _context.SaveChangesAsync();
 
             var patientName = await PatientNameAsync(request.PatientId);

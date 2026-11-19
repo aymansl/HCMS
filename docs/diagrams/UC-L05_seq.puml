@@ -23,25 +23,34 @@ skinparam ActorFontSize 15
 skinparam DatabaseFontSize 15
 hide footbox
 actor Patient as P
-participant ":BookingView" as V
-participant ":LabAppointmentController" as C
+actor "Lab Technician" as U
+participant ":PatientLabAppointmentsController" as C
+participant ":LabScheduleController" as LC
 participant ":LabAppointmentService" as S
+participant ":INotificationService" as N
 database "HCMS Database" as DB
-participant ":NotificationHub" as H
-P -> V : open lab booking
-V -> C : AvailableSlots(date)
-C -> S : GetFreeSlotsAsync(date)
-S -> DB : SELECT free slots
-C --> V : slots
-P -> V : select slot
-V -> C : Book(requestId, slot)
-C -> S : BookAsync(requestId, slot)
-S -> DB : check slot free
+P -> C : BookLabAppointment(requestId, date)
+C -> S : GetBookingFormAsync(userId, requestId, date)
+S -> DB : the patient's request + booked slots of the day
+S --> C : bookable days (Sat-Thu, 14 days), free slots (08:00-13:45, 15 min)
+P -> C : BookLabAppointment(requestId, slot)
+C -> S : BookAsync(userId, requestId, slot)
+S -> DB : request waiting for its sample? slot valid and free?
 alt free
-  S -> DB : INSERT LabAppointment
-  S ->> H : NotifyLab(appointmentId)
-  C --> V : booking confirmed
-else taken
-  C --> V : "slot taken, choose another"
+  alt no booking yet
+    S -> DB : INSERT LabAppointment (Booked)
+  else change (alternative flow)
+    S -> DB : UPDATE SlotStart
+  end
+  note right of DB : unique index on SlotStart\nfor Booked rows
+  S -> N : CreateForRoleAsync(LabTechnician, booking)
+  S -> N : CreateForUserAsync(patient, confirmation)
+  C --> P : booking confirmed
+else taken (or refused by the unique index)
+  C --> P : "slot just booked, choose another time"
 end
+U -> LC : Schedule(date)
+LC -> S : GetScheduleAsync(date)
+LC --> U : bookings by time
+note over N : Notifications are shown on refresh;\nSignalR comes with S3 (Increment 6).
 @enduml

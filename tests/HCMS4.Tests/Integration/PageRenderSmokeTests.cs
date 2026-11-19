@@ -62,6 +62,8 @@ namespace HCMS4.Tests.Integration
             new object[] { "LabTechnician", "/Lab/EditTest/{labTestId}" },
             new object[] { "LabTechnician", "/Lab/RequestDetails/{labRequestId}" },
             new object[] { "LabTechnician", "/Lab/Requests" },
+            new object[] { "LabTechnician", "/Lab/Schedule" },
+            new object[] { "LabTechnician", "/Lab/Schedule?date=2026-11-21" },
             new object[] { "LabTechnician", "/Lab/Requests?Status=Requested&Date=2026-11-19&PatientName=test" },
             // Doctor
             new object[] { "Doctor", "/Doctor/Dashboard" },
@@ -94,6 +96,8 @@ namespace HCMS4.Tests.Integration
             new object[] { "Patient", "/Patient/Complaints" },
             new object[] { "Patient", "/Patient/CreateComplaint" },
             new object[] { "Patient", "/Patient/Surveys" },
+            new object[] { "Patient", "/Patient/LabRequests" },
+            new object[] { "Patient", "/Patient/BookLabAppointment?requestId={labRequestId}" },
             // Pharmacist
             new object[] { "Pharmacist", "/Pharmacist/Dashboard" },
             new object[] { "Pharmacist", "/Pharmacist/Drugs" },

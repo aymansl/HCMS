@@ -39,12 +39,14 @@ ANY /Home/Index
 ANY /Lab/Dashboard
 ANY /Lab/RequestDetails
 ANY /Lab/Requests
+ANY /Lab/Schedule
 ANY /Lab/Tests
 ANY /Notifications/Index
 ANY /Patient/BookAppointment
 ANY /Patient/Dashboard
 ANY /Patient/InvoiceDetails
 ANY /Patient/InvoiceHistory
+ANY /Patient/LabRequests
 ANY /Patient/PrescriptionDetails
 ANY /Patient/Prescriptions
 ANY /Patient/ViewAppointmentHistory
@@ -86,6 +88,7 @@ GET /Doctor/RequestLeave
 GET /Doctor/RescheduleAppointment
 GET /Lab/CreateTest
 GET /Lab/EditTest
+GET /Patient/BookLabAppointment
 GET /Patient/Complaints
 GET /Patient/CreateComplaint
 GET /Patient/GetDoctorConsultationFee
@@ -151,6 +154,7 @@ POST /Lab/ReturnRequest
 POST /Notifications/MarkAllAsRead
 POST /Notifications/Open
 POST /Patient/BookAppointment
+POST /Patient/BookLabAppointment
 POST /Patient/CreateComplaint
 POST /Patient/ProcessPayment
 POST /Patient/RateVisit

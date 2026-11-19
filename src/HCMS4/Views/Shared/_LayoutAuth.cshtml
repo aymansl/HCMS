@@ -165,6 +165,11 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a asp-controller="Lab" asp-action="Schedule" class="nav-link pharmacist-link">
+                                    <i class="bi bi-calendar-check me-1"></i> Schedule
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a asp-controller="Lab" asp-action="Tests" class="nav-link pharmacist-link">
                                     <i class="bi bi-list-check me-1"></i> Test Catalogue
                                 </a>
@@ -232,6 +237,11 @@
                         <li class="nav-item">
                             <a asp-controller="Patient" asp-action="BookAppointment" class="nav-link patient-link">
                                 <i class="bi bi-calendar me-1"></i> Book Appointment
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a asp-controller="Patient" asp-action="LabRequests" class="nav-link patient-link">
+                                <i class="bi bi-eyedropper me-1"></i> Lab Tests
                             </a>
                         </li>
                          <li class="nav-item">

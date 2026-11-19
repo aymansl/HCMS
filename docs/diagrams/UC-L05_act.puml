@@ -19,14 +19,14 @@ skinparam SequenceGroupHeaderFontStyle bold
 title UC-L05: Receive Appointment Booking from Patient - Activity
 |Patient|
 start
-:Choose "Book lab appointment";
+:Choose "Book" (or "Change") for a lab request;
 |System|
-:Show available slots;
+:Show bookable days and free slots;
 |Patient|
 :Select slot;
 |System|
 if (Slot still free?) then (yes)
-  :Save booking;
+  :Save booking (or move it);
   :Notify lab and confirm to patient;
 else (no)
   :Show "slot taken, choose another";

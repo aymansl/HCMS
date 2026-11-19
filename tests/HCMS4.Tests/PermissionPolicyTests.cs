@@ -58,6 +58,8 @@ namespace HCMS4.Tests
         [InlineData(Roles.LabTechnician, Permissions.Lab.ReceiveRequest, true)]
         [InlineData(Roles.Radiologist, Permissions.Lab.ReceiveRequest, false)]
         [InlineData(Roles.Doctor, Permissions.Lab.CreateRequest, true)]
+        [InlineData(Roles.Patient, Permissions.Lab.BookAppointment, true)]
+        [InlineData(Roles.Doctor, Permissions.Lab.BookAppointment, false)]
         [InlineData(Roles.LabTechnician, Permissions.Lab.CreateRequest, false)]
         [InlineData(Roles.Doctor, Permissions.Lab.ReceiveRequest, false)]
         [InlineData(Roles.EmergencySupervisor, Permissions.Emergency.ManageCases, true)]

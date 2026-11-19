@@ -1,0 +1,79 @@
+@model HCMS4.Modules.Lab.ViewModels.BookLabAppointmentViewModel
+
+@{
+    ViewData["Title"] = Model.Appointment == null ? "Book Lab Appointment" : "Change Lab Appointment";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">@ViewData["Title"]</h1>
+            <p class="text-muted mb-0">
+                Lab request #@Model.Request.Id: @string.Join(", ", Model.Request.Items.Select(i => i.LabTest.Name).Order())
+            </p>
+        </div>
+        <a asp-action="LabRequests" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to My Lab Tests
+        </a>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger" role="alert" id="booking-error">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+        </div>
+    }
+
+    @if (Model.Appointment != null)
+    {
+        <div class="alert alert-info" id="current-appointment">
+            Your current time: <strong>@Model.Appointment.SlotStart.ToString("dddd yyyy-MM-dd HH:mm")</strong>. Choose another time to change it.
+        </div>
+    }
+
+    @if (Model.BookableDates.Count == 0)
+    {
+        <p class="text-muted">No dates are open for booking.</p>
+    }
+    else
+    {
+        <div class="card dashboard-card mb-3">
+            <div class="card-body">
+                <h6>1. Choose a day</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var day in Model.BookableDates)
+                    {
+                        <a asp-action="BookLabAppointment" asp-route-requestId="@Model.Request.Id" asp-route-date="@day.ToString("yyyy-MM-dd")"
+                           class="btn btn-sm @(day == Model.SelectedDate ? "btn-primary" : "btn-outline-primary")">
+                            @day.ToString("ddd dd MMM")
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <h6>2. Choose a time on @Model.SelectedDate.ToString("dddd, yyyy-MM-dd")</h6>
+                @if (Model.FreeSlots.Count == 0)
+                {
+                    <p class="text-muted mb-0" id="no-free-slots">All times on this day are booked. Choose another day.</p>
+                }
+                else
+                {
+                    <div class="d-flex flex-wrap gap-2" id="free-slots">
+                        @foreach (var slot in Model.FreeSlots)
+                        {
+                            <form asp-action="BookLabAppointment" method="post" class="d-inline">
+                                <input type="hidden" name="requestId" value="@Model.Request.Id" />
+                                <input type="hidden" name="slot" value="@slot.ToString("yyyy-MM-ddTHH:mm")" />
+                                <button type="submit" class="btn btn-outline-success">@slot.ToString("HH:mm")</button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>

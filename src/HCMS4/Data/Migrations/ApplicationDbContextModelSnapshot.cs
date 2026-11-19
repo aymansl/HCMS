@@ -502,6 +502,55 @@ namespace HCMS4.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabAppointment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("BookedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)");
+
+                    b.Property<int>("LabRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SlotStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabRequestId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LabAppointments_LabRequestId_Booked")
+                        .HasFilter("[Status] = 'Booked'");
+
+                    b.HasIndex("SlotStart")
+                        .IsUnique()
+                        .HasDatabaseName("IX_LabAppointments_SlotStart_Booked")
+                        .HasFilter("[Status] = 'Booked'");
+
+                    b.ToTable("LabAppointments", t =>
+                        {
+                            t.HasCheckConstraint("CK_LabAppointments_SlotStart", "DATEPART(minute, [SlotStart]) % 15 = 0 AND DATEPART(second, [SlotStart]) = 0 AND DATEPART(nanosecond, [SlotStart]) = 0");
+
+                            t.HasCheckConstraint("CK_LabAppointments_Status", "[Status] IN ('Booked', 'Cancelled')");
+                        });
+                });
+
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -2009,6 +2058,17 @@ namespace HCMS4.Data.Migrations
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabAppointment", b =>
+                {
+                    b.HasOne("HCMS4.Modules.Lab.Models.LabRequest", "LabRequest")
+                        .WithMany()
+                        .HasForeignKey("LabRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LabRequest");
                 });
 
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
