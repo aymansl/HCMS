@@ -1,54 +1,54 @@
 @model HCMS4.ViewModels.InvoiceViewModel
 
 @{
-    ViewData["Title"] = "تفاصيل الفاتورة";
+    ViewData["Title"] = "Invoice Details";
     Layout = "_LayoutAuth";
     var invoice = ViewBag.Invoice as HCMS4.Modules.Billing.Models.Invoice;
     var items = invoice?.Prescription?.PrescriptionItems ?? new List<HCMS4.Modules.Pharmacy.Models.PrescriptionItem>();
 }
 
-<div class="container py-4" dir="rtl" lang="ar">
+<div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0"><i class="bi bi-receipt ms-2"></i>الفاتورة @Model.InvoiceNumber</h1>
+        <h1 class="h3 mb-0"><i class="bi bi-receipt me-2"></i>Invoice @Model.InvoiceNumber</h1>
         <a asp-action="InvoiceHistory" class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-right ms-1"></i> العودة إلى الفواتير
+            <i class="bi bi-arrow-left me-1"></i> Back to invoices
         </a>
     </div>
 
-    <div class="card dashboard-card mb-4 text-end">
+    <div class="card dashboard-card mb-4">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <div class="text-muted small">تاريخ الفاتورة</div>
+                    <div class="text-muted small">Invoice date</div>
                     <div class="fw-semibold">@Model.InvoiceDate.ToString("yyyy-MM-dd")</div>
                 </div>
                 <div class="col-md-4">
-                    <div class="text-muted small">الطبيب</div>
+                    <div class="text-muted small">Doctor</div>
                     <div class="fw-semibold">@Model.DoctorName</div>
                 </div>
                 <div class="col-md-4">
-                    <div class="text-muted small">حالة الدفع</div>
-                    <span class="badge @Model.StatusBadgeClass">@(Model.PaymentStatus == "Paid" ? "مدفوعة" : "غير مدفوعة بالكامل")</span>
+                    <div class="text-muted small">Payment status</div>
+                    <span class="badge @Model.StatusBadgeClass">@(Model.PaymentStatus == "Paid" ? "Paid" : "Not fully paid")</span>
                 </div>
                 @if (Model.AppointmentDate.HasValue)
                 {
                     <div class="col-md-4">
-                        <div class="text-muted small">موعد الزيارة</div>
+                        <div class="text-muted small">Visit date</div>
                         <div class="fw-semibold">@Model.AppointmentDate.Value.ToString("yyyy-MM-dd HH:mm")</div>
                     </div>
                 }
                 @if (Model.PaymentDate.HasValue)
                 {
                     <div class="col-md-4">
-                        <div class="text-muted small">تاريخ آخر دفعة</div>
+                        <div class="text-muted small">Last payment date</div>
                         <div class="fw-semibold">@Model.PaymentDate.Value.ToString("yyyy-MM-dd HH:mm")</div>
                     </div>
                 }
                 @if (invoice?.PaymentMethod != null)
                 {
                     <div class="col-md-4">
-                        <div class="text-muted small">طريقة الدفع</div>
-                        <div class="fw-semibold">نقداً</div>
+                        <div class="text-muted small">Payment method</div>
+                        <div class="fw-semibold">Cash</div>
                     </div>
                 }
             </div>
@@ -57,17 +57,17 @@
 
     @if (items.Any())
     {
-        <div class="card dashboard-card mb-4 text-end">
-            <div class="card-header"><h5 class="mb-0">الأدوية</h5></div>
+        <div class="card dashboard-card mb-4">
+            <div class="card-header"><h5 class="mb-0">Medications</h5></div>
             <div class="card-body p-0">
                 <table class="table mb-0">
                     <thead>
                         <tr>
-                            <th>الدواء</th>
-                            <th>الجرعة</th>
-                            <th>الكمية</th>
-                            <th>سعر الوحدة</th>
-                            <th>المجموع</th>
+                            <th>Drug</th>
+                            <th>Dosage</th>
+                            <th>Quantity</th>
+                            <th>Unit price</th>
+                            <th>Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,34 +88,34 @@
         </div>
     }
 
-    <div class="card dashboard-card text-end">
+    <div class="card dashboard-card">
         <div class="card-body">
             <table class="table table-borderless mb-0">
                 <tr>
-                    <td>رسوم الكشف</td>
-                    <td class="text-start">@Model.ConsultationFee.ToString("C2")</td>
+                    <td>Consultation fee</td>
+                    <td class="text-end">@Model.ConsultationFee.ToString("C2")</td>
                 </tr>
                 <tr>
-                    <td>مجموع الأدوية</td>
-                    <td class="text-start">@Model.MedicationTotal.ToString("C2")</td>
+                    <td>Medication total</td>
+                    <td class="text-end">@Model.MedicationTotal.ToString("C2")</td>
                 </tr>
                 <tr class="border-top">
-                    <th>المبلغ الإجمالي</th>
-                    <th class="text-start">@Model.TotalAmount.ToString("C2")</th>
+                    <th>Total amount</th>
+                    <th class="text-end">@Model.TotalAmount.ToString("C2")</th>
                 </tr>
                 <tr>
-                    <td>المدفوع</td>
-                    <td class="text-start text-success">@((Model.AmountPaid ?? 0).ToString("C2"))</td>
+                    <td>Paid</td>
+                    <td class="text-end text-success">@((Model.AmountPaid ?? 0).ToString("C2"))</td>
                 </tr>
                 <tr>
-                    <th>المتبقي</th>
-                    <th class="text-start @(Model.Balance > 0 ? "text-danger" : "text-success")">@Model.Balance.ToString("C2")</th>
+                    <th>Remaining</th>
+                    <th class="text-end @(Model.Balance > 0 ? "text-danger" : "text-success")">@Model.Balance.ToString("C2")</th>
                 </tr>
             </table>
             @if (!string.IsNullOrWhiteSpace(Model.Notes))
             {
                 <hr />
-                <div class="text-muted small">ملاحظات</div>
+                <div class="text-muted small">Notes</div>
                 <div style="white-space: pre-line">@Model.Notes</div>
             }
         </div>

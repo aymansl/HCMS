@@ -40,7 +40,7 @@ namespace HCMS4.Modules.Billing.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error loading the invoice list");
-                TempData["ErrorMessage"] = "تعذّر تحميل قائمة الفواتير، يرجى المحاولة لاحقاً.";
+                TempData["ErrorMessage"] = "Error loading the invoice list. Please try again later.";
                 return View(new AdminInvoiceListViewModel { Filter = filter });
             }
         }

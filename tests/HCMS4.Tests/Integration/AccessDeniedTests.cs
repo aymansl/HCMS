@@ -17,7 +17,7 @@ namespace HCMS4.Tests.Integration
         }
 
         [Fact]
-        public async Task AccessDeniedPage_ShowsArabicMessage()
+        public async Task AccessDeniedPage_ShowsMessage()
         {
             var client = _factory.CreateClientAs("Doctor");
 
@@ -25,7 +25,7 @@ namespace HCMS4.Tests.Integration
 
             Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
             var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
-            Assert.Contains("غير مصرح بالوصول", html);
+            Assert.Contains("Access denied", html);
         }
 
         [Fact]

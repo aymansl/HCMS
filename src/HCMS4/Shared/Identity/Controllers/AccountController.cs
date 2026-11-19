@@ -108,7 +108,7 @@ namespace HCMS4.Shared.Identity.Controllers
                 {
                     _logger.LogWarning("User account locked out.");
                     ModelState.AddModelError(string.Empty,
-                        "تم قفل الحساب مؤقتاً بسبب تكرار محاولات الدخول الفاشلة. حاول مرة أخرى بعد 5 دقائق.");
+                        "Your account is temporarily locked after too many failed sign-in attempts. Try again in 5 minutes.");
                     return View(model);
                 }
                 else

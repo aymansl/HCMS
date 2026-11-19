@@ -6,7 +6,7 @@ namespace HCMS4.ViewModels
     {
         [Required]
         [Display(Name = "Drug")]
-        public int SelectedDrugId { get; set; } // تغيير من DrugId إلى SelectedDrugId
+        public int SelectedDrugId { get; set; }
 
         [Display(Name = "Drug Name")]
         public string DrugName { get; set; } = string.Empty;

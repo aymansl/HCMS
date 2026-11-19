@@ -1249,7 +1249,7 @@ namespace HCMS4.Data.Migrations
                         {
                             Id = 1,
                             ConsultationFee = 150m,
-                            Description = "قلبية",
+                            Description = "Heart and blood vessels",
                             IsActive = true,
                             Name = "Cardiology"
                         },
@@ -1257,7 +1257,7 @@ namespace HCMS4.Data.Migrations
                         {
                             Id = 2,
                             ConsultationFee = 120m,
-                            Description = "جلدية",
+                            Description = "Skin, hair and nails",
                             IsActive = true,
                             Name = "Dermatology"
                         },
@@ -1265,7 +1265,7 @@ namespace HCMS4.Data.Migrations
                         {
                             Id = 3,
                             ConsultationFee = 130m,
-                            Description = "عظمية",
+                            Description = "Bones, joints and muscles",
                             IsActive = true,
                             Name = "Orthopedics"
                         },
@@ -1273,7 +1273,7 @@ namespace HCMS4.Data.Migrations
                         {
                             Id = 4,
                             ConsultationFee = 180m,
-                            Description = "عصبية",
+                            Description = "Brain and nervous system",
                             IsActive = true,
                             Name = "Neurology"
                         },
@@ -1281,7 +1281,7 @@ namespace HCMS4.Data.Migrations
                         {
                             Id = 5,
                             ConsultationFee = 110m,
-                            Description = "أطفال",
+                            Description = "Children's health",
                             IsActive = true,
                             Name = "Pediatrics"
                         },
@@ -1289,7 +1289,7 @@ namespace HCMS4.Data.Migrations
                         {
                             Id = 6,
                             ConsultationFee = 100m,
-                            Description = "طب عام",
+                            Description = "General health care",
                             IsActive = true,
                             Name = "General Medicine"
                         });

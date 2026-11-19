@@ -81,8 +81,8 @@ namespace HCMS4.Modules.Pharmacy.Services
                     Specialization = prescription.Doctor?.Specialization?.Name ?? "UNDEFINED",
                     DrugName = drugNames.Any() ? string.Join(", ", drugNames.Take(2)) +
                         (drugNames.Count > 2 ? $" and{drugNames.Count - 2} more" : "") : "NO DRUGS",
-                    Dosage = dosages.Any() ? string.Join("، ", dosages) : "-",
-                    Duration = durations.Any() ? string.Join("، ", durations) : "-",
+                    Dosage = dosages.Any() ? string.Join(", ", dosages) : "-",
+                    Duration = durations.Any() ? string.Join(", ", durations) : "-",
                     Status = prescription.Status.ToString(),
                     TotalCost = prescription.TotalCost,
                     Notes = prescription.Notes,

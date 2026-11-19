@@ -81,7 +81,7 @@ Increment → requirements: 1 → S2 · 2 → L1–L6 · 3 → L7–L11 · 4 →
 
 ## 5. Architecture constraints
 
-- Modular Monolith with ASP.NET Core MVC (.NET 10), EF Core + SQL Server, Identity with permission-based policies, SignalR notifications, QuestPDF reports, Razor + Bootstrap, Arabic RTL UI.
+- Modular Monolith with ASP.NET Core MVC (.NET 10), EF Core + SQL Server, Identity with permission-based policies, SignalR notifications, QuestPDF reports, Razor + Bootstrap, English UI.
 - Separate AI service (Python FastAPI) called over REST with header `X-API-Key`; the system must keep working when it is down (HTTP 503 → continue without the AI feature).
 - Every order/case (lab request, imaging request/session, emergency case) is a **state machine**: allowed transitions only, and each transition stores a timestamp + user (turnaround time, S4).
 - Data modelled with HL7 FHIR in mind (ServiceRequest / Observation / DiagnosticReport / Encounter naming where reasonable).

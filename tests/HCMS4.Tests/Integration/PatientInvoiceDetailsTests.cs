@@ -50,7 +50,7 @@ namespace HCMS4.Tests.Integration
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             var html = WebUtility.HtmlDecode(await response.Content.ReadAsStringAsync());
             Assert.Contains($"INV-{invoiceId:D6}", html);
-            Assert.Contains("المتبقي", html);
+            Assert.Contains("Remaining", html);
         }
 
         [Fact]

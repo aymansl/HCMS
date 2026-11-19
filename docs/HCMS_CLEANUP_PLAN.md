@@ -12,7 +12,7 @@
 - .NET 10, EF Core and SQL Server.
 - ASP.NET Core Identity with **policy-based authorization**.
 - SignalR for real-time notifications and QuestPDF for reports.
-- Razor and Bootstrap with an Arabic RTL UI.
+- Razor and Bootstrap with an English UI.
 - A **separate AI service** (Python FastAPI, called over REST with an API key). The system must keep working when the AI service is down.
 
 **Roles after Graduation 2 (7):** Patient, Doctor, Admin, Pharmacist, LabTechnician, Radiologist, EmergencySupervisor.
@@ -50,7 +50,7 @@
 - Test coverage of 70% or more, with CI.
 - Data modelled with HL7 FHIR in mind.
 - The audit log is kept for at least 1 year.
-- Arabic RTL UI, with each role's main task done in 3 steps or fewer.
+- English UI, with each role's main task done in 3 steps or fewer.
 
 ---
 
@@ -75,7 +75,7 @@
    - Never drop or reset my local database.
 8. **Ask before deleting.** Do not delete a file or folder without listing it first with the reason. Group deletions in one commit.
 9. **Secrets.** Never commit passwords, connection strings or API keys. Use User Secrets locally and environment variables elsewhere. Commit an `appsettings.Development.example.json` instead.
-10. **Keep the UI language.** Do not translate or rewrite user-facing Arabic text unless a phase says so.
+10. **UI language.** All user-facing text is in English.
 11. **Do not touch these files** unless the phase says so:
     - `medical-appointment-no-shows-main/**/models/*.bin`
     - `data/*.csv`

@@ -9,7 +9,7 @@ namespace HCMS4.Tests.Integration
     public class LoginLockoutTests : IClassFixture<HcmsWebApplicationFactory>
     {
         private const string Password = "Valid@123";
-        private const string LockedMessage = "تم قفل الحساب مؤقتاً";
+        private const string LockedMessage = "temporarily locked";
         private readonly HcmsWebApplicationFactory _factory;
 
         public LoginLockoutTests(HcmsWebApplicationFactory factory)
