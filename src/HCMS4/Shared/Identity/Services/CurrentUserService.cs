@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace HCMS4.Shared.Identity.Services
 {
-    /// <summary>The signed-in user of the current request. Replaces the lookups that lived in BaseController.</summary>
+    /// <summary>The signed-in user of the current request.</summary>
     public interface ICurrentUserService
     {
         /// <summary>Identity user id, or null for anonymous requests.</summary>

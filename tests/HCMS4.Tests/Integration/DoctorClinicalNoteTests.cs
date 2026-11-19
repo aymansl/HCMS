@@ -1,6 +1,5 @@
 using System.Net;
 using System.Reflection;
-using HCMS4.Controllers;
 
 namespace HCMS4.Tests.Integration
 {

@@ -3,7 +3,7 @@ using HCMS4.Modules.Staff.Services;
 
 namespace HCMS4.Tests
 {
-    // These lookups replace BaseController's direct DbContext queries for "current patient / doctor".
+    // The "current patient / doctor" lookups used by HcmsControllerBase.
     public class UserLookupTests
     {
         [Fact]
