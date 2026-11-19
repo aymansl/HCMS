@@ -8,6 +8,9 @@ namespace HCMS4.Modules.Feedback
         {
             services.AddScoped<IComplaintAttachmentService, ComplaintAttachmentService>();
             services.AddScoped<IVisitRatingService, VisitRatingService>();
+            services.AddScoped<IComplaintService, ComplaintService>();
+            services.AddScoped<ISurveyService, SurveyService>();
+            services.AddScoped<IMedicalArticleService, MedicalArticleService>();
             return services;
         }
     }

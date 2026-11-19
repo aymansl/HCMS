@@ -1,53 +1,24 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
-using HCMS4.Modules.Appointments.Models;
-using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Feedback.Models;
-using HCMS4.Modules.Pharmacy.Models;
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Staff.Models;
-using HCMS4.Modules.Staff.Services;
+using HCMS4.Modules.Feedback.Services;
 using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
-using HCMS4.Shared.Notifications.Models;
-using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HCMS4.Modules.Feedback.Controllers
 {
     // Part of the former DoctorController; [ControllerName] keeps the /Doctor/... URLs.
     [Authorize(Roles = "Doctor")]
     [ControllerName("Doctor")]
-    public class DoctorArticlesController : BaseController
+    public class DoctorArticlesController : HcmsControllerBase
     {
-        private readonly IAppointmentService _appointmentService;
-        private readonly IPrescriptionService _prescriptionService;
-        private readonly ILeaveService _leaveService;
-        private readonly INoShowRiskService _noShowRiskService;
-        private readonly INotificationService _notificationService;
+        private readonly IMedicalArticleService _articleService;
         private readonly IActivityLogService _activityLogService;
 
-        public DoctorArticlesController(
-            ApplicationDbContext context,
-            ILogger<DoctorArticlesController> logger,
-            IAppointmentService appointmentService,
-            IPrescriptionService prescriptionService,
-            ILeaveService leaveService,
-            INoShowRiskService noShowRiskService,
-            INotificationService notificationService,
-            IActivityLogService activityLogService)
-            : base(context, logger)
+        public DoctorArticlesController(IMedicalArticleService articleService, IActivityLogService activityLogService)
         {
-            _appointmentService = appointmentService;
-            _prescriptionService = prescriptionService;
-            _leaveService = leaveService;
-            _noShowRiskService = noShowRiskService;
-            _notificationService = notificationService;
+            _articleService = articleService;
             _activityLogService = activityLogService;
         }
 
@@ -60,15 +31,8 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId.Value);
-            ViewBag.CanPublishArticles = doctor?.CanPublishArticles ?? false;
-
-            var articles = await _context.MedicalArticles
-                .Where(a => a.DoctorId == doctorId.Value)
-                .OrderByDescending(a => a.UpdatedAt)
-                .ToListAsync();
-
-            return View(articles);
+            ViewBag.CanPublishArticles = await _articleService.CanPublishAsync(doctorId.Value);
+            return View(await _articleService.GetForDoctorAsync(doctorId.Value));
         }
 
         [HttpPost]
@@ -81,44 +45,16 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId.Value);
-            if (doctor == null || !doctor.CanPublishArticles)
+            var result = await _articleService.PublishAsync(doctorId.Value, id);
+            if (!result.Success)
             {
-                TempData["ErrorMessage"] = "You do not have permission to publish articles.";
+                TempData["ErrorMessage"] = result.Message;
                 return RedirectToAction(nameof(MedicalArticles));
             }
 
-            var article = await _context.MedicalArticles
-                .FirstOrDefaultAsync(a => a.Id == id && a.DoctorId == doctorId.Value);
+            await LogAsync("MedicalArticlePublished", $"Doctor published draft article '{result.Data.Title}'.", result.Data.Id);
 
-            if (article == null)
-            {
-                TempData["ErrorMessage"] = "Article not found.";
-                return RedirectToAction(nameof(MedicalArticles));
-            }
-
-            if (article.Status == ArticleStatus.Published)
-            {
-                TempData["ErrorMessage"] = "This article is already published.";
-                return RedirectToAction(nameof(MedicalArticles));
-            }
-
-            article.Status = ArticleStatus.Published;
-            article.PublishedAt = ClinicTime.Now;
-            article.UpdatedAt = ClinicTime.Now;
-
-            await _context.SaveChangesAsync();
-
-            var currentUser = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(
-                "MedicalArticlePublished",
-                nameof(MedicalArticle),
-                $"Doctor published draft article '{article.Title}'.",
-                article.Id.ToString(),
-                currentUser?.Id,
-                currentUser?.UserName);
-
-            TempData["SuccessMessage"] = "Article published successfully.";
+            TempData["SuccessMessage"] = result.Message;
             return RedirectToAction(nameof(MedicalArticles));
         }
 
@@ -131,10 +67,9 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId.Value);
-            if (doctor == null || !doctor.CanPublishArticles)
+            if (!await _articleService.CanPublishAsync(doctorId.Value))
             {
-                TempData["ErrorMessage"] = "You do not have permission to publish articles.";
+                TempData["ErrorMessage"] = MedicalArticleService.NoPermissionMessage;
                 return RedirectToAction(nameof(MedicalArticles));
             }
 
@@ -151,10 +86,9 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == doctorId.Value);
-            if (doctor == null || !doctor.CanPublishArticles)
+            if (!await _articleService.CanPublishAsync(doctorId.Value))
             {
-                TempData["ErrorMessage"] = "You do not have permission to publish articles.";
+                TempData["ErrorMessage"] = MedicalArticleService.NoPermissionMessage;
                 return RedirectToAction(nameof(MedicalArticles));
             }
 
@@ -164,33 +98,25 @@ namespace HCMS4.Modules.Feedback.Controllers
             }
 
             var publishNow = string.Equals(submitAction, "publish", StringComparison.OrdinalIgnoreCase);
-            var article = new MedicalArticle
+            var result = await _articleService.CreateAsync(doctorId.Value, model, publishNow);
+            if (!result.Success)
             {
-                DoctorId = doctorId.Value,
-                Title = model.Title.Trim(),
-                Summary = model.Summary?.Trim(),
-                Content = model.Content.Trim(),
-                Category = model.Category?.Trim(),
-                Status = publishNow ? ArticleStatus.Published : ArticleStatus.Draft,
-                CreatedAt = ClinicTime.Now,
-                UpdatedAt = ClinicTime.Now,
-                PublishedAt = publishNow ? ClinicTime.Now : null
-            };
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction(nameof(MedicalArticles));
+            }
 
-            _context.MedicalArticles.Add(article);
-            await _context.SaveChangesAsync();
+            await LogAsync(publishNow ? "MedicalArticlePublished" : "MedicalArticleDraftSaved",
+                $"Doctor {(publishNow ? "published" : "saved")} article '{result.Data.Title}'.", result.Data.Id);
 
-            var currentUser = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(
-                publishNow ? "MedicalArticlePublished" : "MedicalArticleDraftSaved",
-                nameof(MedicalArticle),
-                $"Doctor {(publishNow ? "published" : "saved")} article '{article.Title}'.",
-                article.Id.ToString(),
-                currentUser?.Id,
-                currentUser?.UserName);
-
-            TempData["SuccessMessage"] = "Article saved successfully.";
+            TempData["SuccessMessage"] = result.Message;
             return RedirectToAction(nameof(MedicalArticles));
+        }
+
+        private async Task LogAsync(string action, string description, int articleId)
+        {
+            var currentUser = await GetCurrentUserAsync();
+            await _activityLogService.LogAsync(action, nameof(MedicalArticle), description, articleId.ToString(),
+                currentUser?.Id, currentUser?.UserName);
         }
     }
 }

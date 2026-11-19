@@ -132,11 +132,11 @@ namespace HCMS4.Tests
             _db.VisitRatings.Add(rating);
             await _db.SaveChangesAsync();
 
-            var ratings = await new VisitRatingService(_db).GetRatingIdsByAppointmentAsync(patient.Id);
+            var ratings = await new VisitRatingService(_db, _clock).GetRatingIdsByAppointmentAsync(patient.Id);
             var patients = await new PatientService(_db, NullLogger<PatientService>.Instance).GetAllWithUserAsync();
 
             Assert.Equal(rating.Id, ratings[visit.Id]);
-            Assert.Empty(await new VisitRatingService(_db).GetRatingIdsByAppointmentAsync(patient.Id + 1000));
+            Assert.Empty(await new VisitRatingService(_db, _clock).GetRatingIdsByAppointmentAsync(patient.Id + 1000));
             Assert.NotNull(Assert.Single(patients).User);
         }
     }

@@ -1,15 +1,5 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
-using HCMS4.Modules.Appointments.Models;
-using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Billing.Models;
-using HCMS4.Modules.Billing.Services;
 using HCMS4.Modules.Feedback.Models;
 using HCMS4.Modules.Feedback.Services;
-using HCMS4.Modules.Pharmacy.Models;
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Staff.Models;
-using HCMS4.Modules.Staff.Services;
 using HCMS4.Shared.Audit.Services;
 using HCMS4.Shared.Common;
 using HCMS4.Shared.Notifications.Models;
@@ -17,40 +7,38 @@ using HCMS4.Shared.Notifications.Services;
 using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace HCMS4.Modules.Feedback.Controllers
 {
     // Part of the former PatientController; [ControllerName] keeps the /Patient/... URLs.
     [Authorize(Roles = "Patient")]
     [ControllerName("Patient")]
-    public class PatientFeedbackController : BaseController
+    public class PatientFeedbackController : HcmsControllerBase
     {
-        private readonly IAppointmentService _appointmentService;
-        private readonly ILeaveService _leaveService;
+        private readonly IVisitRatingService _visitRatingService;
+        private readonly IComplaintService _complaintService;
+        private readonly ISurveyService _surveyService;
+        private readonly IComplaintAttachmentService _attachmentService;
         private readonly INotificationService _notificationService;
         private readonly IActivityLogService _activityLogService;
-        private readonly IComplaintAttachmentService _attachmentService;
-        private readonly IInvoicePaymentService _paymentService;
+        private readonly ILogger<PatientFeedbackController> _logger;
 
         public PatientFeedbackController(
-            ApplicationDbContext context,
-            ILogger<PatientFeedbackController> logger,
-            IAppointmentService appointmentService,
-            ILeaveService leaveService,
+            IVisitRatingService visitRatingService,
+            IComplaintService complaintService,
+            ISurveyService surveyService,
+            IComplaintAttachmentService attachmentService,
             INotificationService notificationService,
             IActivityLogService activityLogService,
-            IComplaintAttachmentService attachmentService,
-            IInvoicePaymentService paymentService)
-            : base(context, logger)
+            ILogger<PatientFeedbackController> logger)
         {
-            _paymentService = paymentService;
-            _appointmentService = appointmentService;
-            _leaveService = leaveService;
+            _visitRatingService = visitRatingService;
+            _complaintService = complaintService;
+            _surveyService = surveyService;
+            _attachmentService = attachmentService;
             _notificationService = notificationService;
             _activityLogService = activityLogService;
-            _attachmentService = attachmentService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -62,33 +50,14 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var appointment = await _context.Appointments
-                .Include(a => a.Doctor)
-                    .ThenInclude(d => d.User)
-                .FirstOrDefaultAsync(a => a.Id == appointmentId && a.PatientId == patientId.Value);
-
-            if (appointment == null || appointment.Status != AppointmentStatus.Completed)
+            var form = await _visitRatingService.GetRatingFormAsync(patientId.Value, appointmentId);
+            if (!form.Success)
             {
-                TempData["ErrorMessage"] = "Only completed visits can be rated.";
+                TempData["ErrorMessage"] = form.Message;
                 return RedirectToAction("ViewAppointmentHistory");
             }
 
-            var existingRating = await _context.VisitRatings
-                .AnyAsync(vr => vr.PatientId == patientId.Value && vr.AppointmentId == appointmentId);
-
-            if (existingRating)
-            {
-                TempData["ErrorMessage"] = "You have already rated this visit.";
-                return RedirectToAction("ViewAppointmentHistory");
-            }
-
-            return View(new VisitRatingFormViewModel
-            {
-                AppointmentId = appointment.Id,
-                DoctorId = appointment.DoctorId,
-                DoctorName = appointment.Doctor?.User?.FullName ?? "Doctor",
-                AppointmentDateTime = appointment.AppointmentDateTime
-            });
+            return View(form.Data);
         }
 
         [HttpPost]
@@ -101,78 +70,48 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var appointment = await _context.Appointments
-                .Include(a => a.Doctor)
-                .FirstOrDefaultAsync(a => a.Id == model.AppointmentId && a.PatientId == patientId.Value);
-
-            if (appointment == null || appointment.Status != AppointmentStatus.Completed)
-            {
-                TempData["ErrorMessage"] = "Only completed visits can be rated.";
-                return RedirectToAction("ViewAppointmentHistory");
-            }
-
-            if (await _context.VisitRatings.AnyAsync(vr => vr.PatientId == patientId.Value && vr.AppointmentId == model.AppointmentId))
-            {
-                TempData["ErrorMessage"] = "You have already rated this visit.";
-                return RedirectToAction("ViewAppointmentHistory");
-            }
-
             if (!ModelState.IsValid)
             {
-                model.DoctorName = appointment.Doctor?.FullName ?? model.DoctorName;
-                model.DoctorId = appointment.DoctorId;
-                model.AppointmentDateTime = appointment.AppointmentDateTime;
-                return View(model);
+                return await RateVisitFormAsync(patientId.Value, model);
             }
 
             try
             {
-                var rating = new VisitRating
+                var result = await _visitRatingService.RateAsync(patientId.Value, model);
+                if (!result.Success)
                 {
-                    AppointmentId = appointment.Id,
-                    PatientId = patientId.Value,
-                    DoctorId = appointment.DoctorId,
-                    Rating = model.Rating,
-                    Comment = model.Comment,
-                    DoctorCooperative = model.DoctorCooperative,
-                    WaitingTimeReasonable = model.WaitingTimeReasonable,
-                    CreatedAt = ClinicTime.Now
-                };
-
-                _context.VisitRatings.Add(rating);
-                await _context.SaveChangesAsync();
-
-                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Id == appointment.DoctorId);
-                if (doctor != null)
-                {
-                    doctor.RatingCount = await _context.VisitRatings.CountAsync(vr => vr.DoctorId == doctor.Id);
-                    doctor.AverageRating = Math.Round((decimal)await _context.VisitRatings
-                        .Where(vr => vr.DoctorId == doctor.Id)
-                        .AverageAsync(vr => vr.Rating), 2);
-                    await _context.SaveChangesAsync();
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("ViewAppointmentHistory");
                 }
 
-                var currentUser = await GetCurrentUserAsync();
-                await _activityLogService.LogAsync(
-                    "VisitRated",
-                    nameof(VisitRating),
-                    $"Patient rated appointment #{appointment.Id} with {model.Rating} star(s).",
-                    rating.Id.ToString(),
-                    currentUser?.Id,
-                    currentUser?.UserName);
+                await LogAsync("VisitRated", nameof(VisitRating),
+                    $"Patient rated appointment #{model.AppointmentId} with {model.Rating} star(s).", result.Data);
 
-                TempData["SuccessMessage"] = "Thank you for your rating, your feedback has been submitted successfully.";
+                TempData["SuccessMessage"] = result.Message;
                 return RedirectToAction("ViewAppointmentHistory");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving visit rating for appointment {AppointmentId}", model.AppointmentId);
                 ModelState.AddModelError(string.Empty, "Failed to save rating, please try again later.");
-                model.DoctorName = appointment.Doctor?.FullName ?? model.DoctorName;
-                model.DoctorId = appointment.DoctorId;
-                model.AppointmentDateTime = appointment.AppointmentDateTime;
-                return View(model);
+                return await RateVisitFormAsync(patientId.Value, model);
             }
+        }
+
+        // Shows the form again with the submitted answers; leaves when the visit can no longer be rated.
+        private async Task<IActionResult> RateVisitFormAsync(int patientId, VisitRatingFormViewModel model)
+        {
+            var form = await _visitRatingService.GetRatingFormAsync(patientId, model.AppointmentId);
+            if (!form.Success)
+            {
+                TempData["ErrorMessage"] = form.Message;
+                return RedirectToAction("ViewAppointmentHistory");
+            }
+
+            model.DoctorName = form.Data.DoctorName;
+            model.DoctorId = form.Data.DoctorId;
+            model.AppointmentDateTime = form.Data.AppointmentDateTime;
+            return View(model);
         }
 
         [HttpGet]
@@ -184,12 +123,7 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var complaints = await _context.Complaints
-                .Where(c => c.PatientId == patientId.Value)
-                .OrderByDescending(c => c.SubmissionDate)
-                .ToListAsync();
-
-            return View(complaints);
+            return View(await _complaintService.GetForPatientAsync(patientId.Value));
         }
 
         [HttpGet]
@@ -213,7 +147,7 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return View(model);
             }
 
-            string? attachmentPath = null;
+            string? attachmentFileName = null;
             if (model.Attachment != null)
             {
                 var upload = await _attachmentService.SaveAsync(model.Attachment);
@@ -224,24 +158,10 @@ namespace HCMS4.Modules.Feedback.Controllers
                 }
 
                 // Only the stored file name is kept; the file is served by ComplaintAttachmentsController.
-                attachmentPath = upload.Data;
+                attachmentFileName = upload.Data;
             }
 
-            var complaint = new Complaint
-            {
-                PatientId = patientId.Value,
-                Title = model.Title.Trim(),
-                Type = model.Type,
-                Description = model.Description.Trim(),
-                AssociatedVisitDate = model.AssociatedVisitDate,
-                AttachmentPath = attachmentPath,
-                TrackingNumber = $"CMP-{ClinicTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}",
-                SubmissionDate = ClinicTime.Now,
-                Status = ComplaintStatus.Submitted
-            };
-
-            _context.Complaints.Add(complaint);
-            await _context.SaveChangesAsync();
+            var complaint = await _complaintService.CreateAsync(patientId.Value, model, attachmentFileName);
 
             await _notificationService.CreateForRoleAsync(
                 "Admin",
@@ -252,14 +172,8 @@ namespace HCMS4.Modules.Feedback.Controllers
                 nameof(Complaint),
                 complaint.Id);
 
-            var currentUser = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(
-                "ComplaintSubmitted",
-                nameof(Complaint),
-                $"Patient submitted complaint {complaint.TrackingNumber}.",
-                complaint.Id.ToString(),
-                currentUser?.Id,
-                currentUser?.UserName);
+            await LogAsync("ComplaintSubmitted", nameof(Complaint),
+                $"Patient submitted complaint {complaint.TrackingNumber}.", complaint.Id);
 
             TempData["SuccessMessage"] = $"Complaint submitted successfully. Tracking number: {complaint.TrackingNumber}";
             return RedirectToAction(nameof(Complaints));
@@ -274,13 +188,7 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var assignments = await _context.SurveyAssignments
-                .Include(sa => sa.Survey)
-                .Where(sa => sa.PatientId == patientId.Value)
-                .OrderByDescending(sa => sa.AssignedAt)
-                .ToListAsync();
-
-            return View(assignments);
+            return View(await _surveyService.GetAssignmentsAsync(patientId.Value));
         }
 
         [HttpGet]
@@ -292,7 +200,7 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var viewModel = await BuildSurveyResponseViewModelAsync(assignmentId, patientId.Value);
+            var viewModel = await _surveyService.GetResponseFormAsync(assignmentId, patientId.Value);
             if (viewModel == null)
             {
                 TempData["ErrorMessage"] = "Survey not found or is no longer available.";
@@ -312,121 +220,35 @@ namespace HCMS4.Modules.Feedback.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            var assignment = await _context.SurveyAssignments
-                .Include(sa => sa.Survey)
-                .FirstOrDefaultAsync(sa => sa.Id == model.SurveyAssignmentId &&
-                                           sa.PatientId == patientId.Value);
-
-            if (assignment == null || assignment.Status == SurveyAssignmentStatus.Completed)
+            var result = await _surveyService.SubmitAsync(patientId.Value, model);
+            if (!result.Success)
             {
-                TempData["ErrorMessage"] = "Survey not found or has already been completed.";
-                return RedirectToAction(nameof(Surveys));
-            }
-
-            foreach (var question in model.Questions)
-            {
-                if (question.IsRequired)
+                if (result.Errors?.Any() != true)
                 {
-                    var hasAnswer = question.QuestionType switch
-                    {
-                        SurveyQuestionType.MultipleChoice => !string.IsNullOrWhiteSpace(question.AnswerText),
-                        SurveyQuestionType.Rating => question.NumericValue.HasValue,
-                        SurveyQuestionType.YesNo => question.BooleanValue.HasValue,
-                        _ => !string.IsNullOrWhiteSpace(question.AnswerText)
-                    };
-
-                    if (!hasAnswer)
-                    {
-                        ModelState.AddModelError(string.Empty, $"Please answer question before proceeding: {question.QuestionText}");
-                    }
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction(nameof(Surveys));
                 }
-            }
 
-            if (!ModelState.IsValid)
-            {
-                var refreshedModel = await BuildSurveyResponseViewModelAsync(model.SurveyAssignmentId, patientId.Value, model);
-                return View(refreshedModel ?? model);
-            }
-
-            await _context.Database.ExecuteSqlInterpolatedAsync(
-                $"DELETE FROM SurveyAnswers WHERE SurveyAssignmentId = {assignment.Id}");
-
-            foreach (var question in model.Questions)
-            {
-                _context.SurveyAnswers.Add(new SurveyAnswer
+                foreach (var error in result.Errors)
                 {
-                    SurveyAssignmentId = assignment.Id,
-                    SurveyQuestionId = question.SurveyQuestionId,
-                    AnswerText = question.AnswerText,
-                    NumericValue = question.NumericValue,
-                    BooleanValue = question.BooleanValue
-                });
+                    ModelState.AddModelError(string.Empty, error);
+                }
+
+                var refreshed = await _surveyService.GetResponseFormAsync(model.SurveyAssignmentId, patientId.Value, model);
+                return View(refreshed ?? model);
             }
 
-            assignment.Status = SurveyAssignmentStatus.Completed;
-            assignment.CompletedAt = ClinicTime.Now;
-            await _context.SaveChangesAsync();
+            await LogAsync("SurveyCompleted", nameof(Survey), $"Patient completed survey #{result.Data}.", result.Data);
 
-            var currentUser = await GetCurrentUserAsync();
-            await _activityLogService.LogAsync(
-                "SurveyCompleted",
-                nameof(Survey),
-                $"Patient completed survey #{assignment.SurveyId}.",
-                assignment.SurveyId.ToString(),
-                currentUser?.Id,
-                currentUser?.UserName);
-
-            TempData["SuccessMessage"] = "Thank you for participating! Your answers have been recorded successfully.";
+            TempData["SuccessMessage"] = result.Message;
             return RedirectToAction("Dashboard");
         }
 
-        private async Task<SurveyResponseViewModel?> BuildSurveyResponseViewModelAsync(int assignmentId, int patientId,
-            SurveyResponseViewModel? submittedModel = null)
+        private async Task LogAsync(string action, string entityName, string description, int entityId)
         {
-            var assignment = await _context.SurveyAssignments
-                .Include(sa => sa.Survey)
-                .FirstOrDefaultAsync(sa => sa.Id == assignmentId &&
-                                           sa.PatientId == patientId &&
-                                           sa.Status == SurveyAssignmentStatus.Pending);
-
-            if (assignment == null ||
-                assignment.Survey.Status != SurveyStatus.Active ||
-                assignment.Survey.StartDate > ClinicTime.Now.Date ||
-                (assignment.Survey.EndDate.HasValue && assignment.Survey.EndDate.Value < ClinicTime.Now.Date))
-            {
-                return null;
-            }
-
-            var questions = await _context.SurveyQuestions
-                .Include(q => q.Options)
-                .Where(q => q.SurveyId == assignment.SurveyId)
-                .OrderBy(q => q.DisplayOrder)
-                .ToListAsync();
-
-            return new SurveyResponseViewModel
-            {
-                SurveyId = assignment.SurveyId,
-                SurveyAssignmentId = assignment.Id,
-                Title = assignment.Survey.Title,
-                Description = assignment.Survey.Description,
-                Questions = questions.Select(question =>
-                {
-                    var submittedQuestion = submittedModel?.Questions
-                        .FirstOrDefault(q => q.SurveyQuestionId == question.Id);
-
-                    return new SurveyResponseQuestionViewModel
-                    {
-                        SurveyQuestionId = question.Id,
-                        QuestionText = question.QuestionText,
-                        QuestionType = question.QuestionType,
-                        IsRequired = question.IsRequired,
-                        Options = question.Options.OrderBy(o => o.DisplayOrder).ToList(),
-                        AnswerText = submittedQuestion?.AnswerText,
-                        NumericValue = submittedQuestion?.NumericValue,
-                        BooleanValue = submittedQuestion?.BooleanValue
-                    };
-                }).ToList()
-            };
+            var currentUser = await GetCurrentUserAsync();
+            await _activityLogService.LogAsync(action, entityName, description, entityId.ToString(),
+                currentUser?.Id, currentUser?.UserName);
         }
     }
 }
