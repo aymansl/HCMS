@@ -63,10 +63,12 @@ namespace HCMS4.Shared.Identity.Authorization
             public const string ViewComplaintAttachments = "Feedback.ViewComplaintAttachments";
         }
 
-        // Reserved for the next increments; no endpoint uses them yet.
+        // Lab is in use since Increment 2; Radiology and Emergency are reserved for the next increments.
 
         public static class Lab
         {
+            /// <summary>A doctor sends lab test requests for their patients.</summary>
+            public const string CreateRequest = "Lab.CreateRequest";
             public const string ReceiveRequest = "Lab.ReceiveRequest";
             public const string ManageTests = "Lab.ManageTests";
             public const string EnterResults = "Lab.EnterResults";

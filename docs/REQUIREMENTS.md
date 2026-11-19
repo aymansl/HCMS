@@ -98,7 +98,9 @@ Increment → requirements: 1 → S2 · 2 → L1–L6 · 3 → L7–L11 · 4 →
 ### Planned migrations
 
 - ~~`Inc1_S2_NewRoles`~~ — not needed: the 3 new roles are created by `AdminSeeder` at start-up, and permissions are defined in code (`Shared/Identity/Authorization/RolePermissions.cs`), not stored in the database (decided in Increment 1).
-- `Inc2_L_LabRequests` — LabTest, LabRequest, LabRequestItem, LabAppointment
+- `Inc2_L6_LabTests` — LabTest (applied)
+- `Inc2_L3_LabRequests` — LabRequest, LabRequestItem
+- `Inc2_L5_LabAppointments` — LabAppointment
 - `Inc3_L_LabResults` — LabResult, LabNote, IsCritical
 - `Inc4_R_RadiologyScheduling` — ImagingType, Device, ImagingRequest, ImagingSession (+ overlap index)
 - `Inc5_R_RadiologyReports` — ImagingReport, ImagingNote
@@ -170,15 +172,17 @@ Diagrams for every use case are in `docs/diagrams/` (PlantUML): `UCD_L/R/E.puml`
   5. يؤكد فني المخبر الاستلام، فيحفظ النظام الحالة «مستلَم» ووقت الاستلام.
 - **Alternative flow:** إذا كان الطلب ناقصاً:
   - يختار فني المخبر «إعادة إلى الطبيب» ويكتب ملاحظة.
-  - يعيد النظام الطلب إلى الطبيب مع الملاحظة.
+  - يعيد النظام الطلب إلى الطبيب مع الملاحظة (الحالة «أُعيد إلى الطبيب»).
+  - يعدّل الطبيب الطلب ويعيد إرساله، فتعود حالته إلى «مطلوب» ويُشعَر المخبر.
 - **Exceptions:**
   - سجل المريض غير موجود: يرفض النظام الطلب ويُنبّه الطبيب.
+  - طلب بلا تحاليل محددة: يرفض النظام إرساله ويطلب اختيار تحليل واحد على الأقل.
 
 | Test | Scenario | Input | Expected result |
 |---|---|---|---|
 | TC-L3-01 | استلام طلب صحيح | طلب تحليل لمريض موجود | يظهر الطلب لحظياً في المخبر، وبعد التأكيد تصبح حالته «مستلَم» مع وقت الاستلام |
 | TC-L3-02 | طلب لمريض غير موجود | معرّف مريض غير موجود | يُرفض الطلب ويُنبَّه الطبيب |
-| TC-L3-03 | طلب ناقص | طلب بلا تحاليل محددة، ثم «إعادة إلى الطبيب» مع ملاحظة | يعود الطلب إلى الطبيب مع الملاحظة |
+| TC-L3-03 | طلب ناقص | طلب بلا تحاليل محددة؛ ثم طلب تنقصه معلومات سريرية يعيده فني المخبر بملاحظة | يُرفض الطلب الخالي من التحاليل؛ ويعود الطلب الناقص إلى الطبيب مع الملاحظة فيعدّله ويعيد إرساله |
 
 ### UC-L04 — Receive Test Request Cancellation (استقبال إلغاء طلب التحليل من الطبيب) · requirement L4 · increment 2
 

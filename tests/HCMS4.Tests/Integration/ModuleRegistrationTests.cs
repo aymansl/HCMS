@@ -51,6 +51,8 @@ namespace HCMS4.Tests.Integration
         [InlineData(typeof(HCMS4.Modules.Portal.Services.IDashboardService))]
         [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabTechnicianService))]
         [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabTestService))]
+        [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabRequestService))]
+        [InlineData(typeof(HCMS4.Modules.Lab.Services.ILabTestUsage))]
         public void ModuleService_IsRegistered(Type serviceType)
         {
             using var scope = _factory.Services.CreateScope();

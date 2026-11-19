@@ -28,6 +28,7 @@ ANY /Admin/ViewDoctorLeaves
 ANY /Admin/ViewInvoice
 ANY /Doctor/DailyVisitingPatientsReport
 ANY /Doctor/Dashboard
+ANY /Doctor/LabRequests
 ANY /Doctor/Profile
 ANY /Doctor/ViewAppointments
 ANY /Doctor/ViewReports
@@ -36,6 +37,7 @@ ANY /Home/Contact
 ANY /Home/Error
 ANY /Home/Index
 ANY /Lab/Dashboard
+ANY /Lab/RequestDetails
 ANY /Lab/Tests
 ANY /Patient/BookAppointment
 ANY /Patient/Dashboard
@@ -69,9 +71,11 @@ GET /Admin/Surveys
 GET /Admin/UpdatePaymentStatus
 GET /ComplaintAttachments/Download
 GET /Doctor/CreateClinicalNote
+GET /Doctor/CreateLabRequest
 GET /Doctor/CreateMedicalArticle
 GET /Doctor/CreatePrescription
 GET /Doctor/DoctorReviewRequests
+GET /Doctor/EditLabRequest
 GET /Doctor/MedicalArticles
 GET /Doctor/PatientRecord
 GET /Doctor/ReissueRequests
@@ -124,8 +128,10 @@ POST /Admin/UpdateComplaintStatus
 POST /Admin/UpdatePaymentStatus
 POST /Admin/UpdateSpecializationFee
 POST /Doctor/CreateClinicalNote
+POST /Doctor/CreateLabRequest
 POST /Doctor/CreateMedicalArticle
 POST /Doctor/CreatePrescription
+POST /Doctor/EditLabRequest
 POST /Doctor/PublishMedicalArticle
 POST /Doctor/RequestLeave
 POST /Doctor/RescheduleAppointment
@@ -135,6 +141,8 @@ POST /Doctor/SendReminder
 POST /Lab/CreateTest
 POST /Lab/DeleteTest
 POST /Lab/EditTest
+POST /Lab/ReceiveRequest
+POST /Lab/ReturnRequest
 POST /Patient/BookAppointment
 POST /Patient/CreateComplaint
 POST /Patient/ProcessPayment

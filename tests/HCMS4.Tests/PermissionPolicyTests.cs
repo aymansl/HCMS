@@ -57,6 +57,9 @@ namespace HCMS4.Tests
         [InlineData(Roles.Doctor, Permissions.Feedback.ViewComplaintAttachments, false)]
         [InlineData(Roles.LabTechnician, Permissions.Lab.ReceiveRequest, true)]
         [InlineData(Roles.Radiologist, Permissions.Lab.ReceiveRequest, false)]
+        [InlineData(Roles.Doctor, Permissions.Lab.CreateRequest, true)]
+        [InlineData(Roles.LabTechnician, Permissions.Lab.CreateRequest, false)]
+        [InlineData(Roles.Doctor, Permissions.Lab.ReceiveRequest, false)]
         [InlineData(Roles.EmergencySupervisor, Permissions.Emergency.ManageCases, true)]
         [InlineData("Unknown", Permissions.Portal.AdminDashboard, false)]
         public void Has_FollowsTheMap(string role, string permission, bool expected)

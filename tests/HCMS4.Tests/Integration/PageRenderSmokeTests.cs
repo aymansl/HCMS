@@ -3,6 +3,7 @@ using System.Net;
 using HCMS4.Modules.Appointments.Models;
 using HCMS4.Modules.Billing.Models;
 using HCMS4.Modules.Feedback.Models;
+using HCMS4.Modules.Lab.Models;
 using HCMS4.Modules.Pharmacy.Models;
 using HCMS4.Shared.Common;
 
@@ -58,6 +59,8 @@ namespace HCMS4.Tests.Integration
             new object[] { "LabTechnician", "/Lab/Dashboard" },
             new object[] { "LabTechnician", "/Lab/Tests" },
             new object[] { "LabTechnician", "/Lab/CreateTest" },
+            new object[] { "LabTechnician", "/Lab/EditTest/{labTestId}" },
+            new object[] { "LabTechnician", "/Lab/RequestDetails/{labRequestId}" },
             // Doctor
             new object[] { "Doctor", "/Doctor/Dashboard" },
             new object[] { "Doctor", "/Doctor/ViewAppointments" },
@@ -66,6 +69,10 @@ namespace HCMS4.Tests.Integration
             new object[] { "Doctor", "/Doctor/PatientRecord?patientId={patientId}" },
             new object[] { "Doctor", "/Doctor/CreateClinicalNote?patientId={patientId}" },
             new object[] { "Doctor", "/Doctor/CreatePrescription?patientId={patientId}" },
+            new object[] { "Doctor", "/Doctor/LabRequests" },
+            new object[] { "Doctor", "/Doctor/LabRequests?patientId={patientId}" },
+            new object[] { "Doctor", "/Doctor/CreateLabRequest?patientId={patientId}" },
+            new object[] { "Doctor", "/Doctor/EditLabRequest/{returnedLabRequestId}" },
             new object[] { "Doctor", "/Doctor/ReissueRequests" },
             new object[] { "Doctor", "/Doctor/DoctorReviewRequests" },
             new object[] { "Doctor", "/Doctor/MedicalArticles" },
@@ -154,6 +161,12 @@ namespace HCMS4.Tests.Integration
                     db.PurchaseRequests.Add(purchaseRequest);
                     await db.SaveChangesAsync();
 
+                    var labTest = new LabTest { Name = "CBC-SMOKE", Unit = "10^9/L", ReferenceMin = 4, ReferenceMax = 11, Price = 5000 };
+                    var labRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
+                    var returnedLabRequest = new LabRequest { PatientId = patient.Id, DoctorId = doctor.Id, Status = LabRequestStatus.ReturnedToDoctor, ReturnNote = "Missing info", Items = { new LabRequestItem { LabTest = labTest, Price = 5000 } } };
+                    db.LabRequests.AddRange(labRequest, returnedLabRequest);
+                    await db.SaveChangesAsync();
+
                     ids["DoctorUserId"] = doctorUser.Id;
                     ids["PatientUserId"] = patientUser.Id;
                     ids["PharmacistUserId"] = pharmacistUser.Id;
@@ -168,6 +181,9 @@ namespace HCMS4.Tests.Integration
                     ids["invoiceId"] = invoice.Id.ToString(CultureInfo.InvariantCulture);
                     ids["complaintId"] = complaint.Id.ToString(CultureInfo.InvariantCulture);
                     ids["purchaseRequestId"] = purchaseRequest.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["labTestId"] = labTest.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["labRequestId"] = labRequest.Id.ToString(CultureInfo.InvariantCulture);
+                    ids["returnedLabRequestId"] = returnedLabRequest.Id.ToString(CultureInfo.InvariantCulture);
                 });
 
                 _ids = ids;

@@ -1,0 +1,43 @@
+@model HCMS4.Modules.Lab.ViewModels.LabRequestFormViewModel
+
+@{
+    ViewData["Title"] = "Edit Lab Request";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">Edit Lab Request #@Model.Id</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a asp-action="LabRequests">Lab Requests</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </nav>
+        </div>
+        <a asp-action="LabRequests" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Lab Requests
+        </a>
+    </div>
+
+    @if (Model.ReturnNote != null)
+    {
+        <div class="alert alert-warning" id="lab-return-note">
+            <i class="bi bi-arrow-return-left me-2"></i><strong>The lab returned this request:</strong> @Model.ReturnNote
+        </div>
+    }
+
+    <div class="card dashboard-card">
+        <div class="card-body">
+            <form asp-action="EditLabRequest" asp-route-id="@Model.Id" method="post">
+                <partial name="_LabRequestForm" model="Model" />
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="LabRequests" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Resend to Lab</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

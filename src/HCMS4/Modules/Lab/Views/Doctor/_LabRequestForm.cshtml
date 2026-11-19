@@ -1,0 +1,35 @@
+@model HCMS4.Modules.Lab.ViewModels.LabRequestFormViewModel
+
+<div asp-validation-summary="All" class="alert alert-danger"></div>
+<input type="hidden" asp-for="PatientId" />
+
+<p class="mb-3"><strong>Patient:</strong> <span id="lab-request-patient">@Model.PatientName</span></p>
+
+<h6>Tests *</h6>
+@if (Model.AvailableTests.Count == 0)
+{
+    <p class="text-muted">The lab test catalogue has no active tests.</p>
+}
+else
+{
+    <div class="row mb-3">
+        @foreach (var test in Model.AvailableTests)
+        {
+            <div class="col-md-4">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="SelectedTestIds" value="@test.Id" id="test-@test.Id"
+                           checked="@Model.SelectedTestIds.Contains(test.Id)" />
+                    <label class="form-check-label" for="test-@test.Id">
+                        @test.Name <span class="text-muted small">(@test.Unit)</span>
+                    </label>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<div class="mb-3">
+    <label asp-for="ClinicalNotes" class="form-label"></label>
+    <textarea asp-for="ClinicalNotes" class="form-control" rows="3" placeholder="Symptoms, suspected diagnosis, fasting, ..."></textarea>
+    <span asp-validation-for="ClinicalNotes" class="text-danger"></span>
+</div>

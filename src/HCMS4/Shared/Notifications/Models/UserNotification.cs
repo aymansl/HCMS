@@ -49,6 +49,7 @@ namespace HCMS4.Shared.Notifications.Models
         PrescriptionReissue,
         DoctorReview,
         PrescriptionNote,
-        Survey
+        Survey,
+        LabRequest
     }
 }

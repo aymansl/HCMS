@@ -290,12 +290,6 @@ namespace HCMS4.Tests
         }
 
         [Fact]
-        public async Task NoLabTestUsage_ReportsNoTestInUse()
-        {
-            Assert.False(await new NoLabTestUsage().IsUsedAsync(1));
-        }
-
-        [Fact]
         public async Task GetAll_IsOrderedByName()
         {
             await AddAsync(new LabTestFormViewModel { Name = "Glucose", Unit = "mg/dL", Price = 2000 });

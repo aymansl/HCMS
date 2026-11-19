@@ -1,4 +1,4 @@
-﻿@model HCMS4.ViewModels.PatientMedicalRecordViewModel
+@model HCMS4.ViewModels.PatientMedicalRecordViewModel
 
 @{
     ViewData["Title"] = "Patient Medical Record";
@@ -51,6 +51,12 @@
                     <a asp-action="CreateClinicalNote" asp-route-patientId="@Model.PatientId" 
                        class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>Add Clinical Note
+                    </a>
+                    <a asp-action="CreateLabRequest" asp-route-patientId="@Model.PatientId" class="btn btn-primary me-2">
+                        <i class="bi bi-eyedropper me-1"></i>Request Lab Test
+                    </a>
+                    <a asp-action="LabRequests" asp-route-patientId="@Model.PatientId" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-list-check me-1"></i>Lab Requests
                     </a>
                     <a asp-action="CreatePrescription" 
                           asp-route-patientId="@Model.PatientId"

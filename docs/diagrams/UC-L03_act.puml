@@ -19,28 +19,37 @@ skinparam SequenceGroupHeaderFontStyle bold
 title UC-L03: Receive Lab Test Request from Doctor - Activity
 |Doctor|
 start
-:Submit test request from patient file;
-|System|
-if (Patient record exists?) then (no)
-  :Reject request;
-  :Alert doctor;
-  stop
-else (yes)
-  :Save request (Requested);
-  :Notify lab in real time;
-endif
-|Lab Technician|
-:Open request;
-:Check patient and tests;
-if (Request complete?) then (yes)
-  :Confirm receipt;
+repeat
+  :Select tests and write clinical notes in the patient record;
   |System|
-  :Set status Received and log time;
-else (no)
+  if (At least one test selected?) then (no)
+    :Show "Select at least one test";
+    stop
+  endif
+  if (Patient record exists?) then (no)
+    :Reject request;
+    :Alert doctor;
+    stop
+  endif
+  :Save request (Requested);
+  :Notify lab;
+  |Lab Technician|
+  :Open request;
+  :Check patient and tests;
+  if (Request complete?) then (yes)
+    :Confirm receipt;
+    |System|
+    :Set status Received and log time and user;
+    stop
+  endif
   |Lab Technician|
   :Write note;
   |System|
-  :Return request to doctor with note;
-endif
+  :Set status ReturnedToDoctor;
+  :Notify doctor with the note;
+  |Doctor|
+  :Open returned request and correct it;
+repeat while (Resend?) is (yes)
+-> no;
 stop
 @enduml

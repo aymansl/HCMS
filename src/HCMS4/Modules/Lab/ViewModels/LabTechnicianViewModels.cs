@@ -37,10 +37,14 @@ namespace HCMS4.Modules.Lab.ViewModels
         public string? ContactInfo { get; set; }
     }
 
-    /// <summary>The lab dashboard (UC-L01 step 5). Request figures are added with L2.</summary>
+    /// <summary>The lab dashboard (UC-L01 step 5). The full incoming list comes with L2.</summary>
     public class LabDashboardViewModel
     {
         public string TechnicianName { get; set; } = string.Empty;
+
+        /// <summary>Requests waiting for receipt (UC-L03), oldest first.</summary>
+        public int NewRequestCount { get; set; }
+        public List<HCMS4.Modules.Lab.Models.LabRequest> NewRequests { get; set; } = new();
 
         /// <summary>Active tests in the catalogue (UC-L06).</summary>
         public int ActiveTestCount { get; set; }

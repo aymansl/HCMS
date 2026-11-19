@@ -125,17 +125,9 @@ namespace HCMS4.Modules.Lab.Services
         }
     }
 
-    /// <summary>
-    /// Whether past lab requests use a test. Until lab requests exist (L3) no test is in use;
-    /// L3 replaces this with a check on the request items.
-    /// </summary>
+    /// <summary>Whether past lab requests use a test (implemented by <see cref="LabRequestTestUsage"/>).</summary>
     public interface ILabTestUsage
     {
         Task<bool> IsUsedAsync(int labTestId);
-    }
-
-    public class NoLabTestUsage : ILabTestUsage
-    {
-        public Task<bool> IsUsedAsync(int labTestId) => Task.FromResult(false);
     }
 }

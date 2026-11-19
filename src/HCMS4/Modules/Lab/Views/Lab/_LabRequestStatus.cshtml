@@ -1,0 +1,15 @@
+@model HCMS4.Modules.Lab.Models.LabRequestStatus
+@using HCMS4.Modules.Lab.Models
+@{
+    var (css, text) = Model switch
+    {
+        LabRequestStatus.Requested => ("bg-primary", "Requested"),
+        LabRequestStatus.Received => ("bg-info text-dark", "Received"),
+        LabRequestStatus.InProgress => ("bg-warning text-dark", "In Progress"),
+        LabRequestStatus.ResultIssued => ("bg-success", "Result Issued"),
+        LabRequestStatus.Cancelled => ("bg-secondary", "Cancelled"),
+        LabRequestStatus.ReturnedToDoctor => ("bg-danger", "Returned to Doctor"),
+        _ => ("bg-light text-dark", Model.ToString())
+    };
+}
+<span class="badge @css">@text</span>

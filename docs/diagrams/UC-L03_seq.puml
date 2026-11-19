@@ -24,36 +24,44 @@ skinparam DatabaseFontSize 15
 hide footbox
 actor Doctor as D
 actor "Lab Technician" as U
-participant ":PatientFileView" as DV
-participant ":LabRequestsView" as V
+participant ":PatientRecordView" as DV
+participant ":DoctorLabRequestsController" as DC
 participant ":LabRequestController" as C
 participant ":LabRequestService" as S
+participant ":IMedicalRecordService" as MR
+participant ":INotificationService" as N
 database "HCMS Database" as DB
-participant ":NotificationHub" as H
-D -> DV : submit test request
-DV -> C : Create(LabRequestDto)
-C -> S : CreateAsync(dto)
+D -> DV : Request Lab Test
+DV -> DC : CreateLabRequest(model)
+DC -> DC : validate model (at least one test)
+DC -> S : CreateAsync(doctorId, model)
 S -> DB : find patient
 alt patient exists
-  S -> DB : INSERT LabRequest (Requested)
-  S ->> H : NotifyLab(requestId)
-  H ->> V : new request alert
-  C --> DV : request sent
+  S -> MR : DoctorHasAccessAsync(doctorId, patientId)
+  S -> DB : active selected tests
+  S -> DB : INSERT LabRequest (Requested) + items (price snapshot)
+  S -> N : CreateForRoleAsync(LabTechnician, "New lab request")
+  DC --> DV : request sent
 else patient not found
-  C --> DV : request rejected (patient not found)
+  S -> N : CreateForUserAsync(doctor, "Lab request rejected")
+  DC --> DV : request rejected (patient not found)
 end
-U -> V : open request
-V -> C : Details(id)
+U -> C : RequestDetails(id)
+C -> S : GetDetailsAsync(id)
 alt request complete
-  U -> V : confirm receipt
-  V -> C : Receive(id)
-  C -> S : ReceiveAsync(id)
-  S -> DB : UPDATE status = Received
-  C --> V : status Received
+  U -> C : ReceiveRequest(id)
+  C -> S : ReceiveAsync(id, userId)
+  S -> DB : UPDATE status = Received, ReceivedAt, ReceivedBy
+  C --> U : status Received
 else incomplete
-  U -> V : return with note
-  V -> C : ReturnToDoctor(id, note)
-  C -> S : ReturnAsync(id, note)
-  S ->> H : NotifyDoctor(id, note)
+  U -> C : ReturnRequest(id, note)
+  C -> S : ReturnToDoctorAsync(id, userId, note)
+  S -> DB : UPDATE status = ReturnedToDoctor, ReturnNote
+  S -> N : CreateForUserAsync(doctor, note)
+  D -> DC : EditLabRequest(id, model)
+  DC -> S : ResubmitAsync(doctorId, model)
+  S -> DB : UPDATE status = Requested, items
+  S -> N : CreateForRoleAsync(LabTechnician, "Lab request resent")
 end
+note over N : Notifications are shown on refresh;\nSignalR comes with S3 (Increment 6).
 @enduml

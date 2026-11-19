@@ -502,6 +502,102 @@ namespace HCMS4.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClinicalNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReceivedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)");
+
+                    b.Property<string>("ReturnNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReturnedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("StatusChangedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)");
+
+                    b.Property<string>("StatusChangedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId");
+
+                    b.HasIndex("PatientId");
+
+                    b.HasIndex("Status", "RequestedAt");
+
+                    b.ToTable("LabRequests", t =>
+                        {
+                            t.HasCheckConstraint("CK_LabRequests_Status", "[Status] IN ('Requested', 'Received', 'InProgress', 'ResultIssued', 'Cancelled', 'ReturnedToDoctor')");
+                        });
+                });
+
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequestItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("LabRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LabTestId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LabTestId");
+
+                    b.HasIndex("LabRequestId", "LabTestId")
+                        .IsUnique();
+
+                    b.ToTable("LabRequestItems", t =>
+                        {
+                            t.HasCheckConstraint("CK_LabRequestItems_Price", "[Price] >= 0");
+                        });
+                });
+
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabTechnician", b =>
                 {
                     b.Property<int>("Id")
@@ -1895,6 +1991,44 @@ namespace HCMS4.Data.Migrations
                     b.Navigation("Patient");
                 });
 
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
+                {
+                    b.HasOne("HCMS4.Modules.Staff.Models.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HCMS4.Modules.Records.Models.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Doctor");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequestItem", b =>
+                {
+                    b.HasOne("HCMS4.Modules.Lab.Models.LabRequest", "LabRequest")
+                        .WithMany("Items")
+                        .HasForeignKey("LabRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HCMS4.Modules.Lab.Models.LabTest", "LabTest")
+                        .WithMany()
+                        .HasForeignKey("LabTestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("LabRequest");
+
+                    b.Navigation("LabTest");
+                });
+
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabTechnician", b =>
                 {
                     b.HasOne("HCMS4.Shared.Identity.Models.ApplicationUser", "User")
@@ -2220,6 +2354,11 @@ namespace HCMS4.Data.Migrations
                     b.Navigation("Answers");
 
                     b.Navigation("Options");
+                });
+
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("HCMS4.Modules.Pharmacy.Models.Drug", b =>

@@ -25,6 +25,7 @@ namespace HCMS4.Shared.Identity.Authorization
                     Permissions.Appointments.ViewOwnSchedule,
                     Permissions.Pharmacy.Prescribe,
                     Permissions.Feedback.PublishArticles,
+                    Permissions.Lab.CreateRequest,
                 },
                 [Roles.Patient] = new[]
                 {
