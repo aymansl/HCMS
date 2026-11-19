@@ -167,12 +167,18 @@ namespace HCMS4.Modules.Billing.Services
 
             if (!string.IsNullOrWhiteSpace(filter.Search))
             {
-                var term = filter.Search.Trim();
-                var isNumber = int.TryParse(term, out var invoiceId);
-                query = query.Where(i =>
-                    (isNumber && i.Id == invoiceId) ||
-                    (i.Patient.User.FirstName + " " + i.Patient.User.LastName).Contains(term) ||
-                    (i.Patient.User.Email != null && i.Patient.User.Email.Contains(term)));
+                // A number is an invoice number; any other text searches the patient's name and email.
+                var term = filter.Search.Trim().TrimStart('#');
+                if (int.TryParse(term, out var invoiceId))
+                {
+                    query = query.Where(i => i.Id == invoiceId);
+                }
+                else
+                {
+                    query = query.Where(i =>
+                        (i.Patient.User.FirstName + " " + i.Patient.User.LastName).Contains(term) ||
+                        (i.Patient.User.Email != null && i.Patient.User.Email.Contains(term)));
+                }
             }
 
             var totals = await query
