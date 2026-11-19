@@ -10,7 +10,7 @@ namespace HCMS4.Tests.Integration
 {
     /// <summary>
     /// Opens every main page of each role against one seeded data set. Guards the controller-to-service
-    /// refactoring (cleanup phase 5b): each page must render (200) without showing an error message.
+    /// refactoring: each page must render (200) without showing an error message.
     /// </summary>
     public class PageRenderSmokeTests : IClassFixture<HcmsWebApplicationFactory>
     {

@@ -77,7 +77,7 @@
 | الزيادة 7: الذكاء الاصطناعي | 03/01/2027 | 14/01/2027 | 11 يوماً |
 | المرحلة الختامية: الاختبار والتسليم | 14/01/2027 | 19/01/2027 | 5 أيام |
 
-Increment → requirements: 1 → S2 · 2 → L1–L6 · 3 → L7–L11 · 4 → R1, R2, R4 · 5 → R3, R5, R6 · 6 → E1–E6, S1, S3, S4 · 7 → A1–A4. Increment 1 is being done now as the cleanup (see HCMS_CLEANUP_PLAN.md); later dates will be re-baselined.
+Increment → requirements: 1 → S2 · 2 → L1–L6 · 3 → L7–L11 · 4 → R1, R2, R4 · 5 → R3, R5, R6 · 6 → E1–E6, S1, S3, S4 · 7 → A1–A4. Increment 1 (restructuring, S2) is complete (`v2.1`); later dates will be re-baselined.
 
 ## 5. Architecture constraints
 
@@ -97,7 +97,7 @@ Increment → requirements: 1 → S2 · 2 → L1–L6 · 3 → L7–L11 · 4 →
 
 ### Planned migrations
 
-- ~~`Inc1_S2_NewRoles`~~ — not needed: the 3 new roles are created by `AdminSeeder` at start-up, and permissions are defined in code (`Shared/Identity/Authorization/RolePermissions.cs`), not stored in the database (decided in cleanup Phase 5).
+- ~~`Inc1_S2_NewRoles`~~ — not needed: the 3 new roles are created by `AdminSeeder` at start-up, and permissions are defined in code (`Shared/Identity/Authorization/RolePermissions.cs`), not stored in the database (decided in Increment 1).
 - `Inc2_L_LabRequests` — LabTest, LabRequest, LabRequestItem, LabAppointment
 - `Inc3_L_LabResults` — LabResult, LabNote, IsCritical
 - `Inc4_R_RadiologyScheduling` — ImagingType, Device, ImagingRequest, ImagingSession (+ overlap index)

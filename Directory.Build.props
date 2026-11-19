@@ -7,7 +7,7 @@
     <LangVersion>latest</LangVersion>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <!-- 0 warnings (cleanup Phase 6). Exceptions, each with its reason, are listed in .editorconfig. -->
+    <!-- 0 warnings. Exceptions, each with its reason, are listed in .editorconfig. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 

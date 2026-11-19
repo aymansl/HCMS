@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace HCMS4.Tests
 {
-    // Migration Inc1_Cleanup_DefaultsAndConstraints: Damascus defaults, money precision, check constraints, unique indexes.
+    // Damascus defaults, money precision, check constraints, unique indexes.
     public class DatabaseConstraintsModelTests
     {
         // A SQL Server model built without opening a connection.

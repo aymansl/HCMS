@@ -88,7 +88,7 @@ dotnet_naming_rule.types_pascal.severity = suggestion
 [**/Migrations/*.cs]
 generated_code = true
 
-# ----- Analyzer exceptions (cleanup Phase 6) -----
+# ----- Analyzer exceptions -----
 # Every rule switched off here has a reason. All other analyzer warnings are errors
 # (TreatWarningsAsErrors in Directory.Build.props).
 [*.cs]

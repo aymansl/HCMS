@@ -1,13 +1,16 @@
 # HCMS4 — Hospital Care Management System: Comprehensive Codebase Analysis
 
-> **Purpose of this document.** It is a complete, AI-readable map of the HCMS4 repository: architecture, startup pipeline, data model, business rules, every controller action and service method, the Razor UI layer, the no-show ML microservice contract, the test suite, and a catalogue of known defects and risks. It is intended to let another engineer or AI agent (or a fresh chat session) understand the implementation without re-reading the source.
+> **Purpose of this document.** It is a complete, AI-readable map of the HCMS4 repository: architecture, startup pipeline, data model, business rules, services and controllers, the Razor UI layer, the no-show ML microservice contract, the test suite, and a catalogue of known defects and risks. It is meant to let another engineer or AI agent (or a fresh chat session) understand the implementation without re-reading the source.
 >
-> **Verified against source** on 2026-10-21 using .NET SDK `10.0.103`. `dotnet build HCMS4.sln` → 0 errors. `dotnet test HCMS4.Tests/HCMS4.Tests.csproj` → **44 passed, 0 failed, 0 skipped**.
+> **Updated on 2026-11-19 at the end of Increment 1 (`v2.1`).** `dotnet build HCMS4.sln` → 0 errors, 0 warnings (warnings are errors). `dotnet test HCMS4.sln` → **371 passed, 0 failed**. Service line coverage 82.8 %.
+>
+> The first version of this analysis was written on 2026-10-21, before Increment 1. §19 keeps that original defect list and adds the current status of each item.
 
 ---
 
 ## Table of Contents
 
+0. [Status After Increment 1 (`v2.1`)](#0-status-after-increment-1-v21)
 1. [Repository Layout](#1-repository-layout)
 2. [Technology Stack](#2-technology-stack)
 3. [Build, Run, and Test](#3-build-run-and-test)
@@ -28,7 +31,35 @@
 18. [Key End-to-End Workflows](#18-key-end-to-end-workflows)
 19. [Known Issues, Defects &amp; Risks](#19-known-issues-defects--risks)
 20. [Recommended Next Steps](#20-recommended-next-steps)
-21. [Appendix A — Complete File Map](#appendix-a--complete-file-map)
+21. [Appendix A — File Map](#appendix-a--file-map)
+
+---
+
+## 0. Status After Increment 1 (`v2.1`)
+
+Increment 1 kept every feature and URL, and changed the structure underneath them.
+
+| Area | Before (2026-10-21) | After (2026-11-19) |
+|---|---|---|
+| Framework | `net6.0` (out of support) | `net10.0`, EF Core 10.0.15 |
+| Layout | `HCMS4/` with 7 role controllers | `src/HCMS4/` modular monolith: `Modules/*` + `Shared/*`; `tests/HCMS4.Tests` |
+| Controllers | `AdminController` 2 527 lines; all controllers use `ApplicationDbContext` | 23 module controllers; **none** uses the DbContext; data access in 39 services |
+| Authorization | Role strings; Doctor could reach `/Admin/*` | 25 permission policies (`Permissions.*`) mapped to 7 roles in `RolePermissions`; fallback policy requires sign-in |
+| Roles | Admin, Doctor, Patient, Pharmacist | + LabTechnician, Radiologist, EmergencySupervisor (no pages yet) |
+| Time | UTC / local mixed | Damascus time (UTC+3) stored and shown, through `IClinicClock` / `ClinicTime` |
+| Login UIs | MVC + scaffolded Identity pages | MVC only; lockout armed (5 attempts / 5 min) |
+| Pharmacy | Stock taken at prescribing and at dispensing; partial dispensing | Stock taken **only when dispensing**; the whole prescription at once; one invoice |
+| Billing | No admin invoice list | `/Admin/ManageInvoices` (filter, totals, pages); cash payments only |
+| UI language | English with some Arabic RTL pages | English (LTR) everywhere |
+| Secrets | Connection string committed | User Secrets / environment variables only |
+| Tests | 44 (none run through the solution) | 371 unit and integration tests, run through `HCMS4.sln` |
+| CI | none | GitHub Actions on push to `main` (`.github/workflows/ci.yml`) |
+
+**URLs did not change.** Module controllers keep the old controller names through `[ControllerName("Admin")]` and similar attributes; the full list is in `tests/HCMS4.Tests/Integration/RouteInventory.txt`. The only route changes since Increment 1 started are the following.
+- Removed:
+  - the dead pharmacist profile pages;
+  - the two "mark prescription completed" shortcuts.
+- Added: `GET /Admin/ManageInvoices`.
 
 ---
 
@@ -36,260 +67,198 @@
 
 ```
 HCMS4_FINAL/
-├── HCMS4.sln                       # Visual Studio solution — contains ONLY the web app
-├── HCMS4/                          # ASP.NET Core MVC web application (net6.0)
-│   ├── Program.cs                  # Top-level-statements startup
-│   ├── HCMS4.csproj                # Main project file
-│   ├── appsettings.json            # Connection string + NoShow API config
-│   ├── appsettings.Development.json
-│   ├── dotnet-tools.json           # Local dotnet-ef 6.0.35 tool manifest
-│   ├── Areas/Identity/Pages/       # Scaffolded ASP.NET Identity Razor Pages
-│   │   └── Account/                #   Login, Logout, Register, Manage/*, AccessDenied...
-│   ├── Controllers/                # 7 controllers
+├── HCMS4.sln                       # Web app + test project
+├── Directory.Build.props           # net-wide settings: nullable, analyzers, TreatWarningsAsErrors
+├── .editorconfig                   # Code style + documented analyzer exceptions
+├── .config/dotnet-tools.json       # Local tool: dotnet-ef 10.0.15
+├── .github/workflows/ci.yml        # Build + test on push to main
+├── src/HCMS4/                      # ASP.NET Core MVC web application (net10.0)
+│   ├── Program.cs                  # Startup: shared services, one Add<Module>Module() per module
+│   ├── appsettings.json            # No secrets (connection string, admin, API key come from User Secrets)
+│   ├── appsettings.Development.example.json
 │   ├── Data/
-│   │   ├── ApplicationDbContext.cs # EF Core DbContext (360 lines)
-│   │   └── Migrations/             # 24 migrations + 23 Designer files + model snapshot
-│   ├── Models/                     # 36 entity/enum files (incl. Models/Common)
-│   ├── Models/Common/              # BusinessRules, Pagination, ServiceResult, helpers
-│   ├── Properties/                 # launchSettings.json, serviceDependencies*.json
-│   ├── Services/                   # 18 files: 10 interfaces + 10 implementations + background service + seeder
-│   ├── ViewModels/                 # 61 files (74 class declarations)
-│   ├── Views/                      # 82 .cshtml (Admin, Doctor, Patient, Pharmacist, Account, Home, Shared)
-│   └── wwwroot/                    # CSS/JS/vendor libs/images
-├── HCMS4.Tests/                    # xUnit test project (net10.0) — NOT in the solution
-└── medical-appointment-no-shows-main/
-    └── medical-appointment-no-shows-main/   # Flask ML microservice (upstream GitHub project)
-        ├── scripts/predict.py       # Flask app exposing POST /predict on :9696
-        ├── scripts/train.py         # Model training pipeline
-        ├── models/*.bin             # Pickled scaler+OneHotEncoder+classifier bundles
-        ├── data/KaggleV2-May-2016.csv
-        └── Dockerfile, Pipfile, README.md
+│   │   ├── ApplicationDbContext.cs # DbSets + ApplyConfigurationsFromAssembly
+│   │   └── Migrations/             # 29 migrations + model snapshot (never edited)
+│   ├── Modules/
+│   │   ├── Appointments/  Controllers Data Models Services Views
+│   │   ├── Billing/       Controllers Data Models Services Views
+│   │   ├── Feedback/      Controllers Data Models Services Views   (complaints, surveys, ratings, articles)
+│   │   ├── Pharmacy/      Controllers Data Models Services Views   (drugs, prescriptions, dispensing, suppliers, purchasing)
+│   │   ├── Portal/        Controllers Services Views               (role dashboards, public home page)
+│   │   ├── Records/       Controllers Data Models Services Views   (patients, clinical notes, medical record)
+│   │   ├── Staff/         Controllers Data Models Services Views   (doctors, pharmacists, specializations, leave)
+│   │   ├── Lab/           README.md   (Increments 2–3)
+│   │   ├── Radiology/     README.md   (Increments 4–5)
+│   │   └── Emergency/     README.md   (Increment 6)
+│   ├── Shared/
+│   │   ├── Audit/          SystemActivityLog, IActivityLogService
+│   │   ├── Common/         ServiceResult, Pagination, BusinessRules, ClinicTime/IClinicClock, HcmsControllerBase,
+│   │   │                   ControllerNameAttribute, ModuleViewLocationExpander
+│   │   ├── Identity/       ApplicationUser, AccountController, AdminSeeder, ICurrentUserService, lookups,
+│   │   │                   Authorization/ (Roles, Permissions, RolePermissions, AddHcmsAuthorization)
+│   │   ├── Notifications/  UserNotification, INotificationService
+│   │   ├── Reporting/      DailyReport, IDailyReportService, DailyReportBackgroundService
+│   │   └── Workflow/       StateMachine<TStatus> for orders and cases
+│   ├── ViewModels/         Shared view models (HCMS4.ViewModels)
+│   ├── Views/              Account, Home, Shared (layouts, partials)
+│   └── wwwroot/            CSS / JS / vendor libraries / images
+├── tests/HCMS4.Tests/      xUnit unit + integration tests (net10.0)
+├── ai-service/             Flask no-show ML service (predict.py, train.py, models/*.bin, data/*.csv)
+└── docs/                   REQUIREMENTS.md, this file, diagrams/*.puml
 ```
 
-**File counts (verified):** 82 views, 61 ViewModel files, 36 model files, 18 service files, 24 migrations (+ 23 Designer files + model snapshot), 7 controllers, 44 unit tests.
+Each module registers its services in `<Module>Module.Add<Module>Module()` and keeps one `IEntityTypeConfiguration<T>` per entity in its `Data/` folder. Views are found in `Modules/<Module>/Views/<Controller>/` first (`ModuleViewLocationExpander`), then in `Views/`.
 
 ---
 
 ## 2. Technology Stack
 
-### Web application (`HCMS4/HCMS4.csproj`)
+### Web application (`src/HCMS4/HCMS4.csproj`)
 
 | Item | Value |
 |---|---|
 | SDK | `Microsoft.NET.Sdk.Web` |
-| Target framework | `net6.0` (EOL — see [Risks](#19-known-issues-defects--risks)) |
-| Nullable reference types | enabled |
-| Implicit usings | enabled |
+| Target framework | `net10.0` (LTS) |
+| Analysis | `AnalysisLevel=latest-recommended`, `EnforceCodeStyleInBuild`, `TreatWarningsAsErrors` (Directory.Build.props) |
+| Nullable / implicit usings | enabled |
 | UserSecretsId | `aspnet-HCMS4-A260DD2B-EF83-4531-8B2B-7ADF582829DA` |
-| ORM | EF Core 6.0.35 + `Microsoft.EntityFrameworkCore.SqlServer` 6.0.35 |
-| Identity | `Microsoft.AspNetCore.Identity.EntityFrameworkCore` 6.0.35, `...Identity.UI` 6.0.35 |
-| Diagnostics | `Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore` 6.0.7 |
-| Migrations tooling | `Microsoft.EntityFrameworkCore.Design` 6.0.35, `...Tools` 6.0.35 |
-| Razor scaffolding | `Microsoft.VisualStudio.Web.CodeGeneration.Design` 6.0.18 |
-| Client-side validation | `jQuery.Validation` 1.21.0, `Microsoft.jQuery.Unobtrusive.Ajax` 3.2.6, `Microsoft.jQuery.Unobtrusive.Validation` 4.0.0 |
-| Front-end | Bootstrap 5 (vendored), Bootstrap Icons, Font Awesome Free, AOS, GLightbox, Swiper, PureCounter, jQuery 3.6/3.7 (CDN + local) |
+| ORM | EF Core 10.0.15 + SQL Server provider |
+| Identity | `Microsoft.AspNetCore.Identity.EntityFrameworkCore` 10.0.15 (MVC login only, no Identity UI) |
+| Time | `TimeProvider` through `IClinicClock` / `ClinicTime` (Asia/Damascus) |
+| Front-end | Razor + Bootstrap 5, Bootstrap Icons, jQuery (one local copy), English LTR UI |
 
-### Test project (`HCMS4.Tests/HCMS4.Tests.csproj`)
+### Test project (`tests/HCMS4.Tests/HCMS4.Tests.csproj`)
 
 | Item | Value |
 |---|---|
-| SDK | `Microsoft.NET.Sdk` |
-| Target framework | `net10.0` (mismatch vs. the app's `net6.0`) |
+| Target framework | `net10.0` |
 | Test framework | xUnit 2.9.3 + `xunit.runner.visualstudio` 3.1.4 |
-| Test SDK | `Microsoft.NET.Test.Sdk` 17.14.1 |
-| DB provider | `Microsoft.EntityFrameworkCore.InMemory` 6.0.0 |
-| Mocking | `Moq` 4.18.4 |
-| Coverage | `coverlet.collector` 6.0.4 |
-| Project reference | `..\HCMS4\HCMS4.csproj` |
+| Integration tests | `Microsoft.AspNetCore.Mvc.Testing` 10.0.15 (`HcmsWebApplicationFactory`, header-based test login) |
+| DB provider | `Microsoft.EntityFrameworkCore.InMemory` 10.0.15 |
+| Time | `Microsoft.Extensions.TimeProvider.Testing` (`FakeTimeProvider`) |
+| Mocking / coverage | Moq 4.18.4, coverlet.collector 6.0.4 |
 
-### ML microservice
+### ML microservice (`ai-service/`)
 
 | Item | Value |
 |---|---|
-| Language | Python |
-| Framework | Flask (`app = Flask('noshow')`) |
-| Endpoint | `POST /predict` on `0.0.0.0:9696` |
+| Language / framework | Python, Flask (`scripts/predict.py`) |
+| Endpoint | `POST /predict` on `127.0.0.1:9696`, requires `X-API-Key` (`HCMS_AI_API_KEY`), `debug=False` |
 | Model | LightGBM classifier (`LGBMClassifier_tranformers_final.bin`) + `StandardScaler` + `OneHotEncoder` |
-| Data | Kaggle "Medical Appointment No Shows" dataset (110k+ rows) |
+| Data | Kaggle "Medical Appointment No Shows" dataset |
 
 ---
 
 ## 3. Build, Run, and Test
 
-```bash
-# Build the web app (solution contains only HCMS4)
-dotnet build "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.sln"
+```powershell
+# Build and test (the solution contains the web app and the tests)
+dotnet build HCMS4.sln
+dotnet test HCMS4.sln
 
-# Build + run the test project directly (it is NOT in HCMS4.sln)
-dotnet build "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
-dotnet test  "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
+# Run the web app (needs the User Secrets below)
+dotnet run --project src\HCMS4\HCMS4.csproj
 
-# Run the web app (Development profile → https://localhost:7023 ; http://localhost:5023)
-dotnet run --project "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4\HCMS4.csproj"
-
-# Run the ML service (from the nested repo root, so that ../models resolves)
-cd medical-appointment-no-shows-main/medical-appointment-no-shows-main/scripts
-python predict.py     # serves on :9696
-
-# EF tooling (local tool manifest at HCMS4/dotnet-tools.json is pinned to 6.0.35, rollForward:false)
-cd HCMS4
+# EF tooling (local tool manifest in .config/)
 dotnet tool restore
-dotnet ef migrations add <Name> --project HCMS4
+dotnet tool run dotnet-ef migrations add Inc<N>_<Code>_<Name> --project src\HCMS4\HCMS4.csproj --output-dir Data\Migrations
+
+# AI service
+$env:HCMS_AI_API_KEY = "<key>"; python ai-service\scripts\predict.py
 ```
 
-> The tool manifest lives at `HCMS4/dotnet-tools.json` (not `.config/`), so `dotnet tool restore` must be run from inside the `HCMS4` folder.
+**First-run behaviour:** on startup the app applies pending migrations (`Database.Migrate()`, relational providers only) and runs `AdminSeeder`. The seeder creates the 7 roles and the admin account, and **refuses to start** when `AdminSettings:Email` / `AdminSettings:Password` are missing.
 
-**Launch profiles** (`HCMS4/Properties/launchSettings.json`)
-
-| Profile | URL | Environment |
-|---|---|---|
-| `HCMS4` (Project) | `https://localhost:7023;http://localhost:5023` | `Development` |
-| `IIS Express` | `http://localhost:6128` / ssl `44307` | `Development` |
-
-**First-run behaviour:** on startup the app runs `dbContext.Database.Migrate()` and then `AdminSeeder.SeedAdminUser(...)`, so a fresh database is created and populated automatically.
+**CI:** `.github/workflows/ci.yml` runs restore → `build -c Release` → `test` with XPlat coverage on `windows-latest` for every push to `main`. It needs no secrets because the tests use EF InMemory.
 
 ---
 
 ## 4. Configuration
 
-### `HCMS4/appsettings.json`
+`src/HCMS4/appsettings.json` contains **no secrets**:
 
 ```jsonc
 {
-  "ConnectionStrings": {
-    "DefaultConnection": "Data Source=DESKTOP-VTA1SQ3\\SQLEXPRESS;Initial Catalog=aspnet-HCMS4T;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
-  },
-  "NoShowAPI": {
-    "BaseUrl": "http://localhost:9696",
-    "ApiKey": ""
-  },
+  "ConnectionStrings": { "DefaultConnection": "" },
+  "AiService": { "BaseUrl": "http://localhost:9696", "ApiKey": "" },
   "Logging": { "LogLevel": { "Default": "Information", "Microsoft.AspNetCore": "Warning" } },
   "AllowedHosts": "*"
 }
 ```
 
-The file also contains a JSONC comment block instructing operators to configure the admin credentials through User Secrets:
+Development values come from **User Secrets**. Other environments use environment variables. `appsettings.Development.example.json` shows the expected keys:
 
-```
-dotnet user-secrets set "AdminSettings:Password" "YourSecurePassword"
-dotnet user-secrets set "AdminSettings:Email" "admin@hospital.com"
-dotnet user-secrets set "AdminSettings:UserName" "admin"
-```
-
-> **Security note.** The checked-in connection string points at a developer machine (`DESKTOP-VTA1SQ3\SQLEXPRESS`) and uses `Integrated Security`. It is a local-development artifact and must not be treated as a production credential. `NoShowAPI:ApiKey` is present in config but is **never read** by any code — the Flask service performs no authentication at all.
-
-### `HCMS4/appsettings.Development.json`
-
-Only log-level overrides (`Default: Information`, `Microsoft.AspNetCore: Warning`). No connection-string override, so Development uses the same database as Production.
-
-### `HCMS4/Properties/serviceDependencies.json` / `.local.json`
-
-Empty stubs (139 / 145 bytes) — no external service dependency is wired in.
+| Key | Purpose |
+|---|---|
+| `ConnectionStrings:DefaultConnection` | SQL Server connection string |
+| `AdminSettings:Email`, `AdminSettings:Password`, `AdminSettings:UserName` | Seeded admin account (required) |
+| `AiService:ApiKey` | Must equal the AI service's `HCMS_AI_API_KEY`. Without it the app uses the local no-show estimate |
 
 ---
 
 ## 5. Startup Pipeline (`Program.cs`)
 
-`HCMS4/Program.cs` uses .NET 6 top-level statements. Execution order:
-
-1. `WebApplication.CreateBuilder(args)`.
-2. **EF Core** — `AddDbContext<ApplicationDbContext>` bound to `ConnectionStrings:DefaultConnection` with `UseSqlServer`.
-3. **MVC + Razor Pages** — `AddControllersWithViews()` and `AddRazorPages()` (Identity UI needs the latter).
-4. **Session** — 30-minute idle timeout; cookie `HttpOnly`, `IsEssential`, `SameSite=Strict`.
-5. **Identity** — `AddIdentity<ApplicationUser, IdentityRole>`:
-   - `Password.RequireDigit = true`, `RequiredLength = 6`, `RequireNonAlphanumeric = false`, `RequireUppercase = true`, `RequireLowercase = true`
-   - `Lockout.DefaultLockoutTimeSpan = 5 min`, `MaxFailedAccessAttempts = 5`
-   - `User.RequireUniqueEmail = true`
-   - `AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders()`
-6. **Application cookie** — `LoginPath = "/Account/Login"`, `AccessDeniedPath = "/Account/AccessDenied"`, `ExpireTimeSpan = 60 min`, `SlidingExpiration = true`.
-7. **Authorization policies** — `AdminOnly`, `DoctorOnly`, `PatientOnly`, `AdminOrDoctor` (see [§7](#7-authentication--authorization) for the fact that none of them are consumed).
-8. **Service registration** — see [§6](#6-dependency-injection-registry).
-9. **Hosted service** — `AddHostedService<DailyReportBackgroundService>()`.
-10. **Typed HTTP client** — `AddHttpClient("NoShowAPI")` with a 30 s timeout.
-11. **Global culture** — `CultureInfo.DefaultThreadCurrentCulture` / `...UICulture` forced to `en-US` (dates, currency and number formatting are therefore US-style throughout the UI).
-12. **Middleware pipeline**
-    - Development → `UseDeveloperExceptionPage()`; otherwise `UseExceptionHandler("/Home/Error")` + `UseHsts()`
-    - `UseHttpsRedirection()` → `UseStaticFiles()` → `UseRouting()` → **`UseSession()`** → `UseAuthentication()` → `UseAuthorization()`
-13. **Routing** — default `{controller=Home}/{action=Index}/{id?}` + `MapRazorPages()`.
-14. **Bootstrap block** — creates a DI scope, calls `dbContext.Database.Migrate()`, then `await AdminSeeder.SeedAdminUser(scope.ServiceProvider)`.
-15. `app.Run()`.
-
-> ⚠️ There is **no global authorization filter** (`options.FallbackPolicy` / `RequireAuthenticatedUser` on `AddControllersWithViews`). Anonymous access is therefore the default; protection relies entirely on `[Authorize]` attributes on controllers/actions.
+1. `WebApplication.CreateBuilder(args)`; `AddDbContext<ApplicationDbContext>` with SQL Server.
+2. `AddControllersWithViews` with the global `AutoValidateAntiforgeryTokenAttribute`. The `ModuleViewLocationExpander` and the `[ControllerName]` convention are also registered.
+3. Session (30 min, `HttpOnly`, `SameSite=Strict`).
+4. `AddHcmsIdentity()`:
+   - Identity password rules.
+   - Lockout: 5 attempts / 5 min, armed on login.
+   - Unique email.
+   - Cookie: `/Account/Login`, `/Account/AccessDenied`, 60 min sliding.
+   - `ICurrentUserService`.
+5. `AddHcmsAuthorization()`: fallback policy `RequireAuthenticatedUser` plus one policy per permission (§7).
+6. Shared services: `AddSharedCommon()` (clock), `AddNotifications()`, `AddAudit()`, `AddReporting()` (daily report plus the nightly `DailyReportBackgroundService`).
+7. Modules: `AddAppointmentsModule()`, `AddRecordsModule()`, `AddPharmacyModule()`, `AddBillingModule()`, `AddFeedbackModule()`, `AddStaffModule()`, `AddPortalModule()`.
+8. Culture fixed to `en-US`.
+9. Middleware: developer exception page (Development) or exception handler + HSTS → HTTPS redirection → static files → routing → session → authentication → authorization.
+10. Default route `{controller=Home}/{action=Index}/{id?}`.
+11. Startup scope: `Migrate()` (or `EnsureCreated()` for InMemory), then `AdminSeeder.SeedAdminUser`.
 
 ---
 
 ## 6. Dependency Injection Registry
 
-All in `Program.cs` lines 59–74.
+All services are scoped unless noted. Each line is registered by the extension method in its module or shared folder.
 
-| Service | Implementation | Lifetime |
-|---|---|---|
-| `IDailyReportService` | `DailyReportService` | Scoped |
-| `IPatientService` | `PatientService` | Scoped |
-| `IAppointmentService` | `AppointmentService` | Scoped |
-| `IPrescriptionService` | `PrescriptionService` | Scoped |
-| `IDrugService` | `DrugService` | Scoped |
-| `IPharmacistService` | `PharmacistService` | Scoped |
-| `ILeaveService` | `LeaveService` | Scoped |
-| `INotificationService` | `NotificationService` | Scoped |
-| `IActivityLogService` | `ActivityLogService` | Scoped |
-| `INoShowRiskService` | `NoShowRiskService` | Scoped |
-| `DailyReportBackgroundService` | `BackgroundService` | Hosted (singleton) |
-| `HttpClient` | named client `"NoShowAPI"` (30 s timeout) | Factory-managed |
+| Module / shared | Services |
+|---|---|
+| Shared/Common | `IClinicClock` (singleton) |
+| Shared/Identity | `ICurrentUserService` |
+| Shared/Notifications | `INotificationService` |
+| Shared/Audit | `IActivityLogService` |
+| Shared/Reporting | `IDailyReportService`; `DailyReportBackgroundService` (hosted) |
+| Appointments | `IAppointmentService`, `IDailyVisitReportService`, `INoShowRiskService` (+ named `HttpClient`) |
+| Records | `IPatientService`, `IMedicalRecordService`, `IPatientLookup` |
+| Staff | `IStaffService`, `ILeaveService`, `IDoctorLookup` |
+| Pharmacy | `IDrugService`, `IPrescriptionService`, `IPharmacistService`, `ISupplierService`, `IPurchaseRequestService`, `IDispensingService`, `IPrescriptionRequestService` |
+| Billing | `IInvoiceService`, `IInvoicePaymentService` |
+| Feedback | `IComplaintService`, `IComplaintAttachmentService`, `ISurveyService`, `IVisitRatingService`, `IMedicalArticleService` |
+| Portal | `IDashboardService` |
 
-`AdminSeeder` is a static helper (not DI-registered) and is invoked directly during startup.
+`ModuleRegistrationTests` checks that every service resolves.
 
 ---
 
 ## 7. Authentication & Authorization
 
-### Roles
-
-`AdminSeeder` creates four `IdentityRole` rows if missing: **Admin, Doctor, Patient, Pharmacist**. Roles are assigned when accounts are created (self-registration → `Patient`; admin-created doctor/pharmacist → respective role; seeded admin → `Admin`).
-
-### Authorization attributes actually used
-
-| Controller | Class-level attribute | Per-action overrides |
-|---|---|---|
-| `HomeController` | *(none — public)* | — |
-| `AccountController` | *(none — public)* | — |
-| `AdminController` | `[Authorize(Roles = "Admin,Doctor")]` | `[Authorize(Roles = "Doctor")]` on `DailyVisitingPatientsReport`; `[Authorize(Roles = "Admin")]` on `Complaints`, `ComplaintDetails`, `UpdateComplaintStatus`, `Surveys`, `CreateSurvey` |
-| `DoctorController` | `[Authorize(Roles = "Doctor")]` | — |
-| `PatientController` | `[Authorize(Roles = "Patient")]` | (redundant per-action `[Authorize(Roles="Patient")]` on most actions) |
-| `PharmacistController` | `[Authorize(Roles = "Pharmacist")]` | — |
-
-> ⚠️ **Privilege-escalation risk.** Because `AdminController` is `[Authorize(Roles = "Admin,Doctor")]`, **any authenticated Doctor can reach most admin endpoints** — `/Admin/Patients`, `/Admin/EditPatient`, `/Admin/CreateDoctor`, `/Admin/ManageAppointments`, `/Admin/GenerateInvoice`, `/Admin/UpdatePaymentStatus`, `/Admin/PurchaseRequests`, `/Admin/ApprovePurchaseRequest`, `/Admin/Suppliers`, `/Admin/PriceList`, `/Admin/RegisterDoctorLeave`, `/Admin/DeleteUser`, etc. Only complaints/survey actions are Admin-only. This is the highest-impact authorization finding in the codebase.
-
-### Named policies (registered but unused)
-
-`AdminOnly`, `DoctorOnly`, `PatientOnly`, `AdminOrDoctor` are registered in `AddAuthorization` but **no controller or action references them** (verified by grep). They are dead configuration.
-
-### Cookie configuration
-
-- Login path: `/Account/Login` → `AccountController.Login` (custom MVC controller, `Views/Account/Login.cshtml`).
-- Access-denied path: `/Account/AccessDenied` → **no such action exists** in `AccountController` and no `Views/Account/AccessDenied.cshtml` exists. The Identity scaffold page at `Areas/Identity/Pages/Account/AccessDenied.cshtml` is served at `/Identity/Account/AccessDenied`, not at the configured path. A role-denied request therefore yields a 404 rather than a friendly page.
-- Identity scaffold also provides a separate login at `/Identity/Account/Login` (`Areas/Identity/Pages/Account/Login.cshtml`), so there are **two parallel login UIs**.
-- **Lockout is configured but never armed** — both `AccountController.Login` and the scaffolded `Areas/Identity/Pages/Account/Login.cshtml.cs` call `PasswordSignInAsync(..., lockoutOnFailure: false)`, so the 5-attempt / 5-minute lockout policy never takes effect.
-
-### `BaseController` (`Controllers/BaseController.cs`)
-
-Abstract base exposing `protected readonly ApplicationDbContext _context` and `ILogger _logger`, plus:
-
-| Helper | Behaviour |
-|---|---|
-| `GetCurrentPatientIdAsync()` | Reads `ClaimTypes.NameIdentifier` → looks up `Patients.UserId` → returns `Patient.Id` or `null` |
-| `GetCurrentDoctorIdAsync()` | Same, against `Doctors` |
-| `GetCurrentUserAsync()` | Looks up `Users` by `UserName` **or** `Email` |
-
-A block of convenience helpers (`HandleError`, `HandleErrorWithView`, `HandleNotFound`, `HandleSuccess`, `AddErrors`, `AddError`) is present but **commented out**.
-
-`AccountController` and `PharmacistController` do **not** derive from `BaseController`; they inject `ApplicationDbContext` directly.
+- **One login UI:** `/Account/Login`, with lockout armed and local `returnUrl` only. `/Account/AccessDenied` shows a 403 page.
+- **Fallback policy:** every endpoint requires a signed-in user unless it is `[AllowAnonymous]` (Home, Login, Register, AccessDenied).
+- **Antiforgery:** validated globally on every POST.
+- **Roles (7):** Admin, Doctor, Patient, Pharmacist, LabTechnician, Radiologist, EmergencySupervisor. All are created by `AdminSeeder`.
+- **Permissions:** `Shared/Identity/Authorization/Permissions.cs` defines 25 permission names. `RolePermissions.cs` is the **only** place that maps roles to permissions. `AddHcmsAuthorization()` registers each permission as a policy that the roles holding it satisfy.
+  - Every controller has `[Authorize(Policy = Permissions.<Area>.<Action>)]` (§12).
+  - The permissions for Lab, Radiology and Emergency are defined and mapped, but no endpoint uses them yet.
+- **Tests:**
+  - `RoleAccessMatrixTests` requests every GET route as each of the 7 roles; the response is 403 exactly where the role lacks the controller's permission.
+  - `PermissionPolicyTests` checks that no role strings remain.
+- **`HcmsControllerBase`:** the controller base class. It gives the current user id, patient id and doctor id through `IPatientLookup`, `IDoctorLookup` and `ICurrentUserService`; it has no data access of its own.
 
 ---
 
 ## 8. Data Model
 
-All entities live in namespace `HCMS4.Models` (folder `HCMS4/Models`). Shared primitives live in `HCMS4.Models.Common`.
+Entities live in their module: `src/HCMS4/Modules/<Module>/Models`, namespace `HCMS4.Modules.<Module>.Models`. Identity, audit, notification and report entities live in `Shared/<Area>/Models`. The shared primitives (`ServiceResult`, `Pagination`, `BusinessRules`) moved to `HCMS4.Shared.Common`. All dates are Damascus time. The property tables below describe the domain and are still valid. Since Increment 1, money columns have an explicit `decimal(18,2)` precision, and check constraints guard amounts, quantities and ratings (see §9).
 
 ### 8.1 Identity
 
@@ -388,7 +357,7 @@ Computed `ExpiryStatus`: `"Expired"` (≤0 d), `"Expiring Soon"` (≤30 d), `"Ex
 
 **`DailyReport`** — `Id`, `ReportDate`, `TotalInvoices`, `TotalAmount`, `GeneratedAt`, `ReportData?` (JSON blob).
 
-### 8.7 `HCMS4.Models.Common`
+### 8.7 `HCMS4.Shared.Common`
 
 | Type | Purpose |
 |---|---|
@@ -437,11 +406,11 @@ SurveyAssignment 1──N SurveyAnswer ──N:1 SurveyQuestion
 
 ## 9. Database Schema, Migrations & Seed Data
 
-`HCMS4/Data/ApplicationDbContext.cs` (360 lines) defines **29 `DbSet`s** and the full fluent configuration. It contains **no** `SaveChanges` override, **no** global query filters, and **no** value converters.
+`src/HCMS4/Data/ApplicationDbContext.cs` defines the `DbSet`s and applies one `IEntityTypeConfiguration<T>` per entity from the modules (`ApplyConfigurationsFromAssembly`). It contains **no** `SaveChanges` override, **no** global query filters, and **no** value converters.
 
-### 9.1 Migrations (24 migrations + model snapshot)
+### 9.1 Migrations (29 migrations + model snapshot)
 
-`HCMS4/Data/Migrations/` holds 48 `.cs` files: **24 migration classes**, 23 `.Designer.cs` snapshot files and 1 `ApplicationDbContextModelSnapshot.cs`. The `<identity>` migration is hand-written and has no `.Designer.cs` companion.
+`src/HCMS4/Data/Migrations/` holds the migrations; migrations 1–24 predate Increment 1 and 25–29 were added by it. Originally: **24 migration classes**, 23 `.Designer.cs` snapshot files and 1 `ApplicationDbContextModelSnapshot.cs`. The `<identity>` migration is hand-written and has no `.Designer.cs` companion.
 
 | # | Migration | Purpose |
 |---|---|---|
@@ -469,37 +438,42 @@ SurveyAssignment 1──N SurveyAnswer ──N:1 SurveyQuestion
 | 22 | `20260506154500_AddActivityLogMetadataColumns` | `SystemActivityLog` metadata |
 | 23 | `20260506170000_AddSurveyMetadataColumns` | `Survey` metadata |
 | 24 | `20260506183000_AddSurveyAnswerAnsweredAt` | `SurveyAnswer.AnsweredAt` |
+| 25 | `20261117143856_Inc1_Cleanup_Net10Upgrade` | Empty baseline after the .NET 10 upgrade |
+| 26 | `20261118072633_Inc1_Cleanup_PaymentMethodAndLeaveRejectionReason` | `Invoice.PaymentMethod`, `LeaveRequest.RejectionReason` |
+| 27 | `20261118073100_Inc1_Cleanup_DamascusTime` | SQL defaults → Damascus time; one-time +3 h on system timestamps |
+| 28 | `20261119121620_Inc1_Cleanup_DefaultsAndConstraints` | Last 3 UTC defaults; explicit money precision; 12 check constraints; 4 unique indexes |
+| 29 | `20261119123826_Inc1_Cleanup_EnglishSpecializationDescriptions` | English seed descriptions |
 | — | *(snapshot)* `ApplicationDbContextModelSnapshot.cs` | Current model snapshot (61 KB) — not a migration |
 
 ### 9.2 Seed data
 
-`modelBuilder.Entity<Specialization>().HasData(...)` seeds 6 specializations:
+`SpecializationConfiguration` seeds 6 specializations (`HasData`); the descriptions are English since migration 29:
 
 | Id | Name | ConsultationFee | Description |
 |---|---|---|---|
-| 1 | Cardiology | 150 |قلبية |
-| 2 | Dermatology | 120 | جلدية |
-| 3 | Orthopedics | 130 | عظمية |
-| 4 | Neurology | 180 | عصبية |
-| 5 | Pediatrics | 110 | أطفال |
-| 6 | General Medicine | 100 | طب عام |
+| 1 | Cardiology | 150 | Heart and blood vessels |
+| 2 | Dermatology | 120 | Skin, hair and nails |
+| 3 | Orthopedics | 130 | Bones, joints and muscles |
+| 4 | Neurology | 180 | Brain and nervous system |
+| 5 | Pediatrics | 110 | Children's health |
+| 6 | General Medicine | 100 | General health care |
 
 ### 9.3 SQL Server defaults
 
-`GETUTCDATE()` is the default for `Appointment.CreatedAt`, `Drug.CreatedAt`, `Prescription.PrescriptionDate`, `ClinicalNote.Date`, `Invoice.InvoiceDate`, `VisitRating.CreatedAt`, `PrescriptionReissueRequest.RequestDate`, `DoctorReviewRequest.RequestDate`, `PharmacistPrescriptionNote.CreatedAt`, `MedicalArticle.CreatedAt`, `Survey.CreatedAt`, `UserNotification.CreatedAt`, `SystemActivityLog.CreatedAt`.
+Every date default is Damascus time: `CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)` (`ClinicTime.SqlNow`). No `GETUTCDATE()` default remains (migrations 27 and 28).
 
-### 9.4 Admin seeding (`Services/AdminSeeder.cs`)
+### 9.4 Admin seeding (`Shared/Identity/Services/AdminSeeder.cs`)
 
-1. Ensures the roles **Admin, Doctor, Patient, Pharmacist** exist.
-2. Reads `AdminSettings:Email` / `AdminSettings:UserName` / `AdminSettings:Password` from configuration (User Secrets).
-3. **If any are missing → logs a warning and falls back to hard-coded defaults**: `admin@hospital.com` / `admin` / `Admin@123`. This is a real production risk — see [§19](#19-known-issues-defects--risks).
-4. Creates the admin user if the email is not taken and adds it to the `Admin` role.
+1. Ensures the 7 roles exist (`Roles.All`).
+2. Reads `AdminSettings:Email` / `UserName` / `Password` (User Secrets).
+3. **Fails fast** when they are missing or the admin cannot be created; there are no default credentials.
+4. Creates the admin user if needed and adds it to the `Admin` role.
 
 ---
 
 ## 10. Business Rules Catalogue
 
-`HCMS4/Models/Common/BusinessRules.cs`:
+`src/HCMS4/Shared/Common/BusinessRules.cs`:
 
 | Constant | Value | Meaning |
 |---|---|---|
@@ -521,308 +495,77 @@ SurveyAssignment 1──N SurveyAnswer ──N:1 SurveyQuestion
 
 ## 11. Service Layer
 
-`HCMS4/Services/` — 18 files. They contain **10 service interfaces**, **10 service implementations**, one `BackgroundService` and one static seeder helper. Six interfaces live in their own `I*.cs` files (`IAppointmentService`, `IDailyReportService`, `IDrugService`, `IPatientService`, `IPharmacistService`, `IPrescriptionService`); the other four (`ILeaveService`, `INotificationService`, `IActivityLogService`, `INoShowRiskService`) are declared in the same file as their implementation.
+All data access goes through services that return `ServiceResult` / `ServiceResult<T>` or plain query results. Every service reads the time from `IClinicClock`. Lookups that can find nothing return `Task<T?>`.
 
-### 11.1 `IAppointmentService` / `AppointmentService` (`AppointmentService.cs`, 312 lines)
+| Module | Service | Responsibility |
+|---|---|---|
+| Appointments | `IAppointmentService` | Booking (future date, ±30 min slot check), reschedule, cancel (24 h window), lists, consultation fee, past → completed |
+| | `IDailyVisitReportService` | The doctor's daily visiting-patients report |
+| | `INoShowRiskService` | No-show scores from the AI service. It falls back to the local estimate on timeout, error, 503 or a missing key, and is stateless (`NoShowRiskResult`) |
+| Records | `IPatientService` | Patients: list, details, edit, enable/disable, delete, own details |
+| | `IMedicalRecordService` | A doctor's view of a patient's record. Access requires an appointment with the patient, and the same rule applies to adding clinical notes |
+| Staff | `IStaffService` | Doctors, pharmacists, specializations and fees, bookable doctors (available, not on approved leave), user deletion |
+| | `ILeaveService` | Leave requests, approval or rejection with a reason, registered leaves; notifies the admins |
+| Pharmacy | `IDrugService` | Drug catalogue, stock, expiry status (30 / 60 days), prescribable drugs |
+| | `IPrescriptionService` | Prescriptions. Creating one **checks** stock and expiry but **does not take stock**; only pending prescriptions can be canceled |
+| | `IDispensingService` | The pharmacist's queue. Dispensing covers the **whole** prescription (nothing if any item is short): it takes the stock, completes the prescription and creates one pending invoice (+5 % tax). Also notes and doctor review requests |
+| | `IPrescriptionRequestService` | Patient prescription views and re-issuance requests (completed, ≤ 30 days, one pending); the doctor's answers to re-issuance and review requests |
+| | `ISupplierService`, `IPurchaseRequestService` | Suppliers (unique active name; deactivate when used); purchase requests (create → approve adds stock / reject with a reason) |
+| | `IPharmacistService` | Pharmacist profile, hold a prescription |
+| Billing | `IInvoiceService` | Admin invoice list (filters, totals, pages), invoice generation (total = fee + medication, ownership checks), payment status updates, patient invoice views |
+| | `IInvoicePaymentService` | Patient payments: cash only, never above the remaining balance |
+| Feedback | `IComplaintService`, `IComplaintAttachmentService` | Complaints (tracking number, status flow) and attachments (stored outside `wwwroot`; type, size and signature checks) |
+| | `ISurveyService` | Surveys: create, send to a target audience, answer once |
+| | `IVisitRatingService` | One rating per completed visit; updates the doctor's average |
+| | `IMedicalArticleService` | Doctor articles: draft or publish, with a publishing permission |
+| Portal | `IDashboardService` | Read-only figures for the four role dashboards |
+| Shared | `INotificationService`, `IActivityLogService`, `IDailyReportService`, `ICurrentUserService`, `IPatientLookup`, `IDoctorLookup` | Notifications, audit log, daily pharmacy report, current user lookups |
 
-| Method | Behaviour |
-|---|---|
-| `GetByIdAsync(int id)` | Appointment + Patient.User + Doctor.User (`AsNoTracking`) |
-| `GetByIdWithDetailsAsync(int id)` | Adds `Doctor.Specialization` |
-| `GetAllAsync(PaginationParams, string status = "all")` | Paged list ordered by date desc; `status` parsed with `Enum.TryParse<AppointmentStatus>` |
-| `GetByDoctorIdAsync(int)` / `GetByPatientIdAsync(int)` | Filtered lists, date desc |
-| `GetTodayAppointmentsAsync(int? doctorId, int? patientId)` | `AppointmentDateTime.Date == today` **and** status `Scheduled` |
-| `GetUpcomingAppointmentsAsync(int? doctorId, int days = 30)` | Date > today, status `Scheduled`, capped at 50 |
-| `GetCanceledAppointmentsAsync(int? doctorId)` | Status `Canceled` and date ≥ today, capped at 20 |
-| `CreateAsync(Appointment)` | Checks `IsTimeSlotAvailableAsync`; stamps `CreatedAt`/`UpdatedAt` = UTC now; forces status `Scheduled`; **does not validate future date** |
-| `RescheduleAsync(int id, DateTime newDateTime)` | Requires status `Scheduled`; checks slot availability excluding self; **preserves the original `ConsultationFee`** |
-| `CancelAsync(int id, string reason)` | Requires status `Scheduled`; rejects if `AppointmentDateTime <= UtcNow + 24 h`; requires a non-empty reason; sets status `Canceled` + `CancellationReason` |
-| `UpdatePastScheduledToCompletedAsync()` | Bulk-flips past `Scheduled` appointments to `Completed` (never called from `Program.cs` — see risks) |
-| `IsTimeSlotAvailableAsync(int doctorId, DateTime dateTime, int? excludeAppointmentId = null)` | Rejects the slot if any non-canceled appointment for the doctor falls within ±30 min |
+**Cross-module data access (known).** Some services read or write other modules' tables directly through the shared `DbContext` instead of going through an interface:
+- `StaffService` (cascading user deletion).
+- `MedicalRecordService`, `InvoiceService`, `SurveyService` and `DashboardService` (reads).
+- `DispensingService` (creates invoices).
+- `VisitRatingService` (updates the doctor's rating).
 
-### 11.2 `IPrescriptionService` / `PrescriptionService` (`PrescriptionService.cs`, 266 lines)
-
-| Method | Behaviour |
-|---|---|
-| `GetByIdAsync(int)` / `GetByIdWithDetailsAsync(int)` | Includes items + drugs, appointment |
-| `GetPendingAsync()` | Status `Pending`, oldest first |
-| `GetByPatientIdAsync(int)` / `GetByDoctorIdAsync(int)` | Filtered lists |
-| `CreateAsync(Prescription, List<PrescriptionItem>)` | Batch-loads drugs (avoids N+1); validates every item — drug must exist, `drug.Quantity >= item.Quantity`, `drug.ExpiryDate > now`; **collects all errors** then returns `ServiceResult.Fail("Validation failed.", errors)`; on success runs inside an explicit `BeginTransactionAsync` — sets `MedicationTotal = Σ Quantity × Price`, status `Pending`, inserts prescription + items, and **decrements drug stock** |
-| `MarkAsCompletedAsync(int id)` | Only from `Pending`; catches `DbUpdateConcurrencyException` with a friendly message |
-| `CancelAsync(int id)` | Restores drug stock for every item inside a transaction; sets status `Canceled` |
-| `HasDrugStockAsync(int drugId, int quantity)` | `drug.Quantity >= quantity && drug.ExpiryDate > UtcNow` |
-
-### 11.3 `IPatientService` / `PatientService` (`PatientService.cs`, 219 lines)
-
-`GetByIdAsync`, `GetByIdWithDetailsAsync`, `GetAllAsync(PaginationParams)`, `UpdateAsync(int, Patient)`, `DeleteAsync(int)` (blocked when related records exist), `HasRelatedRecordsAsync(int)` (appointments OR prescriptions OR invoices), `GetCountAsync()`, `DisablePatientAsync(int, string reason)` (sets `Status = Disabled`, `DisableReason`, `DisabledAt`), `EnablePatientAsync(int)` (clears the disable fields).
-
-### 11.4 `IDrugService` / `DrugService` (`DrugService.cs`, 210 lines)
-
-| Method | Behaviour |
-|---|---|
-| `GetByIdAsync(int)` | No tracking |
-| `GetAllAsync(string? searchTerm, string? expiryFilter)` | `searchTerm` matches Name/Supplier/Description; `expiryFilter` ∈ `expired` / `expiring-soon` / `valid`; ordered by `ExpiryDate` asc |
-| `CreateAsync(Drug)` | Stamps UTC timestamps |
-| `UpdateAsync(Drug)` | Copies fields onto the tracked entity; catches `DbUpdateConcurrencyException` |
-| `DeleteAsync(int)` | **Refuses** to delete a drug that has `PrescriptionItems` |
-| `UpdateStockAsync(int id, int newQuantity)` | Sets absolute quantity; returns a warning message when `0 < qty < LowStockThreshold` and an alert when `qty == 0` |
-| `GetExpiringDrugsAsync(int daysThreshold = 30)` | Expiry in `(now, now + days]` |
-| `GetLowStockDrugsAsync(int threshold = 10)` | `Quantity < threshold`, ascending |
-| `GetTotalInventoryValueAsync()` | `Σ Price × Quantity` |
-
-### 11.5 `IPharmacistService` / `PharmacistService` (`PharmacistService.cs`, 160 lines)
-
-`GetByIdAsync(int)`, `GetByUserIdAsync(string)`, `UpdateProfileAsync(int id, string qualifications, string? contactInfo, string? shift)`, `MarkPrescriptionCompletedAsync(int prescriptionId, string pharmacistUserId)`, `ProcessPrescriptionAsync(int, string)`.
-`MarkPrescriptionCompletedAsync` runs in a transaction: verifies every drug exists and has sufficient stock, deducts quantities, sets status `Completed`, `DispensedDate = UtcNow`, `DispensedBy = pharmacist.User.FullName ?? "Unknown"`.
-`ProcessPrescriptionAsync` is a **thin alias** that simply calls `MarkPrescriptionCompletedAsync` (the source comment says it is kept separate for future differentiation).
-
-### 11.6 `ILeaveService` / `LeaveService` (`LeaveService.cs`, 192 lines)
-
-| Method | Behaviour |
-|---|---|
-| `CreateLeaveRequestAsync(LeaveRequest)` | Stamps `CreatedAt`, forces status `Pending` |
-| `GetPendingRequestsForDoctorAsync(int doctorId)` | Pending only, newest first |
-| `GetDoctorLeavesAsync(int doctorId)` | All leaves for the doctor, newest start date first |
-| `ApproveLeaveRequestAsync(int requestId, string notes)` | Creates a matching `DoctorLeave` (status Approved) **and** sets the request to Approved |
-| `RejectLeaveRequestAsync(int requestId, string reason)` | Sets status `Rejected`; **the reason is discarded** (not persisted — the entity has no rejection-reason field) |
-| `RegisterDoctorLeaveAsync(DoctorLeave leave)` | Validates `EndDate >= StartDate`; rejects overlaps with existing approved leaves; forces status `Approved` |
-| `IsDoctorOnLeaveAsync(int doctorId, DateTime date)` | Any approved leave covering `date` |
-| `NotifyManagerAsync(int doctorId, string message)` | **Stub** — only writes to the logger, no notification is created |
-
-### 11.7 `IDailyReportService` / `DailyReportService` (`DailyReportService.cs`, 225 lines)
-
-| Method | Behaviour |
-|---|---|
-| `GetDailyReportAsync(DateTime date)` | Pharmacy invoices only (`PrescriptionId != null`) whose `InvoiceDate` falls in the day; maps to `DailyInvoiceItem`; totals computed in memory |
-| `GetFilteredReportAsync(DateTime? startDate, DateTime? endDate, PaymentStatus? status, string? searchTerm)` | Same base query plus date range (end date inclusive), payment-status filter, and a free-text filter over patient name / invoice id / pharmacist name |
-| `GenerateDailyReportAsync(DateTime date)` | Idempotent — skips if a report for that date already exists; otherwise persists a `DailyReport` row with a JSON `ReportData` blob of the invoices |
-| `GetAvailableReportDatesAsync()` | Distinct invoice dates, newest first, capped at 30 |
-
-> Note: "pharmacy invoice" is defined as *any invoice with a `PrescriptionId`*. Consultation-only invoices are excluded from the daily pharmacy report.
-
-### 11.8 `INotificationService` / `NotificationService` (`NotificationService.cs`)
-
-- `CreateForUserAsync(string userId, string title, string message, NotificationType type, string? linkUrl, string? relatedEntityType, int? relatedEntityId)` — no-ops on a blank `userId`; `relatedEntityId` is stored as a string.
-- `CreateForRoleAsync(string roleName, ...)` — resolves the role's user ids via `UserRoles ⋈ Roles`, then creates one notification per user.
-
-### 11.9 `IActivityLogService` / `ActivityLogService` (`ActivityLogService.cs`)
-
-`LogAsync(string action, string entityType, string description, string? entityId, string? userId, string? userName)` — inserts a `SystemActivityLog` row and saves immediately (one `SaveChangesAsync` per call).
-
-### 11.10 `INoShowRiskService` / `NoShowRiskService` (`NoShowRiskService.cs`, 302 lines)
-
-See [§16](#16-ml-no-show-prediction-microservice) for the full contract. Public surface:
-
-```csharp
-Task<double> CalculateRiskScoreAsync(int patientId);
-Task<Dictionary<int, double>> CalculateRiskScoresAsync(IEnumerable<int> appointmentIds);
-bool IsServiceAvailable { get; }
-bool IsUsingAI { get; }
-string? LastErrorMessage { get; }
-```
-
-Key behaviours:
-- `CalculateRiskScoresAsync` reuses any score already persisted on `Appointment.NoShowRiskScore`; otherwise calls the ML API; on failure falls back to the local heuristic.
-- `CalculateRiskScoreAsync` (local heuristic): `noShowRate = NoShowCount / totalAppointments`; `recentFactor = min(recentNoShows(3) × 0.15, 0.45)`; `baseRisk = min(noShowRate × 0.5 + recentFactor, 1.0)`; `distanceFactor = 0.05` when the patient has an address; final score `min(baseRisk + distanceFactor, 1.0)`, rounded to 2 dp. Returns `0.3` when the patient is unknown or has no appointments.
-- DTOs: `NoShowAppointmentRequest` (request body) and `NoShowPredictionResponse` (response body) with explicit `[JsonPropertyName]` mappings.
-
-### 11.11 `DailyReportBackgroundService` (`DailyReportBackgroundService.cs`)
-
-`BackgroundService` that waits until midnight, generates the **previous day's** pharmacy report, then delays 24 h and repeats. Exceptions are logged and swallowed so the loop survives.
-
-### 11.12 `AdminSeeder` (`AdminSeeder.cs`)
-
-Static `SeedAdminUser(IServiceProvider)` — see [§9.4](#94-admin-seeding-servicesadminseedercs).
+`Shared/Workflow/StateMachine<TStatus>` is the reusable status helper for the next increments' orders. It allows only declared transitions and records the time and user of every change.
 
 ---
 
 ## 12. Controller Layer
 
-`HCMS4/Controllers/` — 7 controllers.
+Controllers are thin. They derive from `HcmsControllerBase` (or `Controller` for Home/Account), call services, and never use `ApplicationDbContext`. Several module controllers share one URL prefix through `[ControllerName]`.
 
-### 12.1 `HomeController` (`HomeController.cs`) — public
-
-| Action | Type | Description |
-|---|---|---|
-| `Index()` | GET | Loads the 6 most recent **published** `MedicalArticle`s with their doctor + user; renders `Views/Home/Index.cshtml` |
-| `About()` | GET | Static view |
-| `Contact()` | GET | Static view |
-| `Error()` | GET | `[ResponseCache(Duration = 0, Location = None, NoStore = true)]`; returns `Views/Shared/Error.cshtml` with `ErrorViewModel` |
-
-### 12.2 `AccountController` (`AccountController.cs`) — public, `UserManager` + `SignInManager` + `ApplicationDbContext`
-
-| Action | Type | Description |
-|---|---|---|
-| `Login(string? returnUrl)` | GET | Renders `Views/Account/Login.cshtml` |
-| `Login(LoginViewModel, string? returnUrl)` | POST | Looks the user up by **email** (`FindByEmailAsync`) and calls `PasswordSignInAsync(user.UserName, Password, RememberMe, lockoutOnFailure: **false**)`. On success it resolves the user's roles and redirects → `Admin/Dashboard`, `Doctor/Dashboard`, `Patient/Dashboard`, `Pharmacist/Dashboard`, or `Home/Index`; `returnUrl` (when supplied) takes priority and is emitted via `LocalRedirect`. `IsLockedOut` and generic failures both redirect/return with the message "Invalid login attempt." |
-| `Register()` | GET | Renders `Views/Account/Register.cshtml` |
-| `Register(RegisterViewModel)` | POST | Creates the `ApplicationUser` with `UserName = Email`, adds the **Patient** role, creates the `Patient` profile row (`DateOfBirth`, `ChronicConditions`), signs the user in (`isPersistent: false`), redirects to `/Patient/Dashboard` |
-| `Logout()` | POST | Signs out, redirects to `Home/Index` |
-| `Profile()` | GET | Loads the profile + role-aware extras (doctor/patient profile info) into `ProfileViewModel` |
-| `EditProfile()` | GET | Renders `Views/Account/EditProfile.cshtml` with `EditProfileViewModel` |
-| `EditProfile(EditProfileViewModel)` | POST | Updates `ApplicationUser` fields and, if a doctor, the `Doctor` profile |
-| `ChangePassword(ChangePasswordViewModel)` | POST | `ChangePasswordAsync`; requires the current password |
-
-All POST actions carry `[ValidateAntiForgeryToken]`.
-
-> `AccountController` has **no `AccessDenied` action**, even though the cookie is configured to redirect there.
-
-### 12.3 `AdminController` (`AdminController.cs`, 103 KB — the largest file) — `: BaseController`, `[Authorize(Roles = "Admin,Doctor")]`
-
-Constructor injects `UserManager`, `SignInManager`, `ApplicationDbContext`, `ILogger`, `IDailyReportService`, `IPatientService`, `IAppointmentService`, `IPrescriptionService`, `INoShowRiskService`, `ILeaveService`, `INotificationService`, `IActivityLogService`.
-
-| Action | Type | Description |
-|---|---|---|
-| `Dashboard()` | GET | Aggregate counters (appointments, patients, doctors, revenue, pending prescriptions, complaints, surveys) |
-| `CreateDoctor()` | GET | `DoctorRegisterViewModel` + specialization list |
-| `CreateDoctor(DoctorRegisterViewModel)` | POST | Creates the `ApplicationUser` + `Doctor` profile, assigns the `Doctor` role |
-| `Doctors()` | GET | Lists doctors with specialization, rating, availability |
-| `DeleteUser(string id)` | POST | Deletes the account (and cascades profile rows) |
-| `Patients(int page = 1, int pageSize = 20)` | GET | Paged patient list with search/filter |
-| `EditPatient(int? id)` | GET | Edit form |
-| `EditPatient(int id, Patient patient)` | POST | Persists patient fields |
-| `DeletePatient(int id)` | POST | Deletes when no related records exist |
-| `PatientDetails(int? id)` | GET | Patient detail view |
-| `ManageAppointments(string status = "all", string riskLevel = "all")` | GET | Builds `ManageAppointmentsViewModel`; calls `INoShowRiskService.CalculateRiskScoresAsync`; surfaces `AnalyticsServiceAvailable` / `IsUsingAI`; filters by `RiskLevelHelper.Matches` |
-| `BookAppointment(int? patientId = null)` | GET | Booking form |
-| `BookAppointment(BookAppointmentViewModel)` | POST | Creates the appointment via `IAppointmentService`, assigns the consultation fee from the doctor's specialization |
-| `GetDoctorConsultationFee(int doctorId)` | GET | JSON endpoint returning the doctor's fee (used by the booking AJAX) |
-| `RescheduleAppointment(int? id)` | GET | Reschedule form |
-| `RescheduleAppointment(RescheduleAppointmentViewModel)` | POST | Delegates to `IAppointmentService.RescheduleAsync` |
-| `CancelAppointment(int id, string cancellationReason)` | POST | Delegates to `IAppointmentService.CancelAsync` |
-| `SendReminder(int id)` | POST | Creates an `AppointmentReminder` notification for the patient |
-| `DoctorSchedule(int id, string status = "all")` | GET | `DoctorScheduleViewModel` — today/upcoming/completed/canceled buckets + counts |
-| `PendingPrescriptions()` | GET | Pending prescription queue |
-| `MarkPrescriptionCompleted(int id)` | POST | Marks a prescription completed |
-| `GenerateInvoice(int patientId)` | GET | Invoice builder with recent appointments/prescriptions and existing invoices |
-| `GenerateInvoice(GenerateInvoiceViewModel)` | POST | Creates the `Invoice` (consultation fee + medication total) |
-| `ViewInvoice(int id)` | GET | Invoice preview |
-| `InvoiceDetails(int id)` | GET | Full invoice detail |
-| `UpdatePaymentStatus(int id)` | GET | Payment update form |
-| `UpdatePaymentStatusPost(int id)` | POST (`[ActionName("UpdatePaymentStatus")]`) | Applies the payment status/amount/date |
-| `CreatePharmacist()` | GET | Registration form |
-| `CreatePharmacist(PharmacistRegisterViewModel)` | POST | Creates the account + `Pharmacist` profile + role |
-| `Pharmacists()` | GET | Lists pharmacists |
-| `EditPharmacist(int? id)` | GET | Edit form |
-| `EditPharmacist(int id, PharmacistEditViewModel)` | POST | Persists the profile |
-| `DeletePharmacist(int id)` | POST | Deletes the pharmacist |
-| `DailyPharmacyReport(DateTime? date = null)` | GET | Pharmacy daily report |
-| `FilteredPharmacyReport(DailyReportFilterViewModel filters)` | GET | Filtered report |
-| `ExportPharmacyReport(DateTime? date)` | GET | CSV-style export of the daily report |
-| `Suppliers()` | GET | Supplier list + stats |
-| `CreateSupplier()` | GET | Supplier form |
-| `CreateSupplier(Supplier supplier)` | POST | Creates; rejects duplicate names |
-| `EditSupplier(int? id)` | GET | Edit form |
-| `EditSupplier(int id, Supplier supplier)` | POST | Persists |
-| `DeleteSupplier(int id)` | POST | **Soft delete** (deactivate) when purchase requests exist, otherwise hard delete |
-| `PriceList()` | GET | Specializations + consultation fees |
-| `UpdateSpecializationFee(int id, decimal consultationFee)` | POST | Updates the fee |
-| `DailyVisitingPatientsReport(DateTime? date = null)` | GET | `[Authorize(Roles = "Doctor")]` — daily visiting-patients report (`DailyVisitingPatientsReportViewModel`) |
-| `DisablePatient(int id)` | GET | Disable form |
-| `DisablePatient(DisablePatientViewModel)` | POST | Soft-disables the patient |
-| `EnablePatient(int id)` | POST | Re-enables the patient |
-| `RegisterDoctorLeave(int id)` | GET | Leave registration form |
-| `RegisterDoctorLeave(RegisterDoctorLeaveViewModel)` | POST | Registers an approved `DoctorLeave` |
-| `ViewDoctorLeaves(int id)` | GET | Doctor leave list |
-| `ApproveLeaveRequest(int requestId, string notes)` | POST | Approves a `LeaveRequest` |
-| `RejectLeaveRequest(int requestId, string reason)` | POST | Rejects a `LeaveRequest` |
-| `PurchaseRequests(string status = "all")` | GET | Purchase-request list with counts per status |
-| `PurchaseRequestDetails(int id)` | GET | Purchase-request detail |
-| `ApprovePurchaseRequest(int id)` | POST | Status → `Approved`; **increments drug stock** for every line item (goods received); stamps `ApprovedDate` / `ApprovedBy` |
-| `RejectPurchaseRequest(int id, string rejectionReason)` | POST | Requires a non-empty reason; status → `Rejected`; stores `RejectionReason` |
-| `Complaints()` | GET | `[Authorize(Roles = "Admin")]` — complaint list |
-| `ComplaintDetails(int id)` | GET | `[Authorize(Roles = "Admin")]` |
-| `UpdateComplaintStatus(int id, ComplaintStatus status, string? resolutionNotes)` | POST | `[Authorize(Roles = "Admin")]` |
-| `Surveys()` | GET | `[Authorize(Roles = "Admin")]` — survey list |
-| `CreateSurvey()` | GET | `[Authorize(Roles = "Admin")]` — survey builder form |
-| `CreateSurvey(SurveyEditorViewModel)` | POST | `[Authorize(Roles = "Admin")]` — persists the survey, its questions/options, and creates `SurveyAssignment` rows for the target audience |
-
-Private helpers: `PatientExists(int)`, `AppointmentExists(int)`, `DrugExists(int)`, `SupplierExists(int)`, `ReloadInvoiceDropdowns(GenerateInvoiceViewModel)`, `DetermineVisitType(int patientId, int currentAppointmentId)`, `GetDiagnosis(Prescription?)`, `GetSurveyTargetPatientsAsync(SurveyEditorViewModel)`.
-
-### 12.4 `DoctorController` (`DoctorController.cs`) — `: BaseController`, `[Authorize(Roles = "Doctor")]`
-
-| Action | Type | Description |
-|---|---|---|
-| `Dashboard()` | GET | `DoctorDashboardViewModel` — today's count, pending reissue requests, pending review requests, article counts, average rating, recent ratings, recent notifications |
-| `ViewAppointments(string viewMode = "today", DateTime? selectedDate, ...)` | GET | `DoctorAppointmentsViewModel`; modes `today` / `date` / `range`; attaches `AppointmentRiskScores` from `INoShowRiskService` plus `AnalyticsServiceAvailable` / `IsUsingAI`; filters by `SelectedRiskLevel` |
-| `SendReminder(int id)` | POST | Sends an appointment reminder notification to the patient |
-| `ReissueRequests()` | GET | Lists pending `PrescriptionReissueRequest`s for this doctor |
-| `ReviewReissueRequest(int id, bool approve, string? doctorResponse)` | POST | Approves/rejects a reissue request; sets `ReviewedAt` |
-| `DoctorReviewRequests()` | GET | Lists `DoctorReviewRequest`s raised by pharmacists for this doctor |
-| `RespondToReviewRequest(int id, string doctorResponse)` | POST | Responds; status → `Responded` |
-| `MedicalArticles()` | GET | The doctor's articles (published + drafts) |
-| `PublishMedicalArticle(int id)` | POST | Draft → Published, stamps `PublishedAt` |
-| `CreateMedicalArticle()` | GET | Editor form |
-| `CreateMedicalArticle(MedicalArticleEditorViewModel, string submitAction)` | POST | `submitAction` distinguishes "save draft" vs "publish" |
-| `PatientRecord(int patientId)` | GET | Full medical record: appointment history, prescriptions, clinical notes, invoices |
-| `CreateClinicalNote(int patientId)` | GET | Clinical-note form |
-| `CreateClinicalNote(CreateClinicalNoteViewModel)` | POST | Persists the clinical note |
-| `CreatePrescription(int patientId, int? appointmentId = null)` | GET | Prescription builder with the available drug list |
-| `CreatePrescription(CreatePrescriptionViewModel)` | POST | Delegates to `IPrescriptionService.CreateAsync` (stock validation + decrement) |
-| `Profile()` | GET | Doctor profile |
-| `RequestLeave()` | GET | Leave request form |
-| `RequestLeave(LeaveRequestViewModel)` | POST | Creates a `LeaveRequest` via `ILeaveService` |
-| `ViewReports()` | GET | Report entry point for the doctor |
-
-### 12.5 `PatientController` (`PatientController.cs`) — `: BaseController`, `[Authorize(Roles = "Patient")]`
-
-| Action | Type | Description |
-|---|---|---|
-| `Dashboard()` | GET | `PatientDashboardViewModel` — upcoming appointments, completed visits, active surveys, open complaints, published articles, recent notifications |
-| `BookAppointment()` | GET | Booking form with available doctors |
-| `BookAppointment(BookAppointmentViewModel)` | POST | Books the appointment; on failure calls `ReloadViewModel` |
-| `GetDoctorConsultationFee(int doctorId)` | GET | JSON fee lookup (used by the booking AJAX) |
-| `ViewAppointmentHistory()` | GET | Paginated history with `CanRateVisit` / `HasVisitRating` flags |
-| `InvoiceHistory()` | GET | The patient's invoices |
-| `InvoiceDetails(int id)` | GET | A single invoice (ownership-checked against the current patient) |
-| `ProcessPayment(int invoiceId, decimal amount, string paymentMethod, string? notes)` | POST | Ownership-checked against the current patient; validates `0 < amount <= TotalAmount`; **supports partial payments** — `AmountPaid` accumulates, status flips to `Paid` once `AmountPaid >= TotalAmount`, otherwise stays `Pending`; appends a payment note to `Invoice.Notes` |
-| `Prescriptions()` | GET | The patient's prescriptions (grouped per prescription with drug names) |
-| `PrescriptionDetails(int id)` | GET | Prescription detail incl. pharmacist notes and reissue eligibility |
-| `RateVisit(int appointmentId)` | GET | Rating form |
-| `RateVisit(VisitRatingFormViewModel)` | POST | Requires the appointment to belong to the current patient **and** be `Completed`; rejects duplicate ratings for the same appointment; persists the `VisitRating`; recomputes `Doctor.RatingCount` and `Doctor.AverageRating` (rounded to 2 dp); writes an activity-log entry |
-| `RequestPrescriptionReissue(int prescriptionId)` | POST | Creates a `PrescriptionReissueRequest` (guarded by `IsPrescriptionEligibleForReissue`) |
-| `Complaints()` | GET | The patient's complaints |
-| `CreateComplaint()` | GET | Complaint form |
-| `CreateComplaint(PatientComplaintFormViewModel)` | POST | Optional attachment upload — extension allowlist `.jpg .jpeg .png .pdf .doc .docx`, size ≤ `BusinessRules.ComplaintAttachmentMaxBytes` (5 MiB), stored under `wwwroot/uploads/complaints/{guid}{ext}` with the public path stored on `Complaint.AttachmentPath`. Generates a tracking number `CMP-{yyyyMMdd}-{6 hex chars}`, saves the complaint with status `Submitted`, notifies the **Admin** role, and writes an activity-log entry |
-| `Surveys()` | GET | Surveys assigned to the patient |
-| `TakeSurvey(int assignmentId)` | GET | Survey renderer |
-| `TakeSurvey(SurveyResponseViewModel)` | POST | Saves `SurveyAnswer` rows and marks the assignment `Completed` |
-
-Private helpers: `ReloadViewModel(BookAppointmentViewModel, int patientId)`, `IsPrescriptionEligibleForReissue(Prescription)`, `BuildSurveyResponseViewModelAsync(int assignmentId, int patientId, ...)`.
-
-### 12.6 `PharmacistController` (`PharmacistController.cs`) — `: Controller` (not `BaseController`), `[Authorize(Roles = "Pharmacist")]`
-
-| Action | Type | Description |
-|---|---|---|
-| `Dashboard()` | GET | `PharmacistDashboardViewModel` — drug counts, expiry/low-stock counts, inventory value, pending/completed prescriptions, alerts |
-| `Drugs(string searchTerm, string expiryFilter)` | GET | Inventory list with filtering |
-| `CreateDrug()` | GET | Drug form |
-| `CreateDrug(Drug drug)` | POST | Creates via `IDrugService` |
-| `EditDrug(int? id)` | GET | Drug edit form |
-| `EditDrug(int id, Drug drug)` | POST | Persists |
-| `DeleteDrug(int id)` | POST | Deletes (blocked when the drug has prescription items) |
-| `UpdateStock(int id, int newQuantity)` | POST | Sets absolute stock |
-| `Prescriptions(string status = "pending")` | GET | Prescription queue |
-| `MarkPrescriptionCompleted(int id)` | POST | Completes the prescription and decrements stock |
-| `Profile()` | GET | Pharmacist profile |
-| `EditProfile()` | GET | Edit form |
-| `EditProfile(PharmacistEditProfileViewModel)` | POST | Persists |
-| `ProcessPrescription(int id)` | GET | Dispensing screen (line items, stock, alternatives) |
-| `DispensePrescription(int id, List<int> selectedItemIds, string dispensingNotes)` | POST | Partial dispensing: decrements stock for the selected items, records `DispensingNotes` |
-| `PrescriptionDetails(int id)` | GET | Full prescription detail |
-| `RequestDoctorReview(int prescriptionId)` | GET | Review-request form |
-| `RequestDoctorReview(PrescriptionReviewRequestFormViewModel)` | POST | Creates a `DoctorReviewRequest` and notifies the doctor |
-| `AddPrescriptionNote(int prescriptionId)` | GET | Note form |
-| `AddPrescriptionNote(PrescriptionNoteFormViewModel)` | POST | Creates a `PharmacistPrescriptionNote`; optionally notifies the doctor |
-| `PurchaseRequests(string status = "all")` | GET | The pharmacist's purchase requests |
-| `CreatePurchaseRequest()` | GET | Builder form with suppliers + drugs |
-| `CreatePurchaseRequest(CreatePurchaseRequestViewModel)` | POST | Creates the request + items, generates a request number, computes the total |
-| `PurchaseRequestDetails(int id)` | GET | Detail view |
-| `AddItemToRequest(int drugId, int quantity, decimal unitPrice, string? notes)` | POST | AJAX endpoint that appends a line item to the in-progress request |
+| URL prefix | Controller (module) | Policy | Actions |
+|---|---|---|---|
+| `/Admin` | `AdminPortalController` (Portal) | `Portal.AdminDashboard` | 1 |
+| | `AdminStaffController` (Staff) | `Staff.Manage` | 17 |
+| | `AdminRecordsController` (Records) | `Records.ManagePatients` | 8 |
+| | `AdminAppointmentsController` (Appointments) | `Appointments.Manage` | 9 |
+| | `AdminPharmacyController` (Pharmacy) | `Pharmacy.Oversee` | 11 |
+| | `AdminBillingController` (Billing) | `Billing.ManageInvoices` | 10 |
+| | `AdminFeedbackController` (Feedback) | `Feedback.Manage` | 6 |
+| `/Doctor` | `DoctorPortalController` | `Portal.DoctorDashboard` | 1 |
+| | `DoctorStaffController` | `Staff.OwnProfile` | 3 |
+| | `DoctorRecordsController` | `Records.ViewMedicalRecords` | 3 |
+| | `DoctorAppointmentsController` | `Appointments.ViewOwnSchedule` | 6 |
+| | `DoctorPrescriptionsController` | `Pharmacy.Prescribe` | 6 |
+| | `DoctorArticlesController` | `Feedback.PublishArticles` | 4 |
+| `/Patient` | `PatientPortalController` | `Portal.PatientDashboard` | 1 |
+| | `PatientAppointmentsController` | `Appointments.Book` | 4 |
+| | `PatientPrescriptionsController` | `Pharmacy.ViewOwnPrescriptions` | 3 |
+| | `PatientBillingController` | `Billing.ViewOwnInvoices` | 3 |
+| | `PatientFeedbackController` | `Feedback.Submit` | 8 |
+| `/Pharmacist` | `PharmacistPortalController` | `Portal.PharmacistDashboard` | 1 |
+| | `PharmacistPharmacyController` | `Pharmacy.Dispense` | 20 |
+| `/ComplaintAttachments` | `ComplaintAttachmentsController` (Feedback) | `Feedback.ViewComplaintAttachments` | 1 |
+| `/` , `/Home` | `HomeController` (Portal) | public | 4 |
+| `/Account` | `AccountController` (Shared/Identity) | public / signed-in (fallback) | 10 |
 
 ---
 
 ## 13. ViewModels
+
+> **Since Increment 1:** the view models are in `src/HCMS4/ViewModels` (namespace `HCMS4.ViewModels`). The 8 unused ones were deleted, and new ones were added for the admin invoice list (`AdminInvoiceListViewModel`) and the new services.
 
 `HCMS4/ViewModels/` — 61 files, 74 class declarations. All are plain POCOs with DataAnnotations; there is no FluentValidation.
 
@@ -850,6 +593,13 @@ Private helpers: `ReloadViewModel(BookAppointmentViewModel, int patientId)`, `Is
 ---
 
 ## 14. Razor Views & UI
+
+> **Since Increment 1:**
+> - Views live in `src/HCMS4/Modules/<Module>/Views/<Role>/`; only Account, Home and Shared stay under `Views/`.
+> - The UI is English and left-to-right; jQuery and validation are loaded once.
+> - The booking page script was repaired.
+> - New page: `/Admin/ManageInvoices`.
+> - The pharmacist dispensing page has no item selection: the whole prescription is dispensed.
 
 `HCMS4/Views/` — 82 `.cshtml` files.
 
@@ -926,6 +676,12 @@ Private helpers: `ReloadViewModel(BookAppointmentViewModel, int patientId)`, `Is
 
 ### 16.2 The .NET client
 
+> **Since Increment 1:**
+> - The configuration section is `AiService` (`BaseUrl`, `ApiKey`), and the client sends `X-API-Key`.
+> - Without a key, or on timeout, error or 503, it uses the local estimate.
+> - The service is stateless and returns `NoShowRiskResult`.
+> - The Flask service runs with `debug=False` on `127.0.0.1` and requires `HCMS_AI_API_KEY`.
+
 `HCMS4/Services/NoShowRiskService.cs`
 
 **Request** → `POST {NoShowAPI:BaseUrl}/predict`, JSON body (`NoShowAppointmentRequest`):
@@ -969,36 +725,29 @@ Private helpers: `ReloadViewModel(BookAppointmentViewModel, int patientId)`, `Is
 
 ## 17. Test Suite
 
-`HCMS4.Tests/` — xUnit + EF Core InMemory. **44 tests, all passing.**
+`tests/HCMS4.Tests/` is an xUnit project in `HCMS4.sln` with **371 tests, all passing**. Service line coverage is **82.8 %**: every module is at or above 70 %; the lowest files are `DrugService` 30 %, `DailyReportBackgroundService` 36 % and `LeaveService` 46 %.
 
-| File | Tests | Coverage |
-|---|---|---|
-| `TestDbContextFactory.cs` | — | Helper that builds an InMemory `ApplicationDbContext` with a seeded `Specialization` |
-| `AppointmentServiceTests.cs` | 9 | create (success + duplicate slot), cancel (success, <24 h rejected, already-canceled rejected), reschedule, today-list, slot availability (free / conflicting) |
-| `PrescriptionServiceTests.cs` | 7 | create (success, insufficient stock, expired drug), mark completed (success, already completed), cancel restores stock, pending list |
-| `DrugServiceTests.cs` | 8 | create, update, delete blocked by prescription items, expiry-status detection, `ExpiryStatus` computation, low-stock identification, negative-quantity validation, past-expiry validation |
-| `PatientServiceTests.cs` | 6 | get by id (found / not found), paginated list, update, delete (no relations / with appointments) |
-| `DailyReportServiceTests.cs` | 5 | daily report with prescription invoices, empty report, filter by payment status, generate new report, idempotent regeneration |
-| `AdminServiceTests.cs` | 9 | supplier create / duplicate-name rejection / soft delete with purchase requests, specialization fee update (+ zero-fee rejection), daily-report totals, invoice payment status update, already-paid invoice immutability, purchase-request total calculation |
+| Kind | Examples |
+|---|---|
+| Service unit tests (EF InMemory, `FakeTimeProvider`) | `StaffServiceTests`, `MedicalRecordServiceTests`, `AppointmentQueryTests`, `PharmacyWorkflowServiceTests`, `InvoiceServiceTests`, `FeedbackServiceTests`, `DashboardServiceTests`, `StateMachineTests` |
+| Integration tests (`HcmsWebApplicationFactory`, `TestAuthHandler` header login, antiforgery helper) | `RoleAccessMatrixTests` (every GET route × 7 roles), `PageRenderSmokeTests` (60+ pages), `RouteInventoryTests`, `AntiforgeryTests`, `FallbackPolicyTests`, `LoginLockoutTests` |
+| Model / architecture checks | `ModelSnapshotTests` (no pending model changes), `DatabaseConstraintsModelTests`, `ModuleRegistrationTests`, `PermissionPolicyTests` |
+| Guard rails | `UiLanguageTests` (no Arabic text or RTL markup in src), `ClockUsageTests` (no `DateTime.Now/UtcNow/Today` in src or tests) |
 
-### Coverage gaps
-No tests exist for:
-- `NotificationService`, `LeaveService`, `PharmacistService`, `NoShowRiskService`, `ActivityLogService`, `DailyReportBackgroundService`
-- `AdminSeeder`
-- All controllers (no integration tests at all)
-- The `Views` layer
-- The Flask microservice
+**Known gaps:**
+- `DrugServiceTests` and `AdminServiceTests` still test EF directly instead of the services (finding N1).
+- The Flask service has no automated tests.
 
-### Running
-```bash
-dotnet test "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
-# → Passed! - Failed: 0, Passed: 44, Skipped: 0, Total: 44
+```powershell
+dotnet test HCMS4.sln
+# Passed! - Failed: 0, Passed: 371
 ```
-`dotnet test HCMS4.sln` executes **zero** tests because `HCMS4.Tests` is not registered in the solution.
 
 ---
 
 ## 18. Key End-to-End Workflows
+
+> Controller names below are the original ones. Since Increment 1 the same URLs are served by the module controllers in §12, and the logic lives in the services of §11.
 
 ### 18.1 Patient books an appointment
 1. `PatientController.BookAppointment()` (GET) loads available doctors (`Doctor.IsAvailable`) into `BookAppointmentViewModel.AvailableDoctors`.
@@ -1009,20 +758,20 @@ dotnet test "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
 ### 18.2 Doctor issues a prescription
 1. `DoctorController.CreatePrescription(patientId, appointmentId?)` (GET) loads the drug catalogue into `CreatePrescriptionViewModel.AvailableDrugs`.
 2. `CreatePrescription(CreatePrescriptionViewModel)` (POST) builds `Prescription` + `PrescriptionItem`s and calls `IPrescriptionService.CreateAsync`.
-3. `CreateAsync` validates every line (drug exists, stock sufficient, not expired), returns **all** validation errors at once, then in a transaction inserts the prescription (status `Pending`, `MedicationTotal` computed) and **decrements the drug stock**.
+3. `CreateAsync` validates every line (drug exists, stock sufficient, not expired), returns **all** validation errors at once, then inserts the prescription (status `Pending`, `MedicationTotal` computed). **Since Increment 1 it does not take stock**; stock leaves only when the pharmacist dispenses.
 4. The prescription appears in the pharmacist's pending queue.
 
-### 18.3 Pharmacist dispenses
-1. `PharmacistController.ProcessPrescription(id)` (GET) shows line items, current stock and alternatives.
-2. `DispensePrescription(id, selectedItemIds, dispensingNotes)` (POST) decrements stock for the selected lines and records `DispensingNotes`.
-3. `MarkPrescriptionCompleted(id)` (POST) → `IPharmacistService.MarkPrescriptionCompletedAsync` → transactional stock deduction, status `Completed`, `DispensedDate`, `DispensedBy`.
-4. A `PharmacistPrescriptionNote` can be attached; if `NotifyDoctor` is set, a `DoctorReviewRequest`/notification is raised for the prescribing doctor.
+### 18.3 Pharmacist dispenses (since Increment 1)
+1. `ProcessPrescription(id)` (GET) shows every line, current stock and the totals; dispensing is disabled when any line is short.
+2. `DispensePrescription(id, dispensingNotes)` (POST) → `IDispensingService.DispenseAsync`. In one transaction it takes the stock for **all** lines, sets `Completed` / `DispensedDate` / `DispensedBy`, and creates **one** pending invoice (medication + 5 % tax). There is no partial dispensing, and a completed prescription cannot be dispensed again.
+3. A pharmacist note can be added (optionally notifying the doctor), or a doctor review requested.
+4. The former "mark as completed" shortcuts (admin and pharmacist) were removed: dispensing is the only way to complete a prescription.
 
 ### 18.4 Billing
 1. `AdminController.GenerateInvoice(patientId)` (GET) loads recent appointments, recent prescriptions and existing invoices.
 2. `GenerateInvoice(GenerateInvoiceViewModel)` (POST) creates the `Invoice` with `ConsultationFee` + `MedicationTotal` = `TotalAmount`, `PaymentStatus = Pending`.
 3. `UpdatePaymentStatusPost(id)` (POST) sets `PaymentStatus = Paid`, `AmountPaid`, `PaymentDate`.
-4. `PatientController.ProcessPayment(invoiceId, amount, method, notes)` lets the patient settle their own invoice, including partial payments.
+4. `PatientController.ProcessPayment(invoiceId, amount, method, notes)` lets the patient settle their own invoice (cash only; partial payments allowed, never above the remaining balance). Admins list and filter all invoices at `/Admin/ManageInvoices`.
 5. `DailyReportService` aggregates pharmacy invoices (`PrescriptionId != null`) per day; `DailyReportBackgroundService` persists a `DailyReport` row for yesterday every night.
 
 ### 18.5 Doctor leave
@@ -1044,7 +793,29 @@ dotnet test "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
 
 ## 19. Known Issues, Defects & Risks
 
-### Critical
+### Status after Increment 1 (2026-11-19)
+
+| # | Status | # | Status | # | Status |
+|---|---|---|---|---|---|
+| 1 | Fixed | 14 | Fixed (Damascus time everywhere) | 27 | Fixed |
+| 2 | Fixed | 15 | Fixed (nightly job) | 28 | Open (low, harmless) |
+| 3 | Fixed (User Secrets) | 16 | Fixed | 29 | Fixed |
+| 4 | Fixed | 17 | Fixed | 30 | Fixed |
+| 5 | Fixed | 18 | Fixed | 31 | Fixed (cash only) |
+| 6 | Fixed | 19 | Fixed | 32 | Fixed |
+| 7 | Fixed | 20 | Fixed | 33 | Fixed |
+| 8 | Fixed | 21 | Fixed | 34 | Fixed |
+| 9 | Fixed | 22 | Fixed | 35 | Fixed |
+| 10 | Fixed | 23 | Fixed | 36 | Fixed |
+| 11 | Fixed | 24 | Deferred (needs a decision; changes the schema and the leave flow) | 37 | Kept (intentional) |
+| 12 | Fixed (.NET 10) | 25 | Fixed | 38 | Fixed (`BaseController` removed) |
+| 13 | Fixed (0 vulnerable packages) | 26 | Deferred to A1 (Increment 7) | | |
+
+The numbered descriptions below are the **original findings of 2026-10-21**, kept for reference. File names and line numbers in them refer to the code before Increment 1.
+
+### Original findings (2026-10-21)
+
+#### Critical
 
 1. **`AdminController` is reachable by any Doctor** — the class attribute is `[Authorize(Roles = "Admin,Doctor")]`, so doctors can list/edit patients, create doctors, approve purchase requests, change specialization fees, generate invoices and change payment status. Only complaints and surveys are Admin-only. Fix: change the class attribute to `[Authorize(Roles = "Admin")]` and re-apply `[Authorize(Roles = "Doctor")]` (or move `DailyVisitingPatientsReport` into `DoctorController`).
 2. **Hard-coded fallback admin credentials** — `AdminSeeder` falls back to `admin@hospital.com` / `Admin@123` when User Secrets are not configured. Any deployment that forgets `dotnet user-secrets set` ships a publicly known admin password.
@@ -1052,7 +823,7 @@ dotnet test "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
 4. **`app.run(debug=True, host='0.0.0.0')`** in the Flask service exposes the Werkzeug debugger on all interfaces.
 5. **`NoShowAPI:ApiKey` is configured but never used**; the ML endpoint is completely unauthenticated.
 
-### High
+#### High
 
 6. **Account lockout never triggers.** `Program.cs` configures Identity lockout (5 attempts / 5-minute window), but **both** login implementations pass `lockoutOnFailure: false`:
    - `Controllers/AccountController.cs` → `PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: false)`
@@ -1067,7 +838,7 @@ dotnet test "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
 12. **`net6.0` is out of support** (build emits `NETSDK1138`); the test project is on `net10.0` while the app is on `net6.0`.
 13. **44 NuGet advisories** on the test project, including a **critical** `System.Drawing.Common 4.7.0` vulnerability (`GHSA-rxg9-xrhp-64gj`).
 
-### Medium
+#### Medium
 
 14. **`Drug` mixes UTC and local time** — `CreatedAt`/`UpdatedAt` use `DateTime.UtcNow` while `ExpiryStatus` compares `ExpiryDate` to `DateTime.Now`. `DrugService.GetAllAsync` and `GetExpiringDrugsAsync` also compare `ExpiryDate` against `DateTime.UtcNow`. `PrescriptionService` uses `DateTime.UtcNow` for expiry checks. The same inconsistency exists in `AppointmentService.CancelAsync`, which compares a local appointment time against `DateTime.UtcNow`, and in `PatientController.ProcessPayment`, which stamps `PaymentDate = DateTime.Now`.
 15. **Past appointments only auto-complete when an admin opens the appointments page.** `AppointmentService.UpdatePastScheduledToCompletedAsync()` has exactly one call site — `AdminController.ManageAppointments` (`AdminController.cs:358`). `DailyReportBackgroundService` does **not** call it, so `Scheduled` appointments stay `Scheduled` for doctors/patients until an administrator loads `/Admin/ManageAppointments`.
@@ -1088,7 +859,7 @@ dotnet test "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
 30. **`PatientController.ProcessPayment` allows overpayment.** The guard is `amount <= 0 || amount > invoice.TotalAmount` — it compares against the **total**, not the **remaining balance** (`TotalAmount - AmountPaid`). Paying an already-fully-paid invoice again pushes `AmountPaid` above `TotalAmount` (e.g. total 100, paid 100, pay 100 again → `AmountPaid = 200`). The `else if` branch then leaves `PaymentStatus` untouched, so the invoice reports `Paid` while the recorded payment exceeds the amount due.
 31. **The payment method is never persisted.** `Invoice` has no payment-method column. `ProcessPayment` only embeds `paymentMethod` inside the free-text `Invoice.Notes` string — and only when `notes` is non-empty. A payment submitted without notes loses the method entirely.
 
-### Low / cosmetic
+#### Low / cosmetic
 
 32. `IMPLEMENTATION_STATUS.md`, `IMPLEMENTATION_SUMMARY.md` and `TESTING_GUIDE.md` (all under `HCMS4/`) are **UTF-8 without a BOM**. The Arabic content is valid UTF-8, but BOM-less files are mis-detected as ANSI/Windows-1252 by some Windows editors and legacy tools, which renders the Arabic as mojibake. Saving them with a BOM (or as UTF-16LE) removes the ambiguity.
 33. `TESTING_GUIDE.md` documents admin credentials (`admin@gmail.com` / `SecureP@ssw0rd123`) that do not match the seeder's defaults — stale documentation.
@@ -1102,160 +873,37 @@ dotnet test "C:\Users\Asus\Downloads\HCMS4_FINAL\HCMS4.Tests\HCMS4.Tests.csproj"
 
 ## 20. Recommended Next Steps
 
-1. **Fix the authorization model** — restrict `AdminController` to `Admin`; move doctor-only actions to `DoctorController`.
-2. **Remove the default admin credentials** — fail fast if `AdminSettings:*` is missing instead of falling back to `Admin@123`.
-3. **Enable account lockout** — pass `lockoutOnFailure: true` in both `AccountController.Login` and `Areas/Identity/Pages/Account/Login.cshtml.cs`.
-4. **Repair `Views/Patient/BookAppointment.cshtml`** — remove the duplicated fragment, implement or remove `initializeAssistant()`, and either add `PatientController.GetAppointmentSuggestions` or delete the call.
-5. **Add `AccountController.AccessDenied`** + `Views/Account/AccessDenied.cshtml` (or point `AccessDeniedPath` at the Identity page).
-6. **Add `HCMS4.Tests` to `HCMS4.sln`** and align the target frameworks (`net8.0`+ for both).
-7. **Standardise on UTC** — replace `DateTime.Now` in `Drug.ExpiryStatus`, `DrugService` expiry filters, `AppointmentService.CancelAsync` and `PatientController.ProcessPayment` with a single, explicit convention.
-8. **Call `UpdatePastScheduledToCompletedAsync()`** from `DailyReportBackgroundService` (or a dedicated scheduler) so appointments auto-complete.
-9. **Implement `LeaveService.NotifyManagerAsync`** and persist the leave rejection reason.
-10. **Remove the duplicate jQuery/validation includes** in `_LayoutAuth.cshtml`; delete or wire up `dashboard.css`.
-11. **Serve complaint attachments outside `wwwroot`** (or behind an authorization check) so uploaded files are not publicly reachable.
-12. **Protect the Flask service** — disable `debug`, bind to `127.0.0.1` behind a reverse proxy, and add API-key validation that the .NET client actually sends.
-13. **Add controller-level tests** (WebApplicationFactory) and tests for the untested services.
-14. **Move the connection string to User Secrets / environment variables**, and add a UTF-8 BOM to the three Arabic Markdown docs so Windows editors render them correctly.
+1. **Increment 2 (Lab, L1–L6):**
+   - Build `Modules/Lab` on the prepared role (`LabTechnician`), the permissions (`Permissions.Lab.*`) and `StateMachine<TStatus>`.
+   - The migration is `Inc2_L_LabRequests`.
+2. **Decide #24.** Merge `DoctorLeave` and `LeaveRequest`; this needs a schema change and a new leave flow.
+3. **Decide whether a doctor may change their own specialization** on `Account/EditProfile` (it changes the consultation fee).
+4. **Replace the cross-module table access** listed in §11 with interface calls as the modules grow.
+5. **Rewrite `DrugServiceTests` / `AdminServiceTests`** against the real services (N1) and raise `DrugService` / `LeaveService` coverage.
+6. **Move the shared view models into their modules** (optional).
+7. **Remove the redundant scope in `AdminSeeder`** (#28) when it is next touched.
 
 ---
 
-## Appendix A — Complete File Map
+## Appendix A — File Map
 
-### A.1 `HCMS4/` (web application)
-
-```
-Program.cs                                  Startup / DI / middleware / migration+seed
-HCMS4.csproj                                net6.0 web project
-appsettings.json                            ConnectionStrings, NoShowAPI, Logging
-appsettings.Development.json                LogLevel overrides
-dotnet-tools.json                           dotnet-ef 6.0.35 (rollForward: false)
-IMPLEMENTATION_STATUS.md                    Requirements vs. implementation report (UTF-8, no BOM)
-IMPLEMENTATION_SUMMARY.md                   Feature-completion summary (UTF-8, no BOM)
-TESTING_GUIDE.md                            Manual test guide (UTF-8, no BOM)
-
-Properties/launchSettings.json              Project + IIS Express profiles
-Properties/serviceDependencies.json         Empty stub
-Properties/serviceDependencies.local.json   Empty stub
-
-Data/ApplicationDbContext.cs                29 DbSets, fluent config, seed data (360 lines)
-Data/Migrations/                            24 migrations + 23 Designer files + ModelSnapshot
-Data/Migrations/ApplicationDbContextModelSnapshot.cs
-
-Models/ApplicationUser.cs                   IdentityUser + FirstName/LastName/FullName
-Models/Patient.cs                           Patient + PatientStatus
-Models/Doctor.cs                            Doctor (Specialization, ratings, availability)
-Models/Pharmacist.cs                        Pharmacist + shift/active flag
-Models/Appointment.cs                       Appointment + AppointmentStatus + FutureDateAttribute
-Models/Prescription.cs                      Prescription + PrescriptionStatus
-Models/PrescriptionItem.cs                  PrescriptionItem
-Models/Drug.cs                              Drug + nested FutureDateAttribute + ExpiryStatus
-Models/ClinicalNote.cs                      ClinicalNote
-Models/Invoice.cs                           Invoice + PaymentStatus
-Models/Specialization.cs                    Specialization (seeded)
-Models/Supplier.cs                          Supplier
-Models/PurchaseRequest.cs                   PurchaseRequest + PurchaseRequestStatus
-Models/PurchaseRequestItem.cs               PurchaseRequestItem
-Models/DoctorLeave.cs                       DoctorLeave + LeaveType + LeaveStatus
-Models/LeaveRequest.cs                      LeaveRequest
-Models/VisitRating.cs                       VisitRating
-Models/Complaint.cs                         Complaint + ComplaintType + ComplaintStatus
-Models/PrescriptionReissueRequest.cs        PrescriptionReissueRequest + ReissueRequestStatus
-Models/DoctorReviewRequest.cs               DoctorReviewRequest + ReviewReason + ReviewRequestStatus
-Models/PharmacistPrescriptionNote.cs        PharmacistPrescriptionNote
-Models/MedicalArticle.cs                    MedicalArticle + ArticleStatus
-Models/Survey.cs                            Survey + SurveyTargetAudience + SurveyStatus
-Models/SurveyQuestion.cs                    SurveyQuestion + SurveyQuestionType
-Models/SurveyQuestionOption.cs              SurveyQuestionOption
-Models/SurveyAssignment.cs                  SurveyAssignment + SurveyAssignmentStatus
-Models/SurveyAnswer.cs                      SurveyAnswer
-Models/UserNotification.cs                  UserNotification + NotificationType
-Models/SystemActivityLog.cs                 SystemActivityLog
-Models/DailyReport.cs                       DailyReport
-Models/ErrorViewModel.cs                    ErrorViewModel
-Models/Common/BusinessRules.cs              Centralised constants
-Models/Common/ConcurrencyEntity.cs          Unused optimistic-concurrency base
-Models/Common/Pagination.cs                 PaginatedResult<T> + PaginationParams
-Models/Common/RiskLevelHelper.cs            Risk bucketing helpers
-Models/Common/ServiceResult.cs              ServiceResult + ServiceResult<T>
-
-Services/IDailyReportService.cs             Interface
-Services/DailyReportService.cs              Daily pharmacy report generation + filtering
-Services/DailyReportBackgroundService.cs    Midnight hosted service
-Services/IPatientService.cs                 Interface
-Services/PatientService.cs                  Patient CRUD, pagination, disable/enable
-Services/IAppointmentService.cs             Interface
-Services/AppointmentService.cs              Booking, reschedule, cancel, slot checks
-Services/IPrescriptionService.cs            Interface
-Services/PrescriptionService.cs             Prescription lifecycle + transactional stock
-Services/IDrugService.cs                    Interface
-Services/DrugService.cs                     Inventory CRUD, stock, expiry, low stock
-Services/IPharmacistService.cs              Interface
-Services/PharmacistService.cs               Dispensing + pharmacist profile
-Services/LeaveService.cs                    ILeaveService + LeaveService (requests & leaves)
-Services/NotificationService.cs             INotificationService + NotificationService
-Services/ActivityLogService.cs              IActivityLogService + ActivityLogService
-Services/NoShowRiskService.cs               INoShowRiskService + DTOs (ML client)
-Services/AdminSeeder.cs                     Role + admin-user seeding
-
-Controllers/BaseController.cs               _context/_logger + current patient/doctor/user helpers
-Controllers/HomeController.cs               Public landing pages
-Controllers/AccountController.cs            Login/Register/Logout/Profile/EditProfile/ChangePassword
-Controllers/AdminController.cs              Admin back-office (103 KB, 63 action methods)
-Controllers/DoctorController.cs             Doctor workspace
-Controllers/PatientController.cs            Patient portal
-Controllers/PharmacistController.cs         Pharmacy workspace
-
-ViewModels/  (61 files, 74 classes)         See §13
-
-Views/_ViewImports.cshtml                   Usings + tag helpers
-Views/_ViewStart.cshtml                     Runtime layout selection
-Views/Shared/_Layout.cshtml                 Guest layout
-Views/Shared/_LayoutAuth.cshtml             Authenticated layout
-Views/Shared/_Layout.cshtml.css             Scoped guest CSS
-Views/Shared/_ValidationScriptsPartial.cshtml
-Views/Shared/_AppointmentStatusBadge.cshtml
-Views/Shared/Error.cshtml
-Views/Home/     (4 views)                   Index, About, Contact, Privacy
-Views/Account/  (4 views)                   Login, Register, Profile, EditProfile
-Views/Admin/    (33 views)                  See §14
-Views/Doctor/   (11 views)
-Views/Patient/  (11 views)
-Views/Pharmacist/ (12 views)
-Views/Shared/   (5 views)                   _Layout, _LayoutAuth, _Layout.cshtml.css,
-                                            _ValidationScriptsPartial, _AppointmentStatusBadge, Error
-Areas/Identity/Pages/Account/...            Scaffolded Identity UI (Account + Manage)
-
-wwwroot/assets/{css,js,scss,img,vendor}/    Theme + vendored libraries
-wwwroot/lib/{jquery,jquery-validation,jquery-validation-unobtrusiv}/
-```
-
-### A.2 `HCMS4.Tests/`
-
-```
-HCMS4.Tests.csproj        net10.0, xUnit 2.9.3, EF InMemory, Moq, coverlet
-TestDbContextFactory.cs   InMemory ApplicationDbContext helper
-AppointmentServiceTests.cs   9 tests
-PrescriptionServiceTests.cs  7 tests
-DrugServiceTests.cs          8 tests
-PatientServiceTests.cs       6 tests
-DailyReportServiceTests.cs   5 tests
-AdminServiceTests.cs         9 tests
-```
-
-### A.3 `medical-appointment-no-shows-main/medical-appointment-no-shows-main/`
-
-```
-scripts/predict.py            Flask /predict endpoint (port 9696)
-scripts/train.py              Training pipeline
-scripts/constants.py          Shared constants
-scripts/predict-test.py       Offline test harness
-scripts/predict-test-aws.py   EC2/AWS variant
-scripts/../models/*.bin       Pickled (scaler, ohe, model) bundles
-data/KaggleV2-May-2016.csv    Source dataset (110k rows)
-data/no-show-patients.jpg     Dataset image
-Dockerfile, Pipfile, Pipfile.lock, README.md, LICENSE
-docs/setting-up-ec2-eb.md     EC2/Elastic Beanstalk deployment notes
-notebooks/notebook.ipynb      Exploratory analysis
-opt/environment.yml           Conda environment
-opt/optional_requirement.txt
-```
+| Path | Contents |
+|---|---|
+| `src/HCMS4/Program.cs` | Startup (§5) |
+| `src/HCMS4/Data/` | `ApplicationDbContext`, `Migrations/` (29 + snapshot) |
+| `src/HCMS4/Modules/<Module>/Controllers/` | 22 module controllers (§12) |
+| `src/HCMS4/Modules/<Module>/Services/` | Service interfaces and implementations (§11) |
+| `src/HCMS4/Modules/<Module>/Models/` | Entities and enums, namespace `HCMS4.Modules.<Module>.Models` |
+| `src/HCMS4/Modules/<Module>/Data/` | One `IEntityTypeConfiguration<T>` per entity (26 in total) |
+| `src/HCMS4/Modules/<Module>/Views/<Role>/` | 71 Razor views |
+| `src/HCMS4/Modules/<Module>/<Module>Module.cs` | `Add<Module>Module()` registration |
+| `src/HCMS4/Modules/{Lab,Radiology,Emergency}/README.md` | Skeletons for Increments 2–6 |
+| `src/HCMS4/Shared/Common/` | `ServiceResult`, `Pagination`, `BusinessRules`, `ClinicTime`, `HcmsControllerBase`, `ControllerNameAttribute`, `ModuleViewLocationExpander`, `RiskLevelHelper` |
+| `src/HCMS4/Shared/Identity/` | `ApplicationUser`, `AccountController`, `AdminSeeder`, `CurrentUserService`, lookups, `Authorization/` |
+| `src/HCMS4/Shared/{Audit,Notifications,Reporting,Workflow}/` | Shared services (§6, §11) |
+| `src/HCMS4/ViewModels/` | Shared view models (`HCMS4.ViewModels`) |
+| `src/HCMS4/Views/` | `Account/`, `Home/`, `Shared/` (layouts, partials) — 15 views |
+| `tests/HCMS4.Tests/` | Unit tests, `Integration/` (factory, test login, route inventory), guard tests |
+| `ai-service/` | Flask service: `scripts/predict.py`, `scripts/train.py`, `models/*.bin`, `data/*.csv`, `Dockerfile` |
+| `docs/` | `REQUIREMENTS.md`, this file, `diagrams/*.puml` |
+| `.github/workflows/ci.yml` | CI (§3) |

@@ -10,7 +10,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace HCMS4.Tests
 {
-    // Supplier, purchase-request, dispensing and prescription-request services (cleanup phase 5b).
+    // Supplier, purchase-request, dispensing and prescription-request services.
     public class PharmacyWorkflowServiceTests : IDisposable
     {
         private readonly ApplicationDbContext _db = TestDbContextFactory.CreateInMemoryContext();

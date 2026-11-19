@@ -9,7 +9,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace HCMS4.Tests
 {
-    // Complaint, survey, visit-rating and medical-article services (cleanup phase 5b).
+    // Complaint, survey, visit-rating and medical-article services.
     public class FeedbackServiceTests : IDisposable
     {
         private readonly ApplicationDbContext _db = TestDbContextFactory.CreateInMemoryContext();

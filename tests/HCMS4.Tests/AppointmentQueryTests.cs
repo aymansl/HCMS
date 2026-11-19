@@ -14,7 +14,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace HCMS4.Tests
 {
-    // Queries added while moving data access out of the appointment controllers (cleanup phase 5b).
+    // Queries added while moving data access out of the appointment controllers.
     public class AppointmentQueryTests : IDisposable
     {
         private readonly ApplicationDbContext _db = TestDbContextFactory.CreateInMemoryContext();

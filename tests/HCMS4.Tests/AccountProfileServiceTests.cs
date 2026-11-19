@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace HCMS4.Tests
 {
-    // Service methods used by the account (registration/profile) and home pages (cleanup phase 5b).
+    // Service methods used by the account (registration/profile) and home pages.
     public class AccountProfileServiceTests : IDisposable
     {
         private readonly ApplicationDbContext _db = TestDbContextFactory.CreateInMemoryContext();
