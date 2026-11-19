@@ -857,14 +857,14 @@ namespace HCMS4.Controllers
                     $"A patient requested re-issuance for prescription #{prescription.Id}.",
                     NotificationType.PrescriptionReissue,
                     "/Doctor/ReissueRequests",
-                    nameof(PrescriptionReissueRequest),
+                    "PrescriptionReissueRequest",
                     request.Id);
             }
 
             var currentUser = await GetCurrentUserAsync();
             await _activityLogService.LogAsync(
                 "PrescriptionReissueRequested",
-                nameof(PrescriptionReissueRequest),
+                "PrescriptionReissueRequest",
                 $"Patient requested re-issuance for prescription #{prescription.Id}.",
                 request.Id.ToString(),
                 currentUser?.Id,

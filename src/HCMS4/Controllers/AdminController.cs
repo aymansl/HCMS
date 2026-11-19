@@ -86,105 +86,6 @@ namespace HCMS4.Controllers
             return View();
         }
 
-        public async Task<IActionResult> Patients(int page = 1, int pageSize = 20)
-        {
-            try
-            {
-                var pagination = new PaginationParams
-                {
-                    PageNumber = page,
-                    PageSize = pageSize
-                };
-
-                var result = await _patientService.GetAllAsync(pagination);
-
-                var totalScheduledAppointments = await _context.Appointments
-                    .Where(a => a.Status == AppointmentStatus.Scheduled)
-                    .CountAsync();
-
-                var totalPrescriptions = result.Items.Sum(p => p.Prescriptions?.Count ?? 0);
-                var pendingInvoicesCount = result.Items
-                    .SelectMany(p => p.Invoices ?? new List<Invoice>())
-                    .Count(i => i.PaymentStatus == PaymentStatus.Pending);
-
-                var viewModel = new PatientStatsViewModel
-                {
-                    Patients = result.Items,
-                    TotalScheduledAppointments = totalScheduledAppointments,
-                    TotalPrescriptions = totalPrescriptions,
-                    PendingInvoicesCount = pendingInvoicesCount
-                };
-
-                ViewBag.TotalCount = result.TotalCount;
-                ViewBag.TotalPages = result.TotalPages;
-                ViewBag.CurrentPage = page;
-
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading patients");
-                return View(new PatientStatsViewModel());
-            }
-        }
-
-        public async Task<IActionResult> EditPatient(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var patient = await _patientService.GetByIdAsync(id.Value);
-            if (patient == null)
-                return NotFound();
-
-            return View(patient);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditPatient(int id, Patient patient)
-        {
-            if (id != patient.Id)
-                return NotFound();
-
-            if (ModelState.IsValid)
-            {
-                var result = await _patientService.UpdateAsync(id, patient);
-                if (result.Success)
-                {
-                    TempData["SuccessMessage"] = result.Message;
-                    return RedirectToAction(nameof(Patients));
-                }
-
-                TempData["ErrorMessage"] = result.Message;
-            }
-
-            return View(patient);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeletePatient(int id)
-        {
-            var result = await _patientService.DeleteAsync(id);
-            TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
-            return RedirectToAction(nameof(Patients));
-        }
-
-        public async Task<IActionResult> PatientDetails(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var patient = await _patientService.GetByIdWithDetailsAsync(id.Value);
-            if (patient == null)
-                return NotFound();
-
-            return View(patient);
-        }
-
-        private bool PatientExists(int id) => _context.Patients.Any(e => e.Id == id);
-
         public async Task<IActionResult> ManageAppointments(string status = "all", string riskLevel = "all")
         {
             await _appointmentService.UpdatePastScheduledToCompletedAsync();
@@ -700,7 +601,7 @@ namespace HCMS4.Controllers
                 {
                     _logger.LogWarning("Patient not found with ID: {PatientId}", patientId);
                     TempData["ErrorMessage"] = "Patient not found.";
-                    return RedirectToAction(nameof(Patients));
+                    return RedirectToAction("Patients");
                 }
 
                 var recentAppointments = await _context.Appointments
@@ -767,7 +668,7 @@ namespace HCMS4.Controllers
             {
                 _logger.LogError(ex, "Error loading invoice generation page for patient {PatientId}", patientId);
                 TempData["ErrorMessage"] = $"An error occurred while loading invoice details: {ex.Message}";
-                return RedirectToAction(nameof(Patients));
+                return RedirectToAction("Patients");
             }
         }
 
@@ -793,7 +694,7 @@ namespace HCMS4.Controllers
                     if (patient == null)
                     {
                         TempData["ErrorMessage"] = "Patient not found.";
-                        return RedirectToAction(nameof(Patients));
+                        return RedirectToAction("Patients");
                     }
 
                     if (model.AppointmentId.HasValue)
@@ -839,7 +740,7 @@ namespace HCMS4.Controllers
 
                     _logger.LogInformation("Invoice {InvoiceId} created for patient {PatientId}", invoice.Id, model.PatientId);
                     TempData["SuccessMessage"] = $"Invoice #{invoice.Id} created successfully for {patient.User?.FullName}!";
-                    return RedirectToAction(nameof(Patients));
+                    return RedirectToAction("Patients");
                 }
                 catch (Exception ex)
                 {
@@ -876,7 +777,7 @@ namespace HCMS4.Controllers
             {
                 _logger.LogError(ex, "Error viewing invoice {InvoiceId}", id);
                 TempData["ErrorMessage"] = "An error occurred while loading the invoice.";
-                return RedirectToAction(nameof(Patients));
+                return RedirectToAction("Patients");
             }
         }
 
@@ -1354,62 +1255,6 @@ namespace HCMS4.Controllers
         }
 
         private bool SupplierExists(int id) => _context.Suppliers.Any(e => e.Id == id);
-
-        [HttpGet]
-        public IActionResult DisablePatient(int id)
-        {
-            var patient = _context.Patients
-                .Include(p => p.User)
-                .FirstOrDefault(p => p.Id == id);
-
-            if (patient == null)
-            {
-                TempData["ErrorMessage"] = "Patient not found.";
-                return RedirectToAction("Patients");
-            }
-
-            var viewModel = new DisablePatientViewModel
-            {
-                PatientId = patient.Id,
-                PatientName = patient.User?.FullName ?? "Unknown"
-            };
-
-            return View(viewModel);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DisablePatient(DisablePatientViewModel model)
-        {
-            if (string.IsNullOrWhiteSpace(model.DisableReason))
-            {
-                ModelState.AddModelError("DisableReason", "Please provide a reason for disabling the account.");
-                return View(model);
-            }
-
-            var result = await _patientService.DisablePatientAsync(model.PatientId, model.DisableReason);
-
-            if (result.Success)
-            {
-                TempData["SuccessMessage"] = "Patient account disabled successfully.";
-            }
-            else
-            {
-                TempData["ErrorMessage"] = result.Message;
-            }
-
-            return RedirectToAction("Patients");
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EnablePatient(int id)
-        {
-            var result = await _patientService.EnablePatientAsync(id);
-
-            TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Message;
-            return RedirectToAction("Patients");
-        }
 
         public async Task<IActionResult> PurchaseRequests(string status = "all")
         {

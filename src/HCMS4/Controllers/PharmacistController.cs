@@ -643,13 +643,13 @@ namespace HCMS4.Controllers
                     $"A pharmacist requested review for prescription #{prescription.Id}.",
                     NotificationType.DoctorReview,
                     "/Doctor/DoctorReviewRequests",
-                    nameof(DoctorReviewRequest),
+                    "DoctorReviewRequest",
                     request.Id);
             }
 
             await _activityLogService.LogAsync(
                 "DoctorReviewRequested",
-                nameof(DoctorReviewRequest),
+                "DoctorReviewRequest",
                 $"Pharmacist requested doctor review for prescription #{prescription.Id}.",
                 request.Id.ToString(),
                 currentUser.Id,
@@ -738,14 +738,14 @@ namespace HCMS4.Controllers
                         $"A pharmacist added a note to prescription #{prescription.Id}.",
                         NotificationType.PrescriptionNote,
                         "/Doctor/PatientRecord",
-                        nameof(PharmacistPrescriptionNote),
+                        "PharmacistPrescriptionNote",
                         note.Id);
                 }
             }
 
             await _activityLogService.LogAsync(
                 "PrescriptionNoteAdded",
-                nameof(PharmacistPrescriptionNote),
+                "PharmacistPrescriptionNote",
                 $"Pharmacist added a prescription note to prescription #{prescription.Id}.",
                 note.Id.ToString(),
                 currentUser.Id,

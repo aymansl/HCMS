@@ -17,8 +17,8 @@ namespace HCMS4.Tests.Integration
         [Fact]
         public void CreateClinicalNoteGet_IsAsync()
         {
-            var action = typeof(DoctorController).GetMethods()
-                .Single(m => m.Name == nameof(DoctorController.CreateClinicalNote)
+            var action = typeof(HCMS4.Modules.Records.Controllers.DoctorRecordsController).GetMethods()
+                .Single(m => m.Name == nameof(HCMS4.Modules.Records.Controllers.DoctorRecordsController.CreateClinicalNote)
                           && m.GetParameters().Single().ParameterType == typeof(int));
 
             Assert.True(typeof(Task).IsAssignableFrom(action.ReturnType));
