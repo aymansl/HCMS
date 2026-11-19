@@ -1,90 +1,46 @@
-using HCMS4.Controllers;
-using HCMS4.Data;
-using HCMS4.Modules.Appointments.Models;
-using HCMS4.Modules.Appointments.Services;
-using HCMS4.Modules.Billing.Models;
-using HCMS4.Modules.Feedback.Models;
-using HCMS4.Modules.Pharmacy.Models;
-using HCMS4.Modules.Pharmacy.Services;
-using HCMS4.Modules.Records.Models;
-using HCMS4.Modules.Records.Services;
-using HCMS4.Modules.Staff.Models;
-using HCMS4.Modules.Staff.Services;
-using HCMS4.Shared.Audit.Services;
+using HCMS4.Modules.Portal.Services;
 using HCMS4.Shared.Common;
-using HCMS4.Shared.Identity.Models;
-using HCMS4.Shared.Notifications.Models;
 using HCMS4.Shared.Notifications.Services;
 using HCMS4.Shared.Reporting.Services;
-using HCMS4.ViewModels;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using static HCMS4.ViewModels.GenerateInvoiceViewModel;
-using System.Security.Claims;
 
 namespace HCMS4.Modules.Portal.Controllers
 {
     // Part of the former AdminController; [ControllerName] keeps the /Admin/... URLs.
     [Authorize(Roles = "Admin")]
     [ControllerName("Admin")]
-    public class AdminPortalController : BaseController
+    public class AdminPortalController : HcmsControllerBase
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IDashboardService _dashboardService;
         private readonly IDailyReportService _reportService;
-        private readonly IPatientService _patientService;
-        private readonly IAppointmentService _appointmentService;
-        private readonly IPrescriptionService _prescriptionService;
-        private readonly ApplicationDbContext _adminContext;
-        private readonly INoShowRiskService _noShowRiskService;
-        private readonly ILeaveService _leaveService;
         private readonly INotificationService _notificationService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly IClinicClock _clock;
 
         public AdminPortalController(
-            UserManager<ApplicationUser> userManager,
-            ApplicationDbContext context,
-            SignInManager<ApplicationUser> signInManager,
-            ILogger<AdminPortalController> logger,
+            IDashboardService dashboardService,
             IDailyReportService reportService,
-            IPatientService patientService,
-            IAppointmentService appointmentService,
-            IPrescriptionService prescriptionService,
-            INoShowRiskService noShowRiskService,
-            ILeaveService leaveService,
             INotificationService notificationService,
-            IActivityLogService activityLogService)
-            : base(context, logger)
+            IClinicClock clock)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _dashboardService = dashboardService;
             _reportService = reportService;
-            _patientService = patientService;
-            _appointmentService = appointmentService;
-            _prescriptionService = prescriptionService;
-            _adminContext = context;
-            _noShowRiskService = noShowRiskService;
-            _leaveService = leaveService;
             _notificationService = notificationService;
-            _activityLogService = activityLogService;
+            _clock = clock;
         }
 
         public async Task<IActionResult> Dashboard()
         {
-            ViewBag.DoctorCount = await _context.Doctors.CountAsync();
-            ViewBag.PatientCount = await _context.Patients.CountAsync();
-            ViewBag.AppointmentCount = await _context.Appointments.CountAsync();
-            ViewBag.PendingComplaintsCount = await _context.Complaints.CountAsync(c => c.Status == ComplaintStatus.Submitted || c.Status == ComplaintStatus.UnderReview);
-            ViewBag.ActiveSurveysCount = await _context.Surveys.CountAsync(s => s.Status == SurveyStatus.Active);
-            var todayReport = await _reportService.GetDailyReportAsync(ClinicTime.Today);
-            ViewBag.TodayReport = todayReport;
+            var counts = await _dashboardService.GetAdminCountsAsync();
+            ViewBag.DoctorCount = counts.Doctors;
+            ViewBag.PatientCount = counts.Patients;
+            ViewBag.AppointmentCount = counts.Appointments;
+            ViewBag.PendingComplaintsCount = counts.PendingComplaints;
+            ViewBag.ActiveSurveysCount = counts.ActiveSurveys;
+            ViewBag.TodayReport = await _reportService.GetDailyReportAsync(_clock.Today);
 
             // Admins receive leave requests and other alerts as notifications; show the latest ones.
-            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
-            ViewBag.RecentNotifications = await _notificationService.GetRecentForUserAsync(currentUserId, 8);
+            ViewBag.RecentNotifications = await _notificationService.GetRecentForUserAsync(CurrentUserId ?? string.Empty, 8);
 
             return View();
         }

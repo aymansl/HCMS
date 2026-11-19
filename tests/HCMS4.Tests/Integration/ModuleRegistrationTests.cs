@@ -48,6 +48,7 @@ namespace HCMS4.Tests.Integration
         [InlineData(typeof(IComplaintService))]
         [InlineData(typeof(ISurveyService))]
         [InlineData(typeof(IMedicalArticleService))]
+        [InlineData(typeof(HCMS4.Modules.Portal.Services.IDashboardService))]
         public void ModuleService_IsRegistered(Type serviceType)
         {
             using var scope = _factory.Services.CreateScope();
