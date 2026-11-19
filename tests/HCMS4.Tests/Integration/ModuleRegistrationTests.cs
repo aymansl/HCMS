@@ -44,6 +44,7 @@ namespace HCMS4.Tests.Integration
         [InlineData(typeof(IPurchaseRequestService))]
         [InlineData(typeof(IDispensingService))]
         [InlineData(typeof(IPrescriptionRequestService))]
+        [InlineData(typeof(IInvoiceService))]
         public void ModuleService_IsRegistered(Type serviceType)
         {
             using var scope = _factory.Services.CreateScope();

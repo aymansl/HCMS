@@ -7,6 +7,7 @@ namespace HCMS4.Modules.Billing
         public static IServiceCollection AddBillingModule(this IServiceCollection services)
         {
             services.AddScoped<IInvoicePaymentService, InvoicePaymentService>();
+            services.AddScoped<IInvoiceService, InvoiceService>();
             return services;
         }
     }
