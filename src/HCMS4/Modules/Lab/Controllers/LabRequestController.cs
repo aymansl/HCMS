@@ -20,6 +20,15 @@ namespace HCMS4.Modules.Lab.Controllers
             _requestService = requestService;
         }
 
+        public async Task<IActionResult> Requests(LabRequestFilter filter)
+        {
+            return View(new LabIncomingRequestsViewModel
+            {
+                Filter = filter,
+                Requests = await _requestService.GetIncomingAsync(filter)
+            });
+        }
+
         public async Task<IActionResult> RequestDetails(int id)
         {
             var request = await _requestService.GetDetailsAsync(id);

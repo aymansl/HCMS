@@ -40,6 +40,16 @@ namespace HCMS4.Modules.Lab.ViewModels
         public string Note { get; set; } = string.Empty;
     }
 
+    /// <summary>The lab's incoming requests page (UC-L02).</summary>
+    public class LabIncomingRequestsViewModel
+    {
+        public const string NoRequestsMessage = "No requests at the moment.";
+        public const string NoMatchMessage = "No requests match the filter.";
+
+        public HCMS4.Modules.Lab.Services.LabRequestFilter Filter { get; set; } = new();
+        public List<LabRequest> Requests { get; set; } = new();
+    }
+
     /// <summary>A doctor's lab requests, optionally for one patient.</summary>
     public class DoctorLabRequestsViewModel
     {

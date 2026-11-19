@@ -28,19 +28,19 @@ participant ":LabRequestController" as C
 participant ":LabRequestService" as S
 database "HCMS Database" as DB
 U -> V : open incoming requests
-V -> C : Index(filter)
-C -> S : GetIncomingAsync(filter)
-S -> DB : SELECT incoming requests
+V -> C : Requests(filter)
+C -> S : GetIncomingAsync(filter: status, date, patient name)
+S -> DB : SELECT requests (Requested, Received, InProgress)\nORDER BY RequestedAt
 DB --> S : rows
-S --> C : List<LabRequestDto>
+S --> C : List<LabRequest>
 alt list not empty
   C --> V : render list sorted by arrival
 else empty
   C --> V : "no requests"
 end
 U -> V : select request
-V -> C : Details(id)
-C -> S : GetByIdAsync(id)
-S --> C : LabRequestDto
+V -> C : RequestDetails(id)
+C -> S : GetDetailsAsync(id)
+S --> C : LabRequest
 C --> V : show details
 @enduml

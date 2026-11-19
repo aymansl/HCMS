@@ -61,6 +61,8 @@ namespace HCMS4.Tests.Integration
             new object[] { "LabTechnician", "/Lab/CreateTest" },
             new object[] { "LabTechnician", "/Lab/EditTest/{labTestId}" },
             new object[] { "LabTechnician", "/Lab/RequestDetails/{labRequestId}" },
+            new object[] { "LabTechnician", "/Lab/Requests" },
+            new object[] { "LabTechnician", "/Lab/Requests?Status=Requested&Date=2026-11-19&PatientName=test" },
             // Doctor
             new object[] { "Doctor", "/Doctor/Dashboard" },
             new object[] { "Doctor", "/Doctor/ViewAppointments" },

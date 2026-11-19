@@ -401,6 +401,135 @@ namespace HCMS4.Tests
             Assert.Equal(LabTestDeleteOutcome.Deleted, (await catalogue.DeleteAsync(_glucose.Id)).Data);
         }
 
+        // ---- UC-L02: incoming requests ----
+
+        private async Task<LabRequest> AddRequestAsync(LabRequestStatus status, DateTime requestedAt, int? patientId = null)
+        {
+            var request = new LabRequest
+            {
+                PatientId = patientId ?? _patient.Id, DoctorId = _doctor.Id, Status = status, RequestedAt = requestedAt,
+                StatusChangedAt = requestedAt, Items = { new LabRequestItem { LabTestId = _cbc.Id, Price = 5000 } }
+            };
+            _db.LabRequests.Add(request);
+            await _db.SaveChangesAsync();
+            _db.ChangeTracker.Clear();
+            return request;
+        }
+
+        private async Task<int> AddPatientAsync(string firstName, string lastName)
+        {
+            var user = new ApplicationUser { Id = Guid.NewGuid().ToString(), UserName = $"{firstName}@test.local", FirstName = firstName, LastName = lastName };
+            var patient = new Patient { UserId = user.Id, User = user, DateOfBirth = new DateTime(1990, 1, 1) };
+            _db.Patients.Add(patient);
+            await _db.SaveChangesAsync();
+            _db.ChangeTracker.Clear();
+            return patient.Id;
+        }
+
+        [Fact]
+        public async Task TC_L2_01_Incoming_ShowsTheThreeWorkingStatuses_OldestFirst()
+        {
+            var now = _clock.Now;
+            var inProgress = await AddRequestAsync(LabRequestStatus.InProgress, now.AddHours(-3));
+            var requested = await AddRequestAsync(LabRequestStatus.Requested, now.AddHours(-1));
+            var received = await AddRequestAsync(LabRequestStatus.Received, now.AddHours(-2));
+            await AddRequestAsync(LabRequestStatus.ReturnedToDoctor, now.AddHours(-4));
+            await AddRequestAsync(LabRequestStatus.ResultIssued, now.AddHours(-5));
+            await AddRequestAsync(LabRequestStatus.Cancelled, now.AddHours(-6));
+
+            var incoming = await Service.GetIncomingAsync(new LabRequestFilter());
+
+            Assert.Equal(new[] { inProgress.Id, received.Id, requested.Id }, incoming.Select(r => r.Id));
+            Assert.All(incoming, r => Assert.NotNull(r.Patient.User));
+            Assert.All(incoming, r => Assert.NotNull(r.Doctor.User));
+            Assert.All(incoming, r => Assert.Equal("CBC", Assert.Single(r.Items).LabTest.Name));
+        }
+
+        [Fact]
+        public async Task TC_L2_02_FilterByStatus_ShowsOnlyThatStatus()
+        {
+            var now = _clock.Now;
+            var first = await AddRequestAsync(LabRequestStatus.Requested, now.AddHours(-2));
+            await AddRequestAsync(LabRequestStatus.Received, now.AddHours(-1));
+            var second = await AddRequestAsync(LabRequestStatus.Requested, now);
+
+            var incoming = await Service.GetIncomingAsync(new LabRequestFilter { Status = LabRequestStatus.Requested });
+
+            Assert.Equal(new[] { first.Id, second.Id }, incoming.Select(r => r.Id));
+        }
+
+        [Fact]
+        public async Task TC_L2_03_NoIncomingRequests_IsAnEmptyList()
+        {
+            await AddRequestAsync(LabRequestStatus.ReturnedToDoctor, _clock.Now);
+
+            Assert.Empty(await Service.GetIncomingAsync(new LabRequestFilter()));
+            Assert.True(new LabRequestFilter().IsEmpty);
+        }
+
+        [Fact]
+        public async Task FilterByStatusOutsideTheIncomingOnes_IsIgnored()
+        {
+            var requested = await AddRequestAsync(LabRequestStatus.Requested, _clock.Now);
+            await AddRequestAsync(LabRequestStatus.ReturnedToDoctor, _clock.Now);
+
+            var incoming = await Service.GetIncomingAsync(new LabRequestFilter { Status = LabRequestStatus.ReturnedToDoctor });
+
+            Assert.Equal(requested.Id, Assert.Single(incoming).Id);
+        }
+
+        [Fact]
+        public async Task FilterByDate_UsesTheWholeDamascusDay()
+        {
+            var today = _clock.Today;
+            var startOfDay = await AddRequestAsync(LabRequestStatus.Requested, today);
+            var endOfDay = await AddRequestAsync(LabRequestStatus.Requested, today.AddDays(1).AddTicks(-1));
+            await AddRequestAsync(LabRequestStatus.Requested, today.AddTicks(-1));
+            await AddRequestAsync(LabRequestStatus.Requested, today.AddDays(1));
+
+            var incoming = await Service.GetIncomingAsync(new LabRequestFilter { Date = DateOnly.FromDateTime(today) });
+
+            Assert.Equal(new[] { startOfDay.Id, endOfDay.Id }, incoming.Select(r => r.Id));
+        }
+
+        [Fact]
+        public async Task FilterByPatientName_MatchesPartOfTheFullName_IgnoringCase()
+        {
+            var rami = await AddPatientAsync("Rami", "Haddad");
+            var match = await AddRequestAsync(LabRequestStatus.Requested, _clock.Now, rami);
+            await AddRequestAsync(LabRequestStatus.Requested, _clock.Now);
+
+            Assert.Equal(match.Id, Assert.Single(await Service.GetIncomingAsync(new LabRequestFilter { PatientName = " mi had " })).Id);
+            Assert.Equal(match.Id, Assert.Single(await Service.GetIncomingAsync(new LabRequestFilter { PatientName = "HADDAD" })).Id);
+            Assert.Empty(await Service.GetIncomingAsync(new LabRequestFilter { PatientName = "Nobody" }));
+        }
+
+        [Fact]
+        public async Task Filters_Combine()
+        {
+            var rami = await AddPatientAsync("Rami", "Haddad");
+            var match = await AddRequestAsync(LabRequestStatus.Received, _clock.Now, rami);
+            await AddRequestAsync(LabRequestStatus.Requested, _clock.Now, rami);
+            await AddRequestAsync(LabRequestStatus.Received, _clock.Now.AddDays(-1), rami);
+            await AddRequestAsync(LabRequestStatus.Received, _clock.Now);
+
+            var incoming = await Service.GetIncomingAsync(new LabRequestFilter
+            {
+                Status = LabRequestStatus.Received, Date = DateOnly.FromDateTime(_clock.Today), PatientName = "rami"
+            });
+
+            Assert.Equal(match.Id, Assert.Single(incoming).Id);
+        }
+
+        [Fact]
+        public void Filter_IsEmpty_OnlyWithoutAnyField()
+        {
+            Assert.False(new LabRequestFilter { PatientName = "a" }.IsEmpty);
+            Assert.False(new LabRequestFilter { Date = new DateOnly(2026, 11, 19) }.IsEmpty);
+            Assert.False(new LabRequestFilter { Status = LabRequestStatus.Requested }.IsEmpty);
+            Assert.True(new LabRequestFilter { PatientName = "  " }.IsEmpty);
+        }
+
         // ---- The state machine ----
 
         [Theory]

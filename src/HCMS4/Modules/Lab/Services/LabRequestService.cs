@@ -34,6 +34,12 @@ namespace HCMS4.Modules.Lab.Services
         /// <summary>A request with its patient, doctor and tests, for the lab.</summary>
         Task<LabRequest?> GetDetailsAsync(int id);
 
+        /// <summary>
+        /// The lab's incoming requests (Requested, Received, InProgress) by arrival time, oldest first,
+        /// matching the filter (UC-L02).
+        /// </summary>
+        Task<List<LabRequest>> GetIncomingAsync(LabRequestFilter filter);
+
         /// <summary>The newest requests waiting for the lab to confirm receipt.</summary>
         Task<List<LabRequest>> GetNewForLabAsync(int count = 5);
         Task<int> CountNewAsync();
@@ -219,6 +225,35 @@ namespace HCMS4.Modules.Lab.Services
 
         public Task<LabRequest?> GetDetailsAsync(int id) => WithDetails().FirstOrDefaultAsync(r => r.Id == id);
 
+        public async Task<List<LabRequest>> GetIncomingAsync(LabRequestFilter filter)
+        {
+            ArgumentNullException.ThrowIfNull(filter);
+            var query = WithDetails().Where(r => LabRequestFilter.IncomingStatuses.Contains(r.Status));
+
+            // Keep the status a variable: on SQL Server, EF folds a constant status combined with the
+            // IN list above into "WHERE 0 = 1" (checked with ToQueryString, EF Core 10).
+            if (filter.Status is { } status && LabRequestFilter.IncomingStatuses.Contains(status))
+                query = query.Where(r => r.Status == status);
+
+            if (filter.Date is { } date)
+            {
+                var from = date.ToDateTime(TimeOnly.MinValue);
+                var to = from.AddDays(1);
+                query = query.Where(r => r.RequestedAt >= from && r.RequestedAt < to);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.PatientName))
+            {
+                // Case-insensitive, whatever the database collation; EF translates ToUpper() to SQL UPPER().
+                var name = filter.PatientName.Trim().ToUpperInvariant();
+#pragma warning disable CA1304, CA1311, CA1862
+                query = query.Where(r => (r.Patient.User.FirstName + " " + r.Patient.User.LastName).ToUpper().Contains(name));
+#pragma warning restore CA1304, CA1311, CA1862
+            }
+
+            return await query.OrderBy(r => r.RequestedAt).ThenBy(r => r.Id).ToListAsync();
+        }
+
         public Task<List<LabRequest>> GetNewForLabAsync(int count = 5) =>
             WithDetails()
                 .Where(r => r.Status == LabRequestStatus.Requested)
@@ -267,6 +302,24 @@ namespace HCMS4.Modules.Lab.Services
 
             return ServiceResult.Ok($"Lab request #{id} was returned to the doctor.");
         }
+    }
+
+    /// <summary>The incoming requests filter (UC-L02 alternative flow). Empty fields do not filter.</summary>
+    public class LabRequestFilter
+    {
+        /// <summary>The statuses the lab still has to work on.</summary>
+        public static readonly IReadOnlyList<LabRequestStatus> IncomingStatuses =
+            new[] { LabRequestStatus.Requested, LabRequestStatus.Received, LabRequestStatus.InProgress };
+
+        /// <summary>One of <see cref="IncomingStatuses"/>; any other status is ignored.</summary>
+        public LabRequestStatus? Status { get; set; }
+
+        /// <summary>The day the request arrived (Damascus time).</summary>
+        public DateOnly? Date { get; set; }
+
+        public string? PatientName { get; set; }
+
+        public bool IsEmpty => Status == null && Date == null && string.IsNullOrWhiteSpace(PatientName);
     }
 
     /// <summary>A catalogue test is in use when any lab request includes it (UC-L06 alternative flow).</summary>

@@ -38,6 +38,7 @@ ANY /Home/Error
 ANY /Home/Index
 ANY /Lab/Dashboard
 ANY /Lab/RequestDetails
+ANY /Lab/Requests
 ANY /Lab/Tests
 ANY /Patient/BookAppointment
 ANY /Patient/Dashboard
