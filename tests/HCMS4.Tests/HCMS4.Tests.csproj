@@ -23,6 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Integration\RouteInventory.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\HCMS4\HCMS4.csproj" />
   </ItemGroup>
 
