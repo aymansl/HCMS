@@ -9,6 +9,8 @@ namespace HCMS4.Modules.Lab
         {
             services.AddScoped<ILabTechnicianService, LabTechnicianService>();
             services.AddScoped<IAccountStatusCheck, LabTechnicianAccountStatusCheck>();
+            services.AddScoped<ILabTestService, LabTestService>();
+            services.AddScoped<ILabTestUsage, NoLabTestUsage>();
             return services;
         }
     }

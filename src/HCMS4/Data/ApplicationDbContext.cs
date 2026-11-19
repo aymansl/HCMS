@@ -32,6 +32,7 @@ namespace HCMS4.Data
 
         public DbSet<Pharmacist> Pharmacists { get; set; }
         public DbSet<HCMS4.Modules.Lab.Models.LabTechnician> LabTechnicians { get; set; }
+        public DbSet<HCMS4.Modules.Lab.Models.LabTest> LabTests { get; set; }
         public DbSet<DailyReport> DailyReports { get; set; }
         public DbSet<PurchaseRequest> PurchaseRequests { get; set; }
         public DbSet<PurchaseRequestItem> PurchaseRequestItems { get; set; }

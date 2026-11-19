@@ -13,10 +13,12 @@ namespace HCMS4.Modules.Lab.Controllers
     public class LabPortalController : HcmsControllerBase
     {
         private readonly ILabTechnicianService _technicianService;
+        private readonly ILabTestService _testService;
 
-        public LabPortalController(ILabTechnicianService technicianService)
+        public LabPortalController(ILabTechnicianService technicianService, ILabTestService testService)
         {
             _technicianService = technicianService;
+            _testService = testService;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -26,7 +28,8 @@ namespace HCMS4.Modules.Lab.Controllers
 
             return View(new LabDashboardViewModel
             {
-                TechnicianName = technician?.FullName ?? user?.FullName ?? User.Identity?.Name ?? string.Empty
+                TechnicianName = technician?.FullName ?? user?.FullName ?? User.Identity?.Name ?? string.Empty,
+                ActiveTestCount = await _testService.CountActiveAsync()
             });
         }
     }

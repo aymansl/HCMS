@@ -36,6 +36,7 @@ ANY /Home/Contact
 ANY /Home/Error
 ANY /Home/Index
 ANY /Lab/Dashboard
+ANY /Lab/Tests
 ANY /Patient/BookAppointment
 ANY /Patient/Dashboard
 ANY /Patient/InvoiceDetails
@@ -76,6 +77,8 @@ GET /Doctor/PatientRecord
 GET /Doctor/ReissueRequests
 GET /Doctor/RequestLeave
 GET /Doctor/RescheduleAppointment
+GET /Lab/CreateTest
+GET /Lab/EditTest
 GET /Patient/Complaints
 GET /Patient/CreateComplaint
 GET /Patient/GetDoctorConsultationFee
@@ -129,6 +132,9 @@ POST /Doctor/RescheduleAppointment
 POST /Doctor/RespondToReviewRequest
 POST /Doctor/ReviewReissueRequest
 POST /Doctor/SendReminder
+POST /Lab/CreateTest
+POST /Lab/DeleteTest
+POST /Lab/EditTest
 POST /Patient/BookAppointment
 POST /Patient/CreateComplaint
 POST /Patient/ProcessPayment

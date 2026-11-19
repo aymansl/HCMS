@@ -68,6 +68,8 @@ namespace HCMS4.Tests
         [InlineData(typeof(Specialization), "CK_Specializations_ConsultationFee")]
         [InlineData(typeof(Doctor), "CK_Doctors_AverageRating")]
         [InlineData(typeof(HCMS4.Modules.Appointments.Models.Appointment), "CK_Appointments_ConsultationFee")]
+        [InlineData(typeof(HCMS4.Modules.Lab.Models.LabTest), "CK_LabTests_Price")]
+        [InlineData(typeof(HCMS4.Modules.Lab.Models.LabTest), "CK_LabTests_ReferenceRange")]
         public void CheckConstraint_IsDefined(Type entity, string name)
         {
             Assert.Contains(Model.FindEntityType(entity)!.GetCheckConstraints(), c => c.Name == name);

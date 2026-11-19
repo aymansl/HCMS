@@ -37,9 +37,12 @@ namespace HCMS4.Modules.Lab.ViewModels
         public string? ContactInfo { get; set; }
     }
 
-    /// <summary>The lab dashboard (UC-L01 step 5). Request and catalogue figures are added with L2 and L6.</summary>
+    /// <summary>The lab dashboard (UC-L01 step 5). Request figures are added with L2.</summary>
     public class LabDashboardViewModel
     {
         public string TechnicianName { get; set; } = string.Empty;
+
+        /// <summary>Active tests in the catalogue (UC-L06).</summary>
+        public int ActiveTestCount { get; set; }
     }
 }

@@ -56,6 +56,8 @@ namespace HCMS4.Tests.Integration
             new object[] { "Admin", "/Admin/CreateLabTechnician" },
             // Lab technician
             new object[] { "LabTechnician", "/Lab/Dashboard" },
+            new object[] { "LabTechnician", "/Lab/Tests" },
+            new object[] { "LabTechnician", "/Lab/CreateTest" },
             // Doctor
             new object[] { "Doctor", "/Doctor/Dashboard" },
             new object[] { "Doctor", "/Doctor/ViewAppointments" },
