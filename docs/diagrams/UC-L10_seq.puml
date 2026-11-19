@@ -34,7 +34,7 @@ C -> S : IssueAsync(requestId, values)
 S -> DB : get request status
 alt status Received / InProgress and values complete
   S -> S : compare with reference ranges
-  S -> DB : INSERT result, status = Issued
+  S -> DB : INSERT result, status = ResultIssued
   par
     S ->> H : NotifyDoctor(requestId, isCritical)
   else

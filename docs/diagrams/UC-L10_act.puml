@@ -35,7 +35,7 @@ if (All values entered?) then (no)
   stop
 else (yes)
 endif
-:Set status Issued and log time;
+:Set status ResultIssued and log time;
 if (Critical value?) then (yes)
   :Mark critical;
   :Send urgent alert to doctor;
