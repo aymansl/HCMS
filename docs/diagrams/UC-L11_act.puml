@@ -20,21 +20,22 @@ title UC-L11: Generate Daily Lab Activity Report - Activity
 |Lab Technician|
 start
 :Open reports page;
-:Select date (default today);
+:Select date or period (default today);
 |System|
 :Count requests by status and test type;
-:Compute median turnaround time;
+:Compute median turnaround time (receipt to issue);
 if (Any activity?) then (yes)
   :Show report summary;
-  |Lab Technician|
-  if (Export PDF?) then (yes)
-    |System|
-    :Generate PDF file;
-  else (no)
-  endif
 else (no)
+  :Show empty report with "no activity";
+endif
+|Lab Technician|
+if (Print / Save as PDF?) then (yes)
   |System|
-  :Show "no activity";
+  :Show the print-friendly page;
+  |Lab Technician|
+  :Save as PDF in the browser;
+else (no)
 endif
 stop
 @enduml

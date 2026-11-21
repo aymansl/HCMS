@@ -23,22 +23,23 @@ skinparam ActorFontSize 15
 skinparam DatabaseFontSize 15
 hide footbox
 actor "Lab Technician" as U
-participant ":ReportsView" as V
 participant ":LabReportController" as C
 participant ":LabReportService" as S
 database "HCMS Database" as DB
-participant ":PdfReportService" as R
-U -> V : select date
-V -> C : Daily(date)
-C -> S : BuildDailyAsync(date)
-S -> DB : SELECT requests and timestamps for date
-S -> S : count by status, median TAT
-C --> V : summary
-opt export
-  U -> V : export PDF
-  V -> C : DailyPdf(date)
-  C -> R : GenerateDailyReport(summary)
-  R --> C : file
-  C --> V : download PDF
+U -> C : ActivityReport(from, to)   (default: today)
+C -> S : BuildPageAsync(from, to)
+S -> DB : SELECT requests with RequestedAt in the period (+ tests)
+S -> S : count by current status and by test;\nmedian of (ResultIssuedAt - ReceivedAt)
+alt activity
+  C --> U : report summary
+else none
+  C --> U : empty report + "No activity"
 end
+opt print / PDF
+  U -> C : ActivityReportPrint(from, to)
+  C -> S : BuildPageAsync(from, to)
+  C --> U : print-friendly page (same summary)
+  U -> U : browser "Print / Save as PDF"
+end
+note over C : No PDF library: the browser's "Save as PDF"\nturns the printable page into a PDF file.
 @enduml

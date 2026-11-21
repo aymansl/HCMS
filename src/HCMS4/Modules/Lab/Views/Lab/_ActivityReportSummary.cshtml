@@ -1,0 +1,56 @@
+@model HCMS4.Modules.Lab.ViewModels.LabActivityReport
+@using HCMS4.Modules.Lab.Models
+@using HCMS4.Modules.Lab.ViewModels
+@* The report body, shared by the report page and its print page (UC-L11). *@
+
+<div id="activity-report">
+    <p class="mb-2">
+        <strong>Period:</strong>
+        @(Model.IsSingleDay ? Model.From.ToString("dddd, yyyy-MM-dd") : $"{Model.From:yyyy-MM-dd} – {Model.To:yyyy-MM-dd}")
+    </p>
+
+    @if (!Model.HasActivity)
+    {
+        <div class="alert alert-secondary" id="no-activity">@LabActivityReport.NoActivityMessage</div>
+    }
+
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3"><div class="border rounded p-2"><div class="small text-muted">Requests</div><div class="fs-4 fw-semibold" id="total-requests">@Model.TotalRequests</div></div></div>
+        <div class="col-6 col-md-3"><div class="border rounded p-2"><div class="small text-muted">Issued</div><div class="fs-4 fw-semibold" id="count-issued">@Model.CountOf(LabRequestStatus.ResultIssued)</div></div></div>
+        <div class="col-6 col-md-3"><div class="border rounded p-2"><div class="small text-muted">Cancelled</div><div class="fs-4 fw-semibold" id="count-cancelled">@Model.CountOf(LabRequestStatus.Cancelled)</div></div></div>
+        <div class="col-6 col-md-3"><div class="border rounded p-2"><div class="small text-muted">Median turnaround</div><div class="fs-5 fw-semibold" id="median-turnaround">@LabActivityReport.FormatDuration(Model.MedianTurnaround)</div></div></div>
+    </div>
+    <p class="small text-muted">Turnaround: from receipt by the lab to the result issue, over @Model.TurnaroundSampleSize issued request(s).</p>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <h6>By status</h6>
+            <table class="table table-sm" id="report-by-status">
+                <tbody>
+                    @foreach (var (status, count) in Model.ByStatus)
+                    {
+                        <tr><td>@status</td><td class="text-end">@count</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-6">
+            <h6>By test</h6>
+            @if (Model.ByTest.Count == 0)
+            {
+                <p class="text-muted">-</p>
+            }
+            else
+            {
+                <table class="table table-sm" id="report-by-test">
+                    <tbody>
+                        @foreach (var (test, count) in Model.ByTest)
+                        {
+                            <tr><td>@test</td><td class="text-end">@count</td></tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

@@ -38,6 +38,8 @@ ANY /Home/About
 ANY /Home/Contact
 ANY /Home/Error
 ANY /Home/Index
+ANY /Lab/ActivityReport
+ANY /Lab/ActivityReportPrint
 ANY /Lab/Dashboard
 ANY /Lab/IssuedResults
 ANY /Lab/PatientHistory

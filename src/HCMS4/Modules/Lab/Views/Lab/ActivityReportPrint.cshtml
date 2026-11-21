@@ -1,0 +1,41 @@
+@model HCMS4.Modules.Lab.ViewModels.LabActivityReportPageViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lab Activity Report</title>
+    <link href="~/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body { background: #fff; color: #000; }
+        .report { max-width: 800px; margin: 24px auto; }
+        .report-header { border-bottom: 2px solid #1f3864; padding-bottom: 8px; margin-bottom: 16px; }
+        @@media print {
+            .no-print { display: none !important; }
+            .report { margin: 0; max-width: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report" id="activity-report-print">
+        <div class="no-print d-flex justify-content-end mb-3">
+            <button type="button" class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
+        </div>
+        <div class="report-header">
+            <h1 class="h4 mb-0">HCMS Laboratory</h1>
+            <div class="text-muted">Lab Activity Report</div>
+        </div>
+        @if (Model.Error != null)
+        {
+            <div class="alert alert-danger">@Model.Error</div>
+        }
+        else if (Model.Report != null)
+        {
+            <partial name="_ActivityReportSummary" model="Model.Report" />
+        }
+    </div>
+</body>
+</html>

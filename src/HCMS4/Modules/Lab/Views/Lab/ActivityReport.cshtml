@@ -1,0 +1,60 @@
+@model HCMS4.Modules.Lab.ViewModels.LabActivityReportPageViewModel
+
+@{
+    ViewData["Title"] = "Lab Activity Report";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3"><i class="bi bi-bar-chart me-2"></i>Lab Activity Report</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Reports</li>
+                </ol>
+            </nav>
+        </div>
+        @if (Model.Report != null)
+        {
+            <a asp-action="ActivityReportPrint" asp-route-from="@Model.From.ToString("yyyy-MM-dd")" asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
+               target="_blank" class="btn btn-outline-secondary" id="print-report">
+                <i class="bi bi-printer me-1"></i>Print / Save as PDF
+            </a>
+        }
+    </div>
+
+    <div class="card dashboard-card mb-3">
+        <div class="card-body">
+            <form asp-action="ActivityReport" method="get" class="row g-2 align-items-end" id="report-period">
+                <div class="col-md-4">
+                    <label for="from" class="form-label">From</label>
+                    <input type="date" id="from" name="from" value="@Model.From.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label for="to" class="form-label">To</label>
+                    <input type="date" id="to" name="to" value="@Model.To.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-primary w-100">Show Report</button>
+                </div>
+            </form>
+            <p class="small text-muted mt-2 mb-0">Choose the same day in both fields for a daily report.</p>
+        </div>
+    </div>
+
+    @if (Model.Error != null)
+    {
+        <div class="alert alert-danger" id="report-error">@Model.Error</div>
+    }
+
+    @if (Model.Report != null)
+    {
+        <div class="card dashboard-card">
+            <div class="card-body">
+                <partial name="_ActivityReportSummary" model="Model.Report" />
+            </div>
+        </div>
+    }
+</div>
