@@ -23,24 +23,25 @@ skinparam ActorFontSize 15
 skinparam DatabaseFontSize 15
 hide footbox
 actor "Lab Technician" as U
-participant ":ResultsView" as V
-participant ":LabResultController" as C
-participant ":LabResultService" as S
+participant ":LabIssuedResultsController" as C
+participant ":LabResultSearchService" as S
 database "HCMS Database" as DB
-participant ":PdfReportService" as R
-U -> V : enter criteria
-V -> C : Search(criteria)
-C -> S : SearchIssuedAsync(criteria)
-S -> DB : SELECT issued results
+U -> C : IssuedResults(patient name, request #, test, date)
+C -> S : SearchIssuedAsync(filter)
+alt no criteria
+  S -> DB : SELECT ResultIssued requests issued today
+else criteria
+  S -> DB : SELECT ResultIssued requests matching the criteria
+end
 DB --> S : rows
 alt found
-  C --> V : results list
-  U -> V : print result
-  V -> C : Pdf(resultId)
-  C -> R : GenerateResultPdf(resultId)
-  R --> C : file
-  C --> V : download PDF
+  C --> U : results list, newest first
+  U -> C : ResultReport(id)
+  C -> S : GetReportAsync(id)
+  C --> U : print-friendly report page
+  U -> U : browser "Print / Save as PDF"
 else none
-  C --> V : "no matching results"
+  C --> U : "No matching results."
 end
+note over C : No PDF library: the browser's "Save as PDF"\nturns the printable page into a PDF file.
 @enduml

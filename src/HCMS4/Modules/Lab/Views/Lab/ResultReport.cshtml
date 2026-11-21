@@ -1,0 +1,60 @@
+@model HCMS4.Modules.Lab.ViewModels.LabResultReportViewModel
+@{
+    Layout = null;
+    var request = Model.Request;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lab Report #@request.Id</title>
+    <link href="~/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        body { background: #fff; color: #000; }
+        .report { max-width: 800px; margin: 24px auto; }
+        .report-header { border-bottom: 2px solid #1f3864; padding-bottom: 8px; margin-bottom: 16px; }
+        @@media print {
+            .no-print { display: none !important; }
+            .report { margin: 0; max-width: none; }
+            .table-danger, .table-warning { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report" id="result-report">
+        <div class="no-print d-flex justify-content-end gap-2 mb-3">
+            <button type="button" class="btn btn-primary" onclick="window.print()">Print / Save as PDF</button>
+        </div>
+
+        <div class="report-header d-flex justify-content-between align-items-end">
+            <div>
+                <h1 class="h4 mb-0">HCMS Laboratory</h1>
+                <div class="text-muted">Laboratory Result Report</div>
+            </div>
+            <div class="text-end small">
+                Request #@request.Id<br />
+                Printed @Model.PrintedAt.ToString("yyyy-MM-dd HH:mm")
+            </div>
+        </div>
+
+        <table class="table table-sm table-borderless mb-3">
+            <tr><th style="width: 160px">Patient</th><td>@request.Patient.User.FullName</td>
+                <th style="width: 160px">Date of Birth</th><td>@(request.Patient.DateOfBirth?.ToString("yyyy-MM-dd") ?? "-")</td></tr>
+            <tr><th>Requesting Doctor</th><td>Dr. @request.Doctor.User.FullName</td>
+                <th>Requested</th><td>@request.RequestedAt.ToString("yyyy-MM-dd HH:mm")</td></tr>
+            <tr><th>Received</th><td>@(request.ReceivedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                <th>Issued</th><td>@request.ResultIssuedAt?.ToString("yyyy-MM-dd HH:mm")</td></tr>
+        </table>
+
+        <partial name="_LabResultTable" model="request" />
+
+        @if (request.HasCriticalResult)
+        {
+            <p class="fw-bold text-danger mt-2">This report contains a critical value.</p>
+        }
+
+        <p class="mt-4 mb-0 small">Issued by: @(Model.IssuedByName ?? "-")</p>
+    </div>
+</body>
+</html>

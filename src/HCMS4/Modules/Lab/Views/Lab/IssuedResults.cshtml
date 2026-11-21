@@ -1,0 +1,109 @@
+@model HCMS4.Modules.Lab.ViewModels.IssuedResultsViewModel
+@using HCMS4.Modules.Lab.ViewModels
+
+@{
+    ViewData["Title"] = "Issued Results";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3"><i class="bi bi-clipboard-check me-2"></i>Issued Results</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Issued Results</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card dashboard-card mb-3">
+        <div class="card-body">
+            <form asp-action="IssuedResults" method="get" class="row g-2 align-items-end" id="issued-search">
+                <div class="col-md-3">
+                    <label for="PatientName" class="form-label">Patient Name</label>
+                    <input type="text" id="PatientName" name="PatientName" value="@Model.Filter.PatientName" class="form-control" maxlength="100" />
+                </div>
+                <div class="col-md-2">
+                    <label for="RequestId" class="form-label">Request #</label>
+                    <input type="number" id="RequestId" name="RequestId" value="@Model.Filter.RequestId" class="form-control" min="1" />
+                </div>
+                <div class="col-md-3">
+                    <label for="TestId" class="form-label">Test</label>
+                    <select id="TestId" name="TestId" class="form-select">
+                        <option value="">Any test</option>
+                        @foreach (var test in Model.Tests)
+                        {
+                            <option value="@test.Id" selected="@(Model.Filter.TestId == test.Id)">@test.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="Date" class="form-label">Issued On</label>
+                    <input type="date" id="Date" name="Date" value="@Model.Filter.Date?.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Search</button>
+                    <a asp-action="IssuedResults" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card dashboard-card">
+        <div class="card-body">
+            @if (Model.ShowingToday)
+            {
+                <p class="text-muted" id="showing-today">No criteria: showing today's results.</p>
+            }
+            @if (Model.Results.Count == 0)
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-search display-1 text-muted"></i>
+                    <h4 class="mt-3" id="no-matching-results">@IssuedResultsViewModel.NoMatchMessage</h4>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="issued-results">
+                        <thead class="table-light">
+                            <tr><th>#</th><th>Patient</th><th>Doctor</th><th>Tests</th><th>Issued</th><th>Flags</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var request in Model.Results)
+                            {
+                                var results = request.Items.Where(i => i.Result != null).Select(i => i.Result!).ToList();
+                                <tr>
+                                    <td>@request.Id</td>
+                                    <td>@request.Patient.User.FullName</td>
+                                    <td>Dr. @request.Doctor.User.FullName</td>
+                                    <td>@string.Join(", ", request.Items.Select(i => i.LabTest.Name).Order())</td>
+                                    <td>@request.ResultIssuedAt?.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>
+                                        @if (results.Any(r => r.IsCritical))
+                                        {
+                                            <span class="badge bg-danger">Critical</span>
+                                        }
+                                        else if (results.Any(r => r.IsAbnormal))
+                                        {
+                                            <span class="badge bg-warning text-dark">Abnormal</span>
+                                        }
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <a asp-action="RequestDetails" asp-route-id="@request.Id" class="btn btn-sm btn-outline-primary">Open</a>
+                                        <a asp-action="ResultReport" asp-route-id="@request.Id" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-printer"></i> Print / PDF
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

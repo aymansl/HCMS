@@ -15,6 +15,7 @@ namespace HCMS4.Modules.Lab
             services.AddScoped<ILabAppointmentService, LabAppointmentService>();
             services.AddScoped<ILabResultService, LabResultService>();
             services.AddScoped<ILabHistoryService, LabHistoryService>();
+            services.AddScoped<ILabResultSearchService, LabResultSearchService>();
             return services;
         }
     }

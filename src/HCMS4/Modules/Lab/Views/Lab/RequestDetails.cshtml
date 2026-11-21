@@ -130,6 +130,9 @@
             <div class="card-body">
                 <h5 class="card-title"><i class="bi bi-clipboard-check me-2"></i>Result</h5>
                 <a asp-action="EnterResults" asp-route-id="@Model.Id" class="btn btn-outline-primary">View Result</a>
+                <a asp-action="ResultReport" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-secondary" id="print-result">
+                    <i class="bi bi-printer me-1"></i>Print / PDF
+                </a>
             </div>
         </div>
     }

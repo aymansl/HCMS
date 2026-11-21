@@ -30,7 +30,7 @@ endif
 if (Matches found?) then (yes)
   :Show results list;
   |Lab Technician|
-  :Open result / print PDF;
+  :Open result / print report (browser "Save as PDF");
 else (no)
   |System|
   :Show "no matching results";
