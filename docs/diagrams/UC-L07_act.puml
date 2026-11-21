@@ -33,6 +33,6 @@ if (Marked urgent?) then (yes)
   :Notify doctor immediately;
 else (no)
 endif
-:Show note in request details;
+:Show note in request details (lab and doctor);
 stop
 @enduml

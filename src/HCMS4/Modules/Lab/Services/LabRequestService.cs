@@ -61,6 +61,12 @@ namespace HCMS4.Modules.Lab.Services
 
         /// <summary>The technician's one note on a cancelled request, e.g. "sample taken" (UC-L04 alternative flow).</summary>
         Task<ServiceResult> AddCancellationNoteAsync(int id, string userId, string note);
+
+        /// <summary>
+        /// Adds a technician's note to a received or in-progress request (UC-L07); an urgent note
+        /// notifies the doctor at once. A cancelled request does not accept notes.
+        /// </summary>
+        Task<ServiceResult> AddNoteAsync(int id, string userId, string text, bool isUrgent);
     }
 
     public class LabRequestService : ILabRequestService
@@ -70,6 +76,8 @@ namespace HCMS4.Modules.Lab.Services
         public const string InactiveTestError = "One or more selected tests are not available.";
         public const string ResultIssuedError = "The result of this request has already been issued, so it cannot be cancelled.";
         public const string CancelReasonRequired = "Write the reason for the cancellation.";
+        public const string EmptyNoteError = "Write the note.";
+        public const string CancelledNoteError = "This request was cancelled; it does not accept new notes.";
 
         private readonly ApplicationDbContext _context;
         private readonly IMedicalRecordService _records;
@@ -237,7 +245,8 @@ namespace HCMS4.Modules.Lab.Services
                 .OrderByDescending(r => r.RequestedAt)
                 .ToListAsync();
 
-        public Task<LabRequest?> GetDetailsAsync(int id) => WithDetails().FirstOrDefaultAsync(r => r.Id == id);
+        public Task<LabRequest?> GetDetailsAsync(int id) =>
+            WithDetails().Include(r => r.Notes).ThenInclude(n => n.Author).FirstOrDefaultAsync(r => r.Id == id);
 
         public async Task<List<LabRequest>> GetIncomingAsync(LabRequestFilter filter)
         {
@@ -318,7 +327,43 @@ namespace HCMS4.Modules.Lab.Services
         }
 
         public Task<LabRequest?> GetForDoctorByIdAsync(int doctorId, int id) =>
-            WithDetails().FirstOrDefaultAsync(r => r.Id == id && r.DoctorId == doctorId);
+            WithDetails().Include(r => r.Notes).ThenInclude(n => n.Author)
+                .FirstOrDefaultAsync(r => r.Id == id && r.DoctorId == doctorId);
+
+        public async Task<ServiceResult> AddNoteAsync(int id, string userId, string text, bool isUrgent)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return ServiceResult.Fail(EmptyNoteError);
+
+            var trimmed = text.Trim();
+            if (trimmed.Length > LabNote.TextMaxLength)
+                return ServiceResult.Fail($"A note can have {LabNote.TextMaxLength} characters at most.");
+
+            var request = await _context.LabRequests.Include(r => r.Doctor).FirstOrDefaultAsync(r => r.Id == id);
+            if (request == null)
+                return ServiceResult.Fail("Lab request not found.");
+
+            if (request.Status == LabRequestStatus.Cancelled)
+                return ServiceResult.Fail(CancelledNoteError);
+
+            if (request.Status is not (LabRequestStatus.Received or LabRequestStatus.InProgress))
+                return ServiceResult.Fail("Notes can be added once the request is received and until its result is issued.");
+
+            _context.LabNotes.Add(new LabNote
+            {
+                LabRequestId = id, Text = trimmed, IsUrgent = isUrgent, CreatedAt = _clock.Now, CreatedBy = userId
+            });
+            await _context.SaveChangesAsync();
+
+            if (isUrgent)
+            {
+                await _notifications.CreateForUserAsync(request.Doctor.UserId, "Urgent lab note",
+                    $"Lab request #{id}: {trimmed}", NotificationType.LabRequest,
+                    $"/Doctor/LabRequestDetails/{id.ToString(CultureInfo.InvariantCulture)}", nameof(LabRequest), id);
+            }
+
+            return ServiceResult.Ok(isUrgent ? "The urgent note was saved and the doctor was notified." : "The note was saved.");
+        }
 
         public async Task<ServiceResult> CancelAsync(int doctorId, int id, string reason)
         {

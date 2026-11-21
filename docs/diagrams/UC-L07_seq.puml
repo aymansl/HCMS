@@ -23,22 +23,26 @@ skinparam ActorFontSize 15
 skinparam DatabaseFontSize 15
 hide footbox
 actor "Lab Technician" as U
-participant ":LabRequestsView" as V
+actor Doctor as D
 participant ":LabRequestController" as C
+participant ":DoctorLabRequestsController" as DC
 participant ":LabRequestService" as S
+participant ":INotificationService" as N
 database "HCMS Database" as DB
-participant ":NotificationHub" as H
-U -> V : write note
-V -> C : AddNote(id, text, urgent)
-C -> S : AddNoteAsync(id, text, urgent)
+U -> C : AddNote(id, text, isUrgent)
+C -> S : AddNoteAsync(id, userId, text, isUrgent)
 S -> DB : get request status
-alt text not empty and status not Cancelled
+alt text not empty and status Received / InProgress
   S -> DB : INSERT LabNote (author, createdAt)
   opt urgent
-    S ->> H : NotifyDoctor(id, text)
+    S -> N : CreateForUserAsync(doctor, "Urgent lab note")
   end
-  C --> V : note added
-else invalid
-  C --> V : error
+  C --> U : note added
+else empty text or cancelled request
+  C --> U : error
 end
+D -> DC : LabRequestDetails(id)
+DC -> S : GetForDoctorByIdAsync(doctorId, id)
+DC --> D : tests, status and notes (author, time)
+note over N : Notifications are shown on refresh;\nSignalR comes with S3 (Increment 6).
 @enduml

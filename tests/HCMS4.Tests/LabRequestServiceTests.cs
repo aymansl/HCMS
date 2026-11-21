@@ -683,6 +683,100 @@ namespace HCMS4.Tests
             Assert.False((await Service.AddCancellationNoteAsync(999, TechnicianUserId, "Note")).Success);
         }
 
+        // ---- UC-L07: lab notes ----
+
+        private async Task<LabRequest> ReceivedRequestAsync()
+        {
+            var request = await CreateAsync(_cbc.Id);
+            await Service.ReceiveAsync(request.Id, TechnicianUserId);
+            _db.ChangeTracker.Clear();
+            return request;
+        }
+
+        [Fact]
+        public async Task TC_L7_01_ANoteOnAReceivedRequest_IsSavedWithAuthorAndTime_AndTheDoctorSeesIt()
+        {
+            var request = await ReceivedRequestAsync();
+            _time.Advance(TimeSpan.FromMinutes(15));
+
+            var result = await Service.AddNoteAsync(request.Id, TechnicianUserId, "  Sample slightly haemolysed. ", isUrgent: false);
+
+            Assert.True(result.Success, result.Message);
+            var note = await _db.LabNotes.AsNoTracking().SingleAsync();
+            Assert.Equal("Sample slightly haemolysed.", note.Text);
+            Assert.Equal(TechnicianUserId, note.CreatedBy);
+            Assert.Equal(_clock.Now, note.CreatedAt);
+            Assert.False(note.IsUrgent);
+
+            var forDoctor = await Service.GetForDoctorByIdAsync(_doctor.Id, request.Id);
+            var shown = Assert.Single(forDoctor!.Notes);
+            Assert.Equal("Lina Lab", shown.Author.FullName);
+            Assert.Single((await Service.GetDetailsAsync(request.Id))!.Notes);
+            Assert.DoesNotContain(await NotificationsForAsync(_doctorUser.Id), n => n.Title == "Urgent lab note");
+        }
+
+        [Fact]
+        public async Task TC_L7_02_AnUrgentNote_NotifiesTheDoctorAtOnce()
+        {
+            var request = await ReceivedRequestAsync();
+
+            var result = await Service.AddNoteAsync(request.Id, TechnicianUserId, "Sample clotted, a new sample is needed.", isUrgent: true);
+
+            Assert.True(result.Success, result.Message);
+            Assert.True((await _db.LabNotes.AsNoTracking().SingleAsync()).IsUrgent);
+            var alert = Assert.Single(await NotificationsForAsync(_doctorUser.Id), n => n.Title == "Urgent lab note");
+            Assert.Contains("Sample clotted", alert.Message);
+            Assert.Equal($"/Doctor/LabRequestDetails/{request.Id}", alert.LinkUrl);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task TC_L7_03_AnEmptyNote_IsRefused(string text)
+        {
+            var request = await ReceivedRequestAsync();
+
+            var result = await Service.AddNoteAsync(request.Id, TechnicianUserId, text, isUrgent: true);
+
+            Assert.False(result.Success);
+            Assert.Equal(LabRequestService.EmptyNoteError, result.Message);
+            Assert.Empty(await _db.LabNotes.ToListAsync());
+        }
+
+        [Fact]
+        public async Task Exception_ACancelledRequest_RefusesNewNotes()
+        {
+            var request = await ReceivedRequestAsync();
+            await Service.CancelAsync(_doctor.Id, request.Id, "Not needed");
+
+            var result = await Service.AddNoteAsync(request.Id, TechnicianUserId, "Late note", isUrgent: false);
+
+            Assert.Equal(LabRequestService.CancelledNoteError, result.Message);
+            Assert.Empty(await _db.LabNotes.ToListAsync());
+        }
+
+        [Theory]
+        [InlineData(LabRequestStatus.Requested, false)]
+        [InlineData(LabRequestStatus.ReturnedToDoctor, false)]
+        [InlineData(LabRequestStatus.ResultIssued, false)]
+        [InlineData(LabRequestStatus.InProgress, true)]
+        public async Task Notes_AreAcceptedOnlyFromReceiptUntilTheResult(LabRequestStatus status, bool accepted)
+        {
+            var request = await AddRequestAsync(status, _clock.Now);
+
+            Assert.Equal(accepted, (await Service.AddNoteAsync(request.Id, TechnicianUserId, "Note", isUrgent: false)).Success);
+        }
+
+        [Fact]
+        public async Task ANoteLongerThan500Characters_OrOnAnUnknownRequest_IsRefused()
+        {
+            var request = await ReceivedRequestAsync();
+
+            Assert.False((await Service.AddNoteAsync(request.Id, TechnicianUserId, new string('x', 501), isUrgent: false)).Success);
+            Assert.False((await Service.AddNoteAsync(999, TechnicianUserId, "Note", isUrgent: false)).Success);
+            Assert.True((await Service.AddNoteAsync(request.Id, TechnicianUserId, new string('x', 500), isUrgent: false)).Success);
+        }
+
         // ---- The state machine ----
 
         [Theory]

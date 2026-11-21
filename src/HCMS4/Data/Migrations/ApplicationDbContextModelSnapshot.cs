@@ -551,6 +551,44 @@ namespace HCMS4.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("CAST(SYSDATETIMEOFFSET() AT TIME ZONE 'Syria Standard Time' AS datetime2)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("IsUrgent")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LabRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy");
+
+                    b.HasIndex("LabRequestId", "CreatedAt");
+
+                    b.ToTable("LabNotes");
+                });
+
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -2143,6 +2181,25 @@ namespace HCMS4.Data.Migrations
                     b.Navigation("LabRequest");
                 });
 
+            modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabNote", b =>
+                {
+                    b.HasOne("HCMS4.Shared.Identity.Models.ApplicationUser", "Author")
+                        .WithMany()
+                        .HasForeignKey("CreatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("HCMS4.Modules.Lab.Models.LabRequest", "LabRequest")
+                        .WithMany("Notes")
+                        .HasForeignKey("LabRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("LabRequest");
+                });
+
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
                 {
                     b.HasOne("HCMS4.Modules.Staff.Models.Doctor", "Doctor")
@@ -2522,6 +2579,8 @@ namespace HCMS4.Data.Migrations
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequest", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("Notes");
                 });
 
             modelBuilder.Entity("HCMS4.Modules.Lab.Models.LabRequestItem", b =>

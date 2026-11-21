@@ -1,0 +1,57 @@
+@model HCMS4.Modules.Lab.Models.LabRequest
+@using HCMS4.Modules.Lab.Models
+
+@{
+    ViewData["Title"] = $"Lab Request #{Model.Id}";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">Lab Request #@Model.Id <partial name="~/Modules/Lab/Views/Lab/_LabRequestStatus.cshtml" model="Model.Status" /></h1>
+            <p class="text-muted mb-0">@Model.Patient.User.FullName · requested @Model.RequestedAt.ToString("yyyy-MM-dd HH:mm")</p>
+        </div>
+        <a asp-action="LabRequests" asp-route-patientId="@Model.PatientId" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Lab Requests
+        </a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card dashboard-card h-100">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-list-check me-2"></i>Tests</h5>
+                    <ul class="mb-3">
+                        @foreach (var item in Model.Items.OrderBy(i => i.LabTest.Name))
+                        {
+                            <li>@item.LabTest.Name <span class="text-muted small">(@item.LabTest.Unit)</span></li>
+                        }
+                    </ul>
+                    <h6 class="text-muted">Clinical Notes</h6>
+                    <p>@(Model.ClinicalNotes ?? "None")</p>
+                    @if (Model.ReceivedAt.HasValue)
+                    {
+                        <p class="small text-muted mb-1">Received by the lab on @Model.ReceivedAt.Value.ToString("yyyy-MM-dd HH:mm")</p>
+                    }
+                    @if (Model.Status == LabRequestStatus.ResultIssued)
+                    {
+                        <a asp-action="LabResult" asp-route-id="@Model.Id" class="btn btn-success mt-2"><i class="bi bi-clipboard-check me-1"></i>View Result</a>
+                    }
+                    @if (Model.Status == LabRequestStatus.Cancelled)
+                    {
+                        <div class="alert alert-secondary mt-2 mb-0">Cancelled: @Model.CancelReason</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="card dashboard-card h-100" id="lab-notes">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-journal-text me-2"></i>Lab Notes</h5>
+                    <partial name="~/Modules/Lab/Views/Lab/_LabNotes.cshtml" model="Model.Notes" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

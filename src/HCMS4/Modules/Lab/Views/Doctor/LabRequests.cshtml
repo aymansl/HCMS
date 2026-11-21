@@ -90,6 +90,9 @@
                                                 <i class="bi bi-pencil"></i> Edit and Resend
                                             </a>
                                         }
+                                        <a asp-action="LabRequestDetails" asp-route-id="@request.Id" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-info-circle"></i> Details
+                                        </a>
                                         @if (request.Status == LabRequestStatus.ResultIssued)
                                         {
                                             <a asp-action="LabResult" asp-route-id="@request.Id" class="btn btn-sm @(request.HasCriticalResult && request.CriticalAcknowledgedAt == null ? "btn-danger" : "btn-outline-success")">

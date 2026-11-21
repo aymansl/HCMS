@@ -89,6 +89,17 @@ namespace HCMS4.Modules.Lab.Controllers
             return RedirectToAction(nameof(LabRequests), new { patientId = model.PatientId });
         }
 
+        /// <summary>A request with its status, tests and the lab's notes (UC-L07).</summary>
+        public async Task<IActionResult> LabRequestDetails(int id)
+        {
+            var doctorId = await GetCurrentDoctorIdAsync();
+            if (!doctorId.HasValue)
+                return RedirectToAction("Login", "Account");
+
+            var request = await _requestService.GetForDoctorByIdAsync(doctorId.Value, id);
+            return request == null ? NotFound() : View(request);
+        }
+
         [HttpGet]
         public async Task<IActionResult> CancelLabRequest(int id)
         {

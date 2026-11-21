@@ -28,6 +28,7 @@ ANY /Admin/ViewDoctorLeaves
 ANY /Admin/ViewInvoice
 ANY /Doctor/DailyVisitingPatientsReport
 ANY /Doctor/Dashboard
+ANY /Doctor/LabRequestDetails
 ANY /Doctor/LabRequests
 ANY /Doctor/LabResult
 ANY /Doctor/Profile
@@ -150,6 +151,7 @@ POST /Doctor/RespondToReviewRequest
 POST /Doctor/ReviewReissueRequest
 POST /Doctor/SendReminder
 POST /Lab/AddCancellationNote
+POST /Lab/AddNote
 POST /Lab/CreateTest
 POST /Lab/DeleteTest
 POST /Lab/EditTest

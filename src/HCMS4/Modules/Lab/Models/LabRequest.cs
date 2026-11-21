@@ -67,6 +67,9 @@ namespace HCMS4.Modules.Lab.Models
         public string? CriticalAcknowledgedBy { get; set; }
 
         public ICollection<LabRequestItem> Items { get; set; } = new List<LabRequestItem>();
+
+        /// <summary>The technicians' notes (UC-L07), shown to the doctor.</summary>
+        public ICollection<LabNote> Notes { get; set; } = new List<LabNote>();
     }
 
     /// <summary>One catalogue test in a request, with its price when the request was made.</summary>
