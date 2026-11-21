@@ -23,22 +23,25 @@ skinparam ActorFontSize 15
 skinparam DatabaseFontSize 15
 hide footbox
 actor "Lab Technician" as U
-participant ":PatientHistoryView" as V
-participant ":LabResultController" as C
-participant ":LabResultService" as S
+participant ":LabHistoryController" as C
+participant ":LabHistoryService" as S
+participant ":IPatientService" as P
 database "HCMS Database" as DB
-U -> V : search patient
-V -> C : FindPatient(term)
-C -> S : FindPatientAsync(term)
-S -> DB : SELECT patients
+U -> C : PatientHistory(term)
+C -> S : BuildPageAsync(term)
+S -> P : SearchAsync(term)
+P -> DB : SELECT patients (name, email, phone)
 alt found
-  U -> V : select patient
-  V -> C : History(patientId)
-  C -> S : GetHistoryAsync(patientId)
-  S -> DB : SELECT results by patient
-  S -> S : flag out-of-range values
-  C --> V : history
+  U -> C : PatientHistory(patientId)
+  C -> S : BuildPageAsync(patientId)
+  S -> DB : SELECT ResultIssued requests + results, newest first
+  C --> U : history (abnormal and critical values marked)
+  opt one test over time
+    U -> C : PatientHistory(patientId, testId)
+    S -> DB : SELECT values of the test, oldest first
+    C --> U : table + line chart with the reference range
+  end
 else not found
-  C --> V : "patient not found"
+  C --> U : "Patient not found."
 end
 @enduml

@@ -1,0 +1,133 @@
+@model HCMS4.Modules.Lab.ViewModels.PatientHistoryViewModel
+@using HCMS4.Modules.Lab.ViewModels
+
+@{
+    ViewData["Title"] = "Patient History";
+    Layout = "_LayoutAuth";
+}
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3"><i class="bi bi-clock-history me-2"></i>Patient Test History</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Patient History</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card dashboard-card mb-3">
+        <div class="card-body">
+            <form asp-action="PatientHistory" method="get" class="row g-2" id="patient-search">
+                <div class="col-md-9">
+                    <input type="text" name="term" value="@Model.Term" class="form-control" maxlength="100"
+                           placeholder="Patient name, email or phone" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Find Patient</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (Model.NotFound)
+    {
+        <div class="alert alert-warning" id="patient-not-found">@PatientHistoryViewModel.PatientNotFoundMessage</div>
+    }
+
+    @if (Model.Matches.Count > 0)
+    {
+        <div class="card dashboard-card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Select a patient</h5>
+                <div class="list-group" id="patient-matches">
+                    @foreach (var patient in Model.Matches)
+                    {
+                        <a asp-action="PatientHistory" asp-route-patientId="@patient.Id" class="list-group-item list-group-item-action">
+                            <strong>@patient.User.FullName</strong>
+                            <span class="text-muted small">· @patient.User.Email · @(patient.DateOfBirth?.ToString("yyyy-MM-dd") ?? "-")</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.Patient != null)
+    {
+        <h2 class="h4 mb-3" id="history-patient">@Model.Patient.User.FullName</h2>
+
+        @if (Model.History.Count == 0)
+        {
+            <div class="alert alert-secondary" id="no-history">@PatientHistoryViewModel.NoHistoryMessage</div>
+        }
+        else
+        {
+            <div class="card dashboard-card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-graph-up me-2"></i>Test over time</h5>
+                    <div class="d-flex flex-wrap gap-2 mb-3" id="trend-tests">
+                        @foreach (var test in Model.Tests)
+                        {
+                            <a asp-action="PatientHistory" asp-route-patientId="@Model.Patient.Id" asp-route-testId="@test.Id"
+                               class="btn btn-sm @(Model.TrendTest?.Id == test.Id ? "btn-primary" : "btn-outline-primary")">@test.Name</a>
+                        }
+                    </div>
+                    @if (Model.TrendTest != null)
+                    {
+                        <div id="trend">
+                            @if (Model.Chart != null)
+                            {
+                                <svg viewBox="0 0 @LabTrendChart.Width @LabTrendChart.Height" class="w-100 mb-3" style="max-height: 220px" role="img"
+                                     aria-label="@Model.TrendTest.Name over time">
+                                    @if (Model.Chart.BandY != null)
+                                    {
+                                        <rect x="0" y="@Model.Chart.BandY" width="@LabTrendChart.Width" height="@Model.Chart.BandHeight" fill="#d1e7dd" opacity="0.6" />
+                                    }
+                                    <polyline points="@Model.Chart.Points" fill="none" stroke="#0d6efd" stroke-width="2" />
+                                    @foreach (var dot in Model.Chart.Dots)
+                                    {
+                                        <circle cx="@dot.X" cy="@dot.Y" r="5" fill="@(dot.Abnormal ? "#dc3545" : "#0d6efd")" />
+                                    }
+                                </svg>
+                                <p class="small text-muted">Green band: reference range @Model.TrendTest.ReferenceRange @Model.TrendTest.Unit. Red points are outside it.</p>
+                            }
+                            <table class="table table-sm align-middle" id="trend-table">
+                                <thead class="table-light"><tr><th>Issued</th><th>Request</th><th class="text-end">Value</th><th>Flag</th></tr></thead>
+                                <tbody>
+                                    @foreach (var point in Model.Trend)
+                                    {
+                                        <tr class="@(point.Result.IsCritical ? "table-danger" : point.Result.IsAbnormal ? "table-warning" : "")">
+                                            <td>@point.IssuedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>#@point.RequestId</td>
+                                            <td class="text-end">@point.Result.DisplayValue @Model.TrendTest.Unit</td>
+                                            <td>@(point.Result.IsCritical ? "Critical" : point.Result.IsAbnormal ? "Abnormal" : "")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div id="history-list">
+                @foreach (var request in Model.History)
+                {
+                    <div class="card dashboard-card mb-3" data-request-id="@request.Id">
+                        <div class="card-header d-flex justify-content-between">
+                            <span><strong>Request #@request.Id</strong> · Dr. @request.Doctor.User.FullName</span>
+                            <a asp-action="RequestDetails" asp-route-id="@request.Id" class="small">Open</a>
+                        </div>
+                        <div class="card-body">
+                            <partial name="_LabResultTable" model="request" />
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

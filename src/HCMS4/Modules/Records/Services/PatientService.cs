@@ -175,6 +175,25 @@ namespace HCMS4.Modules.Records.Services
                    await _context.Invoices.AnyAsync(i => i.PatientId == id);
         }
 
+        public async Task<List<Patient>> SearchAsync(string term, int max = 20)
+        {
+            if (string.IsNullOrWhiteSpace(term))
+                return new List<Patient>();
+
+            // Case-insensitive whatever the collation; EF translates ToUpper() to SQL UPPER().
+            var upper = term.Trim().ToUpperInvariant();
+#pragma warning disable CA1304, CA1311, CA1862
+            return await _context.Patients.AsNoTracking()
+                .Include(p => p.User)
+                .Where(p => (p.User.FirstName + " " + p.User.LastName).ToUpper().Contains(upper)
+                            || (p.User.Email != null && p.User.Email.ToUpper().Contains(upper))
+                            || (p.User.PhoneNumber != null && p.User.PhoneNumber.Contains(upper)))
+                .OrderBy(p => p.User.FirstName).ThenBy(p => p.User.LastName)
+                .Take(max)
+                .ToListAsync();
+#pragma warning restore CA1304, CA1311, CA1862
+        }
+
         public async Task<int> GetCountAsync()
         {
             return await _context.Patients.AsNoTracking().CountAsync();

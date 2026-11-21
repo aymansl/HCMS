@@ -49,6 +49,8 @@
                         <dd class="col-sm-8">@(Model.Patient.DateOfBirth?.ToString("yyyy-MM-dd") ?? "-")</dd>
                         <dt class="col-sm-4">Phone</dt>
                         <dd class="col-sm-8">@(Model.Patient.User.PhoneNumber ?? "-")</dd>
+                        <dt class="col-sm-4">History</dt>
+                        <dd class="col-sm-8"><a asp-action="PatientHistory" asp-route-patientId="@Model.PatientId" id="patient-history-link">Patient history</a></dd>
                         <dt class="col-sm-4">Doctor</dt>
                         <dd class="col-sm-8">Dr. @Model.Doctor.User.FullName</dd>
                         <dt class="col-sm-4">Requested</dt>

@@ -10,6 +10,8 @@ namespace HCMS4.Modules.Records.Services
         /// <summary>All patients with their user, for selection lists.</summary>
         Task<List<Patient>> GetAllWithUserAsync();
         Task<Patient?> GetByUserIdAsync(string userId);
+        /// <summary>Patients whose name, email or phone contains <paramref name="term"/> (case-insensitive), by name.</summary>
+        Task<List<Patient>> SearchAsync(string term, int max = 20);
         /// <summary>Creates the patient record of a newly registered user.</summary>
         Task<Patient> CreateForUserAsync(string userId, DateTime? dateOfBirth, string? chronicConditions);
         /// <summary>Updates the details a patient edits on their own profile; false when the user has no patient record.</summary>

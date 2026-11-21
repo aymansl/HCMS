@@ -39,6 +39,7 @@ ANY /Home/Contact
 ANY /Home/Error
 ANY /Home/Index
 ANY /Lab/Dashboard
+ANY /Lab/PatientHistory
 ANY /Lab/RequestDetails
 ANY /Lab/Requests
 ANY /Lab/Schedule

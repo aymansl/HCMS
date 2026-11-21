@@ -36,5 +36,11 @@ if (Any results?) then (yes)
 else (no)
   :Show "no test history";
 endif
+|Lab Technician|
+if (Choose one test?) then (yes)
+  |System|
+  :Show its values over time (table and chart);
+else (no)
+endif
 stop
 @enduml
